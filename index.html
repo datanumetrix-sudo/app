@@ -167,6 +167,16 @@ const NxChat = (function () {
 .nxc-doc .ic{border-radius:8px;background:#64748b}
 .nxc-vid span,.nxc-doc span,.nxc-aud span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 .nxc-vid small,.nxc-doc small,.nxc-aud small{color:#64748b;font-size:11.5px;flex:none}
+.nxc-voice{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:12px;background:rgba(15,23,42,.05);margin:2px 0;min-width:220px;max-width:300px;width:100%;user-select:none}
+.nxc-voice .pp{width:38px;height:38px;border-radius:50%;border:0;background:var(--brand,#2457f5);color:#fff;font-size:15px;cursor:pointer;flex:none;display:grid;place-items:center;padding:0}
+.nxc-voice .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.nxc-voice .bar{height:6px;border-radius:3px;background:rgba(15,23,42,.15);position:relative;cursor:pointer}
+.nxc-voice .bar::after{content:'';position:absolute;inset:-8px 0}
+.nxc-voice .fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:var(--brand,#2457f5)}
+.nxc-voice .knob{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--brand,#2457f5);transform:translate(-50%,-50%);left:0}
+.nxc-voice .row{display:flex;justify-content:space-between;font-size:11px;color:#64748b}
+.nxc-voice .sp{border:0;background:rgba(15,23,42,.08);border-radius:10px;font-size:11px;font-weight:700;padding:3px 7px;cursor:pointer;flex:none;color:#334155}
+.nxc-voice.load .pp{opacity:.7}
 .nxc-m audio{width:260px;max-width:100%;height:40px;margin:2px 0}
 .nxc-m video{width:280px;max-width:100%;border-radius:10px;margin:2px 0;background:#000}
 .nxc-rx{display:flex;gap:3px;flex-wrap:wrap;margin-top:-4px;padding:0 6px;position:relative;z-index:1}
@@ -254,7 +264,62 @@ const NxChat = (function () {
   }
   const stamp = () => { const d = new Date(); return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; };
 
+  /* ---------- ձայնային նվագարկիչ (WhatsApp-ի պես՝ հենց տեղում) ---------- */
+  let CALL = null;
+  const SHARED = new Map();          // file id → Promise<{url, mime, name}>
+  function fetchMedia(id, call) {
+    call = call || CALL;
+    if (!SHARED.has(id)) SHARED.set(id, call('chatFile', { id }).then(f => {
+      const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return { url: URL.createObjectURL(new Blob([u8], { type: f.mime })), mime: f.mime, name: f.name };
+    }).catch(e => { SHARED.delete(id); throw e; }));
+    return SHARED.get(id);
+  }
+  const fmtT = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + pad(t % 60); };
+  function voiceHtml(id, sizeTxt, label) {
+    return `<div class="nxc-voice" data-voice="${esc(id)}"><button type="button" class="pp" data-vp title="Լսել">▶</button><div class="mid"><div class="bar" data-vbar><div class="fill"></div><div class="knob"></div></div><div class="row"><span class="tm">${esc(label || '🎤 Ձայնային')}</span><span class="dur">${esc(sizeTxt || '')}</span></div></div><button type="button" class="sp" data-vsp>1×</button></div>`;
+  }
+  let CUR = null;                    // { el, audio }
+  function voiceUi(el, a) {
+    const p = a.duration && isFinite(a.duration) ? a.currentTime / a.duration : 0;
+    el.querySelector('.fill').style.width = (p * 100) + '%';
+    el.querySelector('.knob').style.left = (p * 100) + '%';
+    el.querySelector('.tm').textContent = fmtT(a.currentTime);
+    if (a.duration && isFinite(a.duration)) el.querySelector('.dur').textContent = fmtT(a.duration);
+    el.querySelector('.pp').textContent = a.paused ? '▶' : '❚❚';
+  }
+  async function voiceToggle(el) {
+    if (CUR && CUR.el !== el) { CUR.audio.pause(); voiceUi(CUR.el, CUR.audio); }
+    if (el._audio) { const a = el._audio; if (a.paused) a.play(); else a.pause(); CUR = { el, audio: a }; return; }
+    el.classList.add('load'); el.querySelector('.pp').textContent = '⏳';
+    try {
+      const m = await fetchMedia(el.dataset.voice);
+      const a = new Audio(m.url); a.preload = 'auto'; el._audio = a; a.playbackRate = el._rate || 1;
+      ['timeupdate', 'play', 'pause', 'loadedmetadata', 'durationchange'].forEach(ev => a.addEventListener(ev, () => voiceUi(el, a)));
+      a.addEventListener('ended', () => { a.currentTime = 0; voiceUi(el, a); });
+      el.classList.remove('load'); CUR = { el, audio: a };
+      await a.play();
+    } catch (e) { el.classList.remove('load'); el.querySelector('.pp').textContent = '⚠'; el.title = e.message; }
+  }
+  document.addEventListener('click', e => {
+    const el = e.target.closest('.nxc-voice'); if (!el) return;
+    e.stopPropagation();
+    if (e.target.closest('[data-vp]')) return voiceToggle(el);
+    if (e.target.closest('[data-vsp]')) {
+      const r = { 1: 1.5, 1.5: 2, 2: 1 }[el._rate || 1]; el._rate = r; e.target.closest('[data-vsp]').textContent = r + '×';
+      if (el._audio) el._audio.playbackRate = r; return;
+    }
+    const bar = e.target.closest('[data-vbar]');
+    if (bar) {
+      const go = () => { const a = el._audio; if (a && a.duration && isFinite(a.duration)) { const b = bar.getBoundingClientRect(); a.currentTime = Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)) * a.duration; voiceUi(el, a); } };
+      if (el._audio) go(); else voiceToggle(el).then(() => setTimeout(go, 300));
+    }
+  }, true);
+  /** Ֆայլի տեսակը՝ ըստ անվան */
+  const kindOf = n => /\.(jpe?g|png|gif|webp|heic|bmp)$/i.test(n) ? 'image' : /^Ձայնային|\.(m4a|mp3|ogg|wav|aac|opus)$/i.test(n) ? 'audio' : /\.(mp4|mov|webm|3gp|m4v)$/i.test(n) ? 'video' : 'file';
+
   function mount(root, o) {
+    CALL = o.call;
     if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st); cssDone = true; }
     const S = { info: null, msgs: [], v: '', reply: null, edit: null, files: [], q: '', search: false, tab: 'chat', rec: null, alive: true, timer: null, typingAt: 0, err: '', busy: false, atBottom: true, lastCount: 0, firstLoad: true };
     const call = o.call;
@@ -270,13 +335,7 @@ const NxChat = (function () {
     list.addEventListener('scroll', () => { S.atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80; if (S.atBottom) { const nb = root.querySelector('.nxc-new'); if (nb) nb.remove(); } });
 
     /* ---------- մեդիա ---------- */
-    function media(id) {
-      if (!MEDIA.has(id)) MEDIA.set(id, call('chatFile', { id }).then(f => {
-        const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-        return { url: URL.createObjectURL(new Blob([u8], { type: f.mime })), mime: f.mime, name: f.name };
-      }).catch(e => { MEDIA.delete(id); throw e; }));
-      return MEDIA.get(id);
-    }
+    function media(id) { return fetchMedia(id, call); }
     const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
       if (!e.isIntersecting) return; io.unobserve(e.target);
       media(e.target.dataset.fid).then(m => { e.target.src = m.url; }).catch(() => { e.target.alt = '⚠'; });
@@ -294,7 +353,7 @@ const NxChat = (function () {
     }
     function fileHtml(f) {
       if (f.kind === 'image') return `<img class="nxc-img" data-fid="${esc(f.id)}" data-view="${esc(f.id)}" alt="">`;
-      if (f.kind === 'audio') return `<button class="nxc-aud" data-play="${esc(f.id)}"><span class="ic">▶</span><span>🎤 Ձայնային հաղորդագրություն</span><small>${size(f.size)}</small></button>`;
+      if (f.kind === 'audio') return voiceHtml(f.id, size(f.size), /^Ձայնային/.test(f.name) ? '🎤 Ձայնային' : f.name);
       if (f.kind === 'video') return `<button class="nxc-vid" data-play="${esc(f.id)}"><span class="ic">▶</span><span>${esc(f.name)}</span><small>${size(f.size)}</small></button>`;
       return `<button class="nxc-doc" data-view="${esc(f.id)}"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} ⬇</small></button>`;
     }
@@ -350,7 +409,7 @@ const NxChat = (function () {
       const med = fs.filter(f => f.kind === 'image' || f.kind === 'video'), aud = fs.filter(f => f.kind === 'audio'), doc = fs.filter(f => f.kind === 'file');
       box.innerHTML = !fs.length ? '<div class="nxc-empty">Ֆայլեր դեռ չկան</div>' :
         (med.length ? `<div class="nxc-h">Նկարներ և տեսանյութեր (${med.length})</div><div class="nxc-grid">${med.map(f => `<button class="g" data-view="${esc(f.id)}">${f.kind === 'image' ? `<img data-fid="${esc(f.id)}" alt="">` : '🎥'}<small>${size(f.size)}</small></button>`).join('')}</div>` : '')
-        + (aud.length ? `<div class="nxc-h">Ձայնային (${aud.length})</div>${aud.map(f => `<button class="nxc-aud" data-view="${esc(f.id)}" style="max-width:none;margin-bottom:6px"><span class="ic">▶</span><span>${esc(f.at.slice(0, 16))} · ${esc(f.by)}</span><small>${size(f.size)}</small></button>`).join('')}` : '')
+        + (aud.length ? `<div class="nxc-h">Ձայնային (${aud.length})</div>${aud.map(f => `<div style="font-size:11.5px;color:#64748b;margin:6px 0 2px">${esc(f.at.slice(0, 16))} · ${esc(f.by)}</div>` + voiceHtml(f.id, size(f.size))).join('')}` : '')
         + (doc.length ? `<div class="nxc-h" style="margin-top:12px">Փաստաթղթեր (${doc.length})</div>${doc.map(f => `<button class="nxc-doc" data-view="${esc(f.id)}" style="max-width:none;margin-bottom:6px"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} · ${esc(f.at.slice(0, 10))}</small></button>`).join('')}` : '');
       box.querySelectorAll('img[data-fid]').forEach(img => media(img.dataset.fid).then(m => { img.src = m.url; }).catch(() => {}));
     }
@@ -525,6 +584,7 @@ const NxChat = (function () {
         if (a === 'send') send();
         if (a === 'mic') startRec();
         if (a === 'att') attachMenu();
+        if (a === 'retry') S.retry();
         if (a === 'cx') { S.reply = null; S.edit = null; $r('cmp').innerHTML = ''; drawComposer(); }
         return;
       }
@@ -559,8 +619,18 @@ const NxChat = (function () {
       S.timer = setTimeout(tick, document.hidden ? 15000 : 3000);
     }
     drawTop(); drawComposer();
-    call('chatGet', { thread: o.thread }).then(r => { apply(r); S.timer = setTimeout(tick, 3000); })
-      .catch(e => { list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; });
+    // առաջին բեռնում՝ ցանցի խափանման դեպքում կրկին փորձում է ինքնաբերաբար
+    let tries = 0;
+    const first = () => call('chatGet', { thread: o.thread }).then(r => { apply(r); S.timer = setTimeout(tick, 3000); })
+      .catch(e => {
+        if (!S.alive) return;
+        if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.message)) { list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; return; }
+        tries++;
+        list.innerHTML = `<div class="nxc-empty">⚠ Կապի խնդիր (${esc(e.message)})<br><small>Կրկին փորձում ենք… (${tries})</small><br><button data-a="retry" style="margin-top:10px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">🔄 Կրկին փորձել</button></div>`;
+        S.timer = setTimeout(first, Math.min(15000, 2000 * tries));
+      });
+    S.retry = () => { clearTimeout(S.timer); list.innerHTML = '<div class="nxc-empty">Բեռնվում է…</div>'; first(); };
+    first();
     const onVis = () => { if (!document.hidden && S.alive) { clearTimeout(S.timer); tick(); } };
     document.addEventListener('visibilitychange', onVis);
     return {
@@ -569,13 +639,13 @@ const NxChat = (function () {
       busy() { return !!(S.rec || S.files.length || ($r('cmp').querySelector('textarea') || {}).value); }
     };
   }
-  return { mount };
+  return { mount, voiceHtml, kindOf, setCall: c => { CALL = c; }, fetchMedia: id => fetchMedia(id) };
 })();
 
 /* NXCHAT:END */
 
 /* Առանձին հոսթինգի դեպքում (GitHub Pages) լրացրեք Apps Script-ի …/exec հղումը */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyviUPX2N47hdsD7QiGYSwEyh67PtAzZC2BrN3K_3YCWhfNHiMQmBiau4k-ZjLdhHY/exec'; // ← ԱՅՍՏԵՂ տեղադրեք Apps Script-ի …/exec հղումը, օր.՝ 'https://script.google.com/macros/s/XXXX/exec'
+const API_URL = 'https://script.google.com/macros/s/AKfycbyviUPX2N47hdsD7QiGYSwEyh67PtAzZC2BrN3K_3YCWhfNHiMQmBiau4k-ZjLdhHY/exec';
 const TOKEN = (function () { try { return JSON.parse(document.getElementById('tokj').textContent) || ''; } catch (e) { return ''; } })() || new URLSearchParams(location.search).get('p') || '';
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 const ST_COLORS = { 'Նոր': '#2563eb', 'Դիտված': '#0ea5e9', 'Թասք է դարձել': '#7c3aed', 'Կատարված': '#16a34a', 'Մերժված': '#dc2626' };
@@ -671,7 +741,18 @@ function bind() {
 
 /* ======================= ՀԱՃԱԽՈՐԴԻ ՊԱՏՈՒՀԱՆ (մուտքանուն + PIN) ======================= */
 const CL = { tok: lsGet('nx_client_tok'), v: null, screen: 'home', thread: null, filter: 'open', files: [], login: '', check: null, q: '', res: null };
-function ccall(action, payload) {
+/** Կարդալու գործողությունները ցանցի խափանման դեպքում կրկնվում են (մինչև 2 անգամ) */
+const RETRY_OK = { clientInfo: 1, chatGet: 1, chatFile: 1, chatSearch: 1, clientCheck: 1, chatTyping: 1 };
+async function ccall(action, payload) {
+  for (let i = 0; ; i++) {
+    try { return await ccall1(action, payload); }
+    catch (e) {
+      if (!RETRY_OK[action] || i >= 2 || !/Կապի սխալ/.test(e.message) || /AUTH/.test(e.message)) throw e;
+      await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+    }
+  }
+}
+function ccall1(action, payload) {
   return new Promise((resolve, reject) => {
     const done = r => {
       if (r && r.ok) return resolve(r.data);
@@ -681,7 +762,12 @@ function ccall(action, payload) {
     };
     const fail = e => reject(new Error('Կապի սխալ՝ ' + (e && e.message || e)));
     if (IS_GAS) google.script.run.withSuccessHandler(done).withFailureHandler(fail).api(action, CL.tok, payload || {});
-    else if (API_URL) fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: CL.tok, payload: payload || {} }) }).then(r => r.json()).then(done).catch(fail);
+    else if (API_URL) {
+      const tm = setTimeout(() => fail(new Error('սերվերը չի պատասխանում (60 վրկ)')), 60000);
+      fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: CL.tok, payload: payload || {} }) })
+        .then(r => r.text()).then(t => { clearTimeout(tm); let j; try { j = JSON.parse(t); } catch (e) { throw new Error('սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)'); } done(j); })
+        .catch(e => { clearTimeout(tm); fail(e); });
+    }
     else fail(new Error('API_URL'));
   });
 }
@@ -748,7 +834,13 @@ function clientInit() {
     else if (!v.requests.length && v.chats.length === 1 && !v.chats[0].n) { CL.screen = 'home'; clRender(); }
     else clRender();
     clPoll();
-  }).catch(() => {});
+  }).catch(e => {
+    if (!CL.tok) return;   // մուտքի էջն արդեն ցույց է տրված
+    $('#root').innerHTML = `<div class="card bad"><div class="big">⚠️</div><b>Չհաջողվեց բեռնել</b><p class="sub" style="margin-top:8px">${esc(e.message)}</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px"><button class="btn" id="rt1" style="width:auto">🔄 Կրկին փորձել</button><button class="btn2" id="rt2">Դուրս գալ և նորից մտնել</button></div></div>`;
+    $('#rt1').onclick = () => { $('#root').innerHTML = '<div class="card"><div class="empty">Բեռնվում է…</div></div>'; clientInit(); };
+    $('#rt2').onclick = () => { CL.tok = ''; lsSet('nx_client_tok', ''); clLogin(); };
+  });
 }
 
 function clLogin(err) {
