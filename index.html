@@ -206,6 +206,24 @@ const NxFb = (function () {
     b.set(F.doc(st.db, 'sig', String(cid)), sg);
     return withTimeout(b.commit(), 6000);
   }
+  /** Ֆայլերը Firestore-ում՝ մասերով (յուրաքանչյուրը ≤ 700 ԿԲ base64) */
+  const CH = 700000;
+  async function putFiles(pth, items) {
+    const F = st.F; let b = F.writeBatch(st.db), sz = 0; const all = [];
+    for (const it of items) {
+      for (let i = 0; i * CH < it.b64.length || i === 0; i++) {
+        const part = it.b64.slice(i * CH, (i + 1) * CH);
+        if (sz + part.length > 6000000) { all.push(b.commit()); b = F.writeBatch(st.db); sz = 0; }
+        b.set(F.doc(st.db, ...pth, 'f', it.id + '-' + i), { d: part, u: F.serverTimestamp() }); sz += part.length;
+      }
+    }
+    all.push(b.commit());
+    return withTimeout(Promise.all(all), 120000);
+  }
+  async function getFile(pth, id, n) {
+    const F = st.F, parts = await Promise.all(Array.from({ length: n }, (_, i) => F.getDoc(F.doc(st.db, ...pth, 'f', id + '-' + i))));
+    return parts.map(p => { if (!p.exists()) throw new Error('Ֆայլը չի գտնվել'); return p.data().d; }).join('');
+  }
   function typing(pth) {
     const F = st.F;
     return F.setDoc(F.doc(st.db, ...pth), { ty: { [st.me.k]: { n: st.me.n, s: st.me.s, at: now() } }, u: F.serverTimestamp() }, { merge: true }).catch(() => {});
@@ -216,7 +234,7 @@ const NxFb = (function () {
     return b.commit().catch(() => {});
   }
   return {
-    start, stop, now, nowStr, path, newId, side, listenMsgs, listenDoc, onSig, send, typing, markRead,
+    start, stop, now, nowStr, path, newId, side, listenMsgs, listenDoc, onSig, send, typing, markRead, putFiles, getFile, chunks: s => Math.max(1, Math.ceil(s.length / CH)),
     ready: () => st.p || Promise.resolve(false),
     on: () => st.on, me: () => st.me, err: () => st.err || ''
   };
@@ -360,8 +378,14 @@ const NxChat = (function () {
   /* ---------- ձայնային նվագարկիչ (WhatsApp-ի պես՝ հենց տեղում) ---------- */
   let CALL = null;
   const SHARED = new Map();          // file id → Promise<{url, mime, name}>
+  const LIVE = new Map();            // Firebase-ում պահված ֆայլ → { pth, n, mime, name }
   function fetchMedia(id, call) {
     call = call || CALL;
+    const L = LIVE.get(id);
+    if (!SHARED.has(id) && L && NxFb.on()) SHARED.set(id, NxFb.getFile(L.pth, id, L.n).then(d => {
+      const bin = atob(d), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return { url: URL.createObjectURL(new Blob([u8], { type: L.mime || 'application/octet-stream' })), mime: L.mime || 'application/octet-stream', name: L.name };
+    }).catch(e => { SHARED.delete(id); throw e; }));
     if (!SHARED.has(id)) SHARED.set(id, call('chatFile', { id }).then(f => {
       const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
       return { url: URL.createObjectURL(new Blob([u8], { type: f.mime })), mime: f.mime, name: f.name };
@@ -577,16 +601,31 @@ const NxChat = (function () {
       m.onclick = e => { const b = e.target.closest('[data-pick]'); if (!b) return; m.remove(); root.querySelector(`[data-f="${b.dataset.pick}"]`).click(); };
     }
     /** Արագ ուղարկում Firebase-ով (միայն տեքստ)՝ մյուս կողմը տեսնում է անմիջապես, աղյուսակում պահվում է զուգահեռ */
-    async function sendFast(text) {
-      const id = NxFb.newId(), me = NxFb.me(), sd = NxFb.side(), at = NxFb.nowStr(), replyTo = S.reply ? S.reply.id : '';
-      const msg = { author: me.n, side: sd, x: me.x || '', text, at, replyTo, files: [], edited: false, deleted: false, reactions: {}, rt: sd === 'team', rc: sd === 'client' };
-      S.pend.set(id, { id, author: me.n, side: sd, text, at, replyTo, files: [], edited: false, deleted: false, reactions: {}, mine: true, read: false, pending: true });
-      S.reply = null; S.err = ''; S.typingAt = 0;
+    async function sendFast(text, files) {
+      files = files || [];
+      const id = NxFb.newId(), me = NxFb.me(), sd = NxFb.side(), at = NxFb.nowStr(), replyTo = S.reply ? S.reply.id : '', pth = S.fbPath;
+      const fl = files.map(f => {
+        const k = kindOf(f.name) !== 'file' ? kindOf(f.name) : fileKindLocal(f);
+        const m = { id: 'L-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), name: f.name, size: f.size, kind: k, at, by: me.n, mime: f.type || 'application/octet-stream', n: 1, live: 1 };
+        SHARED.set(m.id, Promise.resolve({ url: URL.createObjectURL(f), mime: m.mime, name: f.name }));   // ուղարկողը տեսնում է անմիջապես
+        return { f, m };
+      });
+      S.pend.set(id, { id, author: me.n, side: sd, text, at, replyTo, files: fl.map(x => x.m), edited: false, deleted: false, reactions: {}, mine: true, read: false, pending: true });
+      S.reply = null; S.err = ''; S.typingAt = 0; S.files = [];
       $r('cmp').innerHTML = ''; drawComposer(); setMsgs(true);
       const t2 = $r('cmp').querySelector('textarea'); if (t2 && !('ontouchstart' in window)) t2.focus();
-      let ok = true;
-      try { await NxFb.send(S.fbPath, id, msg, S.info.companyId, o.thread); } catch (e) { ok = false; }
-      const payload = { thread: o.thread, text, replyTo, fid: id, fat: at };
+      let ok = true, data = [];
+      try {
+        data = await Promise.all(fl.map(async x => ({ name: x.f.name, mime: x.f.type, data: await readB64(x.f) })));
+        if (fl.length) {
+          fl.forEach((x, i) => { x.m.n = NxFb.chunks(data[i].data); });
+          await NxFb.putFiles(pth, fl.map((x, i) => ({ id: x.m.id, b64: data[i].data })));
+        }
+        const msg = { author: me.n, side: sd, x: me.x || '', text, at, replyTo, files: fl.map(x => x.m), edited: false, deleted: false, reactions: {}, rt: sd === 'team', rc: sd === 'client' };
+        await NxFb.send(pth, id, msg, S.info.companyId, o.thread);
+      } catch (e) { ok = false; }
+      const payload = { thread: o.thread, text, replyTo, fid: id, fat: at, files: data };
+      if (ok && fl.length) payload.live = fl.map(x => ({ id: x.m.id, n: x.m.n }));
       if (!ok) {
         // Firebase-ը չաշխատեց՝ ուղարկում ենք սովորական ճանապարհով (նույն ID-ով, կրկնօրինակ չի լինի)
         try { const r = await call('chatSend', Object.assign(payload, { push: 1 })); S.pend.delete(id); apply(r, true); }
@@ -601,7 +640,8 @@ const NxChat = (function () {
     async function send() {
       const ta = $r('cmp').querySelector('textarea'); const text = ta ? ta.value.trim() : '';
       if (S.busy || (!text && !S.files.length)) return;
-      if (!S.edit && !S.files.length && S.fbPath && NxFb.on() && S.info) return sendFast(text);
+      // Firebase-ով (արագ)՝ տեքստ և մինչև 6 ՄԲ ֆայլեր, մեծերը՝ սովորական ճանապարհով
+      if (!S.edit && S.fbPath && NxFb.on() && S.info && S.files.reduce((a, f) => a + f.size, 0) <= 6 * 1048576) return sendFast(text, S.files.slice());
       S.busy = true; S.err = ''; drawComposer();
       try {
         let r;
@@ -722,6 +762,7 @@ const NxChat = (function () {
     function fsNorm(id, d) {
       const me = NxFb.me() || {}, sd = me.s === 't' ? 'team' : 'client';
       const mine = d.side === sd && (sd === 'team' ? d.author === me.n : d.x === me.x);
+      (Array.isArray(d.files) ? d.files : []).forEach(f => { if (f && f.live && S.fbPath) LIVE.set(f.id, { pth: S.fbPath, n: +f.n || 1, mime: f.mime, name: f.name }); });
       return { id, author: d.author || '', side: d.side || 'team', text: d.text || '', at: String(d.at || ''), replyTo: d.replyTo || '', edited: !!d.edited, deleted: !!d.deleted,
         reactions: d.reactions || {}, files: Array.isArray(d.files) ? d.files : [], mine, read: mine ? !!(d.side === 'team' ? d.rc : d.rt) : true, _rt: !!d.rt, _rc: !!d.rc };
     }
@@ -769,7 +810,7 @@ const NxChat = (function () {
       const off = [];
       S.fbUnsub = off; S.fbPath = pth;
       try {
-        off.push(NxFb.listenMsgs(pth, NxFb.now() - 30 * 60000, (chs, err) => {
+        off.push(NxFb.listenMsgs(pth, NxFb.now() - 3 * 86400000, (chs, err) => {
           if (!S.alive) return;
           if (err) { try { console.warn('Firebase chat', err); } catch (x) {} off.forEach(f => { try { f(); } catch (x) {} }); S.fbUnsub = null; S.fbPath = null; return; }
           let any = false;
@@ -780,11 +821,18 @@ const NxChat = (function () {
         S.tyTimer = setInterval(drawTyping, 2000);
       } catch (e) { off.forEach(f => { try { f(); } catch (x) {} }); S.fbUnsub = null; S.fbPath = null; }
     }
-    function apply(r, own) {
+    /* վերջին վիճակը պահվում է սարքում, որ չաթը բացվի անմիջապես (թարմը գալիս է հետո) */
+    const CK = 'nxc1_' + o.thread;
+    function cacheSave(r) {
+      clearTimeout(S.cT);
+      S.cT = setTimeout(() => { try { const c = Object.assign({}, r, { msgs: (r.msgs || []).slice(-60), typing: [] }); localStorage.setItem(CK, JSON.stringify(c)); } catch (e) {} }, 400);
+    }
+    function apply(r, own, fromCache) {
       if (!S.alive || !r) return;
       if (r.typing) { S.gasTy = r.typing; drawTyping(); }
       if (r.same) return;
-      S.info = r; S.v = r.v; S.gas = r.msgs || [];
+      if (!fromCache) cacheSave(r);
+      S.info = r; S.v = fromCache ? '' : r.v; S.gas = r.msgs || [];
       setMsgs(own);
       if (o.onInfo) o.onInfo(r);
       fbAttach();
@@ -796,13 +844,15 @@ const NxChat = (function () {
       S.timer = setTimeout(tick, S.fbPath ? (document.hidden ? 60000 : 20000) : (document.hidden ? 15000 : 3000));
     }
     drawTop(); drawComposer();
+    try { const c = JSON.parse(localStorage.getItem(CK) || 'null'); if (c && c.thread === o.thread) apply(c, false, true); } catch (e) {}
     // առաջին բեռնում՝ ցանցի խափանման դեպքում կրկին փորձում է ինքնաբերաբար
     let tries = 0;
     const first = () => call('chatGet', { thread: o.thread }).then(r => { apply(r); S.timer = setTimeout(tick, 3000); })
       .catch(e => {
         if (!S.alive) return;
-        if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.message)) { list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; return; }
+        if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.message)) { try { localStorage.removeItem(CK); } catch (x) {} list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; return; }
         tries++;
+        if (S.info) { S.timer = setTimeout(first, Math.min(15000, 2000 * tries)); return; }   // պահված տարբերակը ցույց է տրված
         list.innerHTML = `<div class="nxc-empty">⚠ Կապի խնդիր (${esc(e.message)})<br><small>Կրկին փորձում ենք… (${tries})</small><br><button data-a="retry" style="margin-top:10px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">🔄 Կրկին փորձել</button></div>`;
         S.timer = setTimeout(first, Math.min(15000, 2000 * tries));
       });
@@ -826,7 +876,7 @@ const NxChat = (function () {
 /* NXCHAT:END */
 
 /* Առանձին հոսթինգի դեպքում (GitHub Pages) լրացրեք Apps Script-ի …/exec հղումը */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyviUPX2N47hdsD7QiGYSwEyh67PtAzZC2BrN3K_3YCWhfNHiMQmBiau4k-ZjLdhHY/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxyhILiybrXvxAo4G-yEYuFhWRXLeQEPge7yJHV-Bb0MTO_XhAZ_RLz_e9GIi293mk-/exec';
 const TOKEN = (function () { try { return JSON.parse(document.getElementById('tokj').textContent) || ''; } catch (e) { return ''; } })() || new URLSearchParams(location.search).get('p') || '';
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 const ST_COLORS = { 'Նոր': '#2563eb', 'Դիտված': '#0ea5e9', 'Թասք է դարձել': '#7c3aed', 'Կատարված': '#16a34a', 'Մերժված': '#dc2626' };
@@ -1025,10 +1075,22 @@ function fbStartC() {
 }
 function fbStopC() { if (typeof FBC === 'function') FBC(); FBC = null; FBC_T.forEach(clearTimeout); NxFb.stop(); }
 
+const VKEY = () => 'nx_cv_' + String(CL.tok).slice(0, 12);
 function clientInit() {
   if (!IS_GAS && !API_URL) { $('#root').innerHTML = `<div class="card bad"><div class="big">⚙️</div><b>Հավելվածը դեռ կարգավորված չէ</b><p class="sub">index.html ֆայլում լրացրեք API_URL-ը (Apps Script-ի …/exec հղումը)։</p></div>`; return; }
   if (!CL.tok) return clLogin();
+  NxFb.start(ccall);   // Firebase-ը միանում է զուգահեռ
+  // նախորդ անգամվա տվյալները՝ անմիջապես (թարմը կգա մի քանի վայրկյանից)
+  let cached = null;
+  try { cached = JSON.parse(lsGet(VKEY()) || 'null'); } catch (e) {}
+  if (cached && cached.me && !CL.v) { CL.v = cached; if (CL.screen === 'home') clRender(); }
   ccall('clientInfo', {}).then(v => {
+    lsSet(VKEY(), JSON.stringify(v));
+    if (cached && CL.v === cached) {
+      CL.v = v; notifyChanges(null, v);
+      if (CL.screen === 'home' && !homeBusy()) clRender();
+      clPoll(); fbStartC(); return;
+    }
     CL.v = v; notifyChanges(null, v);
     const h = location.hash.slice(1);
     if (h && allThreads(v).some(r => r.thread === h)) { history.replaceState(null, '', location.pathname + location.search); clOpen(h); }
@@ -1037,6 +1099,7 @@ function clientInit() {
     clPoll(); fbStartC();
   }).catch(e => {
     if (!CL.tok) return;   // մուտքի էջն արդեն ցույց է տրված
+    if (CL.v) { toastC('⚠ Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները'); setTimeout(() => { if (CL.tok) clientInit(); }, 15000); return; }
     $('#root').innerHTML = `<div class="card bad"><div class="big">⚠️</div><b>Չհաջողվեց բեռնել</b><p class="sub" style="margin-top:8px">${esc(e.message)}</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px"><button class="btn" id="rt1" style="width:auto">🔄 Կրկին փորձել</button><button class="btn2" id="rt2">Դուրս գալ և նորից մտնել</button></div></div>`;
     $('#rt1').onclick = () => { $('#root').innerHTML = '<div class="card"><div class="empty">Բեռնվում է…</div></div>'; clientInit(); };
@@ -1306,6 +1369,7 @@ async function clLogout() {
   try { await ccall('clientLogout', {}); } catch (e) {}
   if (CHAT) { CHAT.destroy(); CHAT = null; }
   fbStopC();
+  try { localStorage.removeItem(VKEY()); } catch (e) {}
   CL.tok = ''; CL.v = null; CL.screen = 'home'; CL.thread = null; lsSet('nx_client_tok', ''); clLogin();
 }
 let clTimer = null;
