@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="hy">
 <head>
+<script>
+/* Ախտորոշում. եթե էջը չի բեռնվում, սխալը ցույց է տրվում էկրանին (ուղարկեք դրա նկարը) */
+window.__nxErr = function (m) { try { var d = document.getElementById('nxerr'); if (!d) { d = document.createElement('div'); d.id = 'nxerr'; d.style.cssText = 'position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#7f1d1d;color:#fff;font:13px/1.45 monospace;padding:12px 14px;border-radius:10px;white-space:pre-wrap;max-height:45vh;overflow:auto'; (document.body || document.documentElement).appendChild(d); } d.textContent += '⚠ ' + m + '\n'; } catch (e) {} };
+window.addEventListener('error', function (e) { window.__nxErr((e.message || 'Error') + (e.lineno ? ' (տող ' + e.lineno + ':' + e.colno + ')' : '') + (e.filename ? ' ' + String(e.filename).slice(-60) : '')); });
+window.addEventListener('unhandledrejection', function (e) { var r = e.reason; window.__nxErr('Promise: ' + (r && r.message || r)); });
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2457f5">
@@ -116,6 +123,8 @@ textarea.inp{resize:vertical;min-height:90px}
 </style>
 </head>
 <body>
+<div id="nxboot" style="position:fixed;inset:0;display:grid;place-items:center;font:15px system-ui,sans-serif;color:#64748b;background:#f4f6fb;z-index:9998">Բեռնվում է…</div>
+
 <div class="wrap" id="root"><div class="card"><div class="empty">Բեռնվում է…</div></div></div>
 <script type="application/json" id="tokj">""</script>
 <script>
@@ -231,7 +240,7 @@ const NxChat = (function () {
     const p = d.split('-'); return p[2] + '.' + p[1] + '.' + p[0];
   };
   const kindIcon = k => ({ image: '🖼️', video: '🎥', audio: '🎤', file: '📄' }[k] || '📄');
-  const fileKindLocal = f => /^image\//.test(f.type) ? 'image' : /^video\//.test(f.type) ? 'video' : /^audio\//.test(f.type) ? 'audio' : 'file';
+  const fileKindLocal = f => /^image[/]/.test(f.type) ? 'image' : /^video[/]/.test(f.type) ? 'video' : /^audio[/]/.test(f.type) ? 'audio' : 'file';
   function readB64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Չհաջողվեց կարդալ ' + f.name)); r.readAsDataURL(f); }); }
   async function shrinkImage(f) {
     if (!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size < 1.2 * 1048576 || !window.createImageBitmap) return f;
@@ -275,7 +284,7 @@ const NxChat = (function () {
     function viewer(f) {
       media(f.id).then(m => {
         const save = () => { const a = document.createElement('a'); a.href = m.url; a.download = m.name || f.name; document.body.appendChild(a); a.click(); a.remove(); };
-        if (!/^(image|video|audio)\//.test(m.mime)) return save();
+        if (!/^(image|video|audio)[/]/.test(m.mime)) return save();
         const v = document.createElement('div'); v.className = 'nxc-view';
         v.innerHTML = (/^image/.test(m.mime) ? `<img src="${m.url}">` : /^video/.test(m.mime) ? `<video src="${m.url}" controls autoplay playsinline></video>` : `<div style="font-size:54px">🎤</div><audio src="${m.url}" controls autoplay></audio>`)
           + `<div class="nm">${esc(f.name)}</div><div class="vb"><button data-a="s" style="background:#fff">⬇ Պահպանել</button><button data-a="c" style="background:#334155;color:#fff">✕ Փակել</button></div>`;
@@ -374,11 +383,11 @@ const NxChat = (function () {
           <textarea rows="1" placeholder="${S.edit ? 'Խմբագրել…' : 'Հաղորդագրություն…'}" ${S.busy ? 'disabled' : ''}>${esc(draft)}</textarea>
           <button class="nxc-ib ${draft.trim() || S.files.length || S.edit ? 'nxc-send' : ''}" data-a="${draft.trim() || S.files.length || S.edit ? 'send' : 'mic'}" title="${draft.trim() || S.files.length || S.edit ? 'Ուղարկել' : 'Ձայնային հաղորդագրություն'}">${S.busy ? '⏳' : (draft.trim() || S.files.length || S.edit ? '➤' : '🎤')}</button>
         </div>
-        <input type="file" data-f="cam" accept="image/*" capture="environment" hidden>
-        <input type="file" data-f="vid" accept="video/*" capture="environment" hidden>
-        <input type="file" data-f="gal" accept="image/*,video/*" multiple hidden>
+        <input type="file" data-f="cam" accept="image/${'*'}" capture="environment" hidden>
+        <input type="file" data-f="vid" accept="video/${'*'}" capture="environment" hidden>
+        <input type="file" data-f="gal" accept="image/${'*'},video/${'*'}" multiple hidden>
         <input type="file" data-f="any" multiple hidden>
-        <input type="file" data-f="aud" accept="audio/*" capture hidden>
+        <input type="file" data-f="aud" accept="audio/${'*'}" capture hidden>
         ${S.err ? `<div class="nxc-err">${esc(S.err)}</div>` : ''}`;
       const ta = c.querySelector('textarea');
       const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
@@ -566,7 +575,7 @@ const NxChat = (function () {
 /* NXCHAT:END */
 
 /* Առանձին հոսթինգի դեպքում (GitHub Pages) լրացրեք Apps Script-ի …/exec հղումը */
-const API_URL = 'https://script.google.com/macros/s/AKfycbx2zL1J1ri82JyaAG8z5flvfOcB3h4LKKyYZCRs-3PSTD-MJnuNaAyK2FuK8y61ejpw/exec'; // ← ԱՅՍՏԵՂ տեղադրեք Apps Script-ի …/exec հղումը, օր.՝ 'https://script.google.com/macros/s/XXXX/exec'
+const API_URL = ''; // ← ԱՅՍՏԵՂ տեղադրեք Apps Script-ի …/exec հղումը, օր.՝ 'https://script.google.com/macros/s/XXXX/exec'
 const TOKEN = (function () { try { return JSON.parse(document.getElementById('tokj').textContent) || ''; } catch (e) { return ''; } })() || new URLSearchParams(location.search).get('p') || '';
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 const ST_COLORS = { 'Նոր': '#2563eb', 'Դիտված': '#0ea5e9', 'Թասք է դարձել': '#7c3aed', 'Կատարված': '#16a34a', 'Մերժված': '#dc2626' };
@@ -603,7 +612,7 @@ function render() {
       <div><label class="f">Ցանկալի ժամկետ</label><input class="inp" type="date" name="due"></div>
       <div class="full"><label class="f">Ի՞նչ է պետք անել *</label><input class="inp" name="title" maxlength="300" placeholder="Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը" required></div>
       <div class="full"><label class="f">Մանրամասներ</label><textarea class="inp" name="description" maxlength="5000" placeholder="Լրացուցիչ տեղեկություններ…"></textarea></div>
-      <div class="full"><label class="f">Հղում փաստաթղթին (եթե կա)</label><input class="inp" name="link" placeholder="https://…"></div>
+      <div class="full"><label class="f">Հղում փաստաթղթին (եթե կա)</label><input class="inp" name="link" placeholder="https:\/\/…"></div>
       <div class="full"><label class="f">Ֆայլեր (մինչև 5 հատ, յուրաքանչյուրը մինչև ${d.maxFileMb} ՄԲ)</label>
         <div class="drop" id="drop">📎 Սեղմեք կամ քաշեք ֆայլերը այստեղ</div>
         <input type="file" id="fi" multiple hidden>
@@ -835,7 +844,7 @@ function clNewScreen() {
       <div class="full"><label class="f">Ի՞նչ է պետք անել *</label><input class="inp" name="title" maxlength="300" placeholder="Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին"></div>
       <div class="full"><label class="f">Մանրամասներ</label><textarea class="inp" name="description" maxlength="5000" placeholder="Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…"></textarea></div>
       <div><label class="f">Ցանկալի ժամկետ</label><input class="inp" type="date" name="due"></div>
-      <div><label class="f">Հղում (եթե կա)</label><input class="inp" name="link" placeholder="https://…"></div>
+      <div><label class="f">Հղում (եթե կա)</label><input class="inp" name="link" placeholder="https:\/\/…"></div>
       <div class="full"><label class="f">Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ ${v.maxFileMb} ՄԲ)</label><div class="drop" id="drop" style="display:var(--dropd,block)">📎 Սեղմեք կամ քաշեք ֆայլերը այստեղ</div>${mediaBar('n')}<div class="flist" id="fl"></div></div>
       <div class="full"><button class="btn" id="ngo">Ուղարկել</button></div>
       <div class="full err" id="nerr"></div>
@@ -853,16 +862,16 @@ function mediaBar(p) {
     <button type="button" id="${p}mic"><b>🎤</b>Ձայն</button>
     <button type="button" data-pick="${p}any"><b>📎</b>Ֆայլ</button>
   </div>
-  <input type="file" id="${p}cam" accept="image/*" capture="environment" hidden>
-  <input type="file" id="${p}vid" accept="video/*" capture="environment" hidden>
-  <input type="file" id="${p}gal" accept="image/*,video/*" multiple hidden>
-  <input type="file" id="${p}aud" accept="audio/*" capture hidden>
+  <input type="file" id="${p}cam" accept="image/${'*'}" capture="environment" hidden>
+  <input type="file" id="${p}vid" accept="video/${'*'}" capture="environment" hidden>
+  <input type="file" id="${p}gal" accept="image/${'*'},video/${'*'}" multiple hidden>
+  <input type="file" id="${p}aud" accept="audio/${'*'}" capture hidden>
   <input type="file" id="${p}any" multiple hidden>
   <div class="rec hidden" id="${p}rec"><span class="dot"></span><span id="${p}rt">00:00</span><button type="button" class="x" id="${p}rx">Չեղարկել</button><button type="button" id="${p}rs">■ Կանգնեցնել</button></div>`;
 }
 const URLS = new WeakMap();
 function objUrl(f) { if (!URLS.has(f)) URLS.set(f, URL.createObjectURL(f)); return URLS.get(f); }
-function fileIcon(t) { return /^image\//.test(t) ? '🖼️' : /^video\//.test(t) ? '🎥' : /^audio\//.test(t) ? '🎤' : '📄'; }
+function fileIcon(t) { return /^image[/]/.test(t) ? '🖼️' : /^video[/]/.test(t) ? '🎥' : /^audio[/]/.test(t) ? '🎤' : '📄'; }
 /** Մեծ նկարները փոքրացվում են (մինչև 2048px), որ արագ ուղարկվեն */
 async function shrinkImage(f) {
   if (!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size < 1.2 * 1048576 || !window.createImageBitmap) return f;
@@ -880,8 +889,8 @@ let REC = null;
 function bindMedia(listKey, p, flId, errId, max, dropId) {
   const er = () => $('#' + errId);
   const draw = () => {
-    $('#' + flId).innerHTML = CL[listKey].map((f, i) => `<div class="fitem">${/^image\//.test(f.type) ? `<img class="th" src="${objUrl(f)}">` : /^video\//.test(f.type) ? `<video class="th" src="${objUrl(f)}" muted playsinline></video>` : fileIcon(f.type)}
-      ${/^audio\//.test(f.type) ? `<audio controls src="${objUrl(f)}"></audio>` : `<span>${esc(f.name)}</span>`}<small style="color:var(--muted);margin-left:auto">${fmtSize(f.size)}</small><button type="button" data-i="${i}">×</button></div>`).join('');
+    $('#' + flId).innerHTML = CL[listKey].map((f, i) => `<div class="fitem">${/^image[/]/.test(f.type) ? `<img class="th" src="${objUrl(f)}">` : /^video[/]/.test(f.type) ? `<video class="th" src="${objUrl(f)}" muted playsinline></video>` : fileIcon(f.type)}
+      ${/^audio[/]/.test(f.type) ? `<audio controls src="${objUrl(f)}"></audio>` : `<span>${esc(f.name)}</span>`}<small style="color:var(--muted);margin-left:auto">${fmtSize(f.size)}</small><button type="button" data-i="${i}">×</button></div>`).join('');
     $('#' + flId).querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { CL[listKey].splice(+b.dataset.i, 1); draw(); });
   };
   const add = async list => {
@@ -889,7 +898,7 @@ function bindMedia(listKey, p, flId, errId, max, dropId) {
     for (let f of [...list]) {
       if (CL[listKey].length >= max) { if (er()) er().textContent = 'Առավելագույնը ' + max + ' ֆայլ'; break; }
       f = await shrinkImage(f);
-      if (f.size > CL.v.maxFileMb * 1048576) { if (er()) er().textContent = `«${f.name}» ֆայլը մեծ է ${CL.v.maxFileMb} ՄԲ-ից${/^video\//.test(f.type) ? '։ Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։' : ''}`; continue; }
+      if (f.size > CL.v.maxFileMb * 1048576) { if (er()) er().textContent = `«${f.name}» ֆայլը մեծ է ${CL.v.maxFileMb} ՄԲ-ից${/^video[/]/.test(f.type) ? '։ Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։' : ''}`; continue; }
       if (CL[listKey].reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { if (er()) er().textContent = 'Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։'; break; }
       CL[listKey].push(f);
     }
@@ -1028,6 +1037,8 @@ document.addEventListener('visibilitychange', async () => {
   try { INFO = await call('portalInfo', {}); render(); }
   catch (e) { $('#root').innerHTML = `<div class="card bad"><div class="big">🔒</div><b>${esc(e.message)}</b></div>`; }
 })();
+
+(function () { var b = document.getElementById('nxboot'); if (b) b.remove(); })();
 </script>
 </body>
 </html>
