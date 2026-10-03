@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2457f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Numetrix">
+<title>Հարցումներ · Numetrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--panel:#fff;--line:#e5e9f2;--line2:#eef1f7;--text:#0f172a;--muted:#64748b;--muted2:#94a3b8;--brand:#2457f5;--brand2:#1d44c4;--brandSoft:#e9efff;--red:#dc2626;--green:#16a34a;--shadow:0 1px 2px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.06)}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans Armenian',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:28px 16px 60px}
+.head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.mark{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--brand),#7c3aed);display:grid;place-items:center;color:#fff;font-weight:700;font-size:20px;flex:none}
+.head h1{margin:0;font-size:20px;line-height:1.2}
+.head small{display:block;color:var(--muted);font-size:13px;font-weight:500}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:16px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:0 0 6px}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none;transition:border .15s,box-shadow .15s}
+.inp:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brandSoft)}
+textarea.inp{resize:vertical;min-height:90px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.full{grid-column:1/-1}
+.drop{border:1.5px dashed #cbd5e1;border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;transition:.15s}
+.drop:hover,.drop.on{border-color:var(--brand);background:var(--brandSoft);color:var(--brand2)}
+.flist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.fitem{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid var(--line2);border-radius:8px;padding:6px 10px;font-size:13px}
+.fitem span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fitem button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px}
+.fitem button:hover{color:var(--red)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;background:var(--brand);color:#fff;border-radius:10px;padding:11px 18px;font-weight:600;cursor:pointer;width:100%}
+.btn:hover{background:var(--brand2)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.err{color:var(--red);font-size:13px;min-height:18px;margin-top:10px}
+.ok{background:#ecfdf3;border:1px solid #bbf7d0;color:#166534;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-bottom:12px}
+.req{border-top:1px solid var(--line2);padding:12px 0;display:flex;gap:12px;align-items:flex-start}
+.req:first-child{border-top:0;padding-top:0}
+.req .t{font-weight:600}
+.req .m{font-size:12.5px;color:var(--muted);margin-top:2px}
+.req .note{font-size:13px;background:#f8fafc;border-left:3px solid var(--brand);padding:6px 10px;border-radius:0 8px 8px 0;margin-top:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;background:color-mix(in srgb,var(--c) 12%,white);color:color-mix(in srgb,var(--c) 80%,black);margin-left:auto;flex:none}
+.pill::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--c)}
+.empty{color:var(--muted);text-align:center;padding:18px 0;font-size:13.5px}
+.bad{text-align:center;padding:40px 20px}
+.bad .big{font-size:38px;margin-bottom:8px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.top .who{margin-left:auto;text-align:right;font-size:13px;color:var(--muted)}
+.top .who b{display:block;color:var(--text);font-size:14px}
+.lnk{border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:0;font-size:13px}
+.btn2{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 14px;font-weight:600;cursor:pointer;font-size:13.5px}
+.btn2:hover{border-color:#cbd5e1}
+.seg{display:inline-flex;background:#eef1f7;border-radius:10px;padding:3px;gap:2px;margin-bottom:10px}
+.seg button{border:0;background:transparent;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.it{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;cursor:pointer;border:1px solid transparent}
+.it:hover{background:#f8fafc;border-color:var(--line2)}
+.it .t{font-weight:600}
+.it .m{font-size:12.5px;color:var(--muted);margin-top:2px}
+.un{background:var(--red);color:#fff;border-radius:20px;font-size:11.5px;font-weight:700;padding:1px 8px;margin-left:6px}
+.thread{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.msg{max-width:85%;padding:9px 12px;border-radius:14px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg small{display:block;font-size:11.5px;opacity:.7;margin-bottom:2px;white-space:normal}
+.msg.them{background:#f1f5f9;align-self:flex-start;border-bottom-left-radius:4px}
+.msg.me{background:var(--brand);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.dl{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line2);border-radius:10px;background:#f8fafc;font-size:13px;cursor:pointer;width:100%;text-align:left}
+.dl:hover{border-color:var(--brand)}
+.dl span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-block;font-size:11.5px;background:var(--brandSoft);color:var(--brand2);border-radius:6px;padding:1px 7px;margin-left:6px;font-weight:600}
+.reply{display:flex;gap:8px;align-items:flex-end}
+.reply textarea{min-height:44px}
+.reply .ic{flex:none;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:18px}
+.reply .send{flex:none;width:auto;padding:11px 16px}
+.mbar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.mbar button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 2px;font-size:11.5px;font-weight:600;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2}
+.mbar button b{font-size:19px;font-weight:400}
+.mbar button:active{background:var(--brandSoft)}
+.rec{display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 12px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-weight:600}
+.rec .dot{width:10px;height:10px;border-radius:50%;background:#dc2626;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+.rec button{margin-left:auto;border:0;border-radius:8px;padding:7px 12px;font-weight:600;cursor:pointer;background:#dc2626;color:#fff}
+.rec button.x{margin-left:0;background:#fff;color:#991b1b;border:1px solid #fecaca}
+.fitem .th{width:40px;height:40px;border-radius:6px;object-fit:cover;flex:none;background:#e2e8f0}
+.fitem audio{height:32px;max-width:160px}
+.viewer{position:fixed;inset:0;background:rgba(2,6,23,.92);z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px}
+.viewer img,.viewer video{max-width:100%;max-height:75vh;border-radius:10px}
+.viewer .vb{display:flex;gap:10px}
+.viewer .vb button{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.hidden{display:none!important}
+.av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#2457f5,#7c3aed);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it{align-items:center}
+.chatpage{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);z-index:5}
+.chbar{display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:#fff;border-bottom:1px solid var(--line)}
+.chbar .t{font-weight:700}.chbar .m{font-size:12.5px;color:var(--muted)}
+.chinfo{background:#fff;border-bottom:1px solid var(--line);padding:10px 14px;font-size:13.5px;max-height:40vh;overflow:auto}
+.chinfo .pill{margin-left:0}
+.chbody{flex:1;min-height:0;max-width:820px;width:100%;margin:0 auto}
+.chbody .nxc{border-radius:0}
+.appbar{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
+.appbar button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--brand2)}
+.ios{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.ios>div{background:#fff;border-radius:16px 16px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-width:480px;width:100%}
+.ios ol{padding-left:20px;margin:10px 0}.ios li{margin:6px 0}
+@media (display-mode:standalone){.wrap{padding-top:calc(14px + env(safe-area-inset-top))}}
+@media (pointer:coarse){:root{--dropd:none}}
+@media (max-width:600px){.grid{grid-template-columns:1fr}.wrap{padding-top:18px}.inp{font-size:16px}.card{padding:16px}
+  .reply{position:sticky;bottom:0;background:#fff;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}}
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="card"><div class="empty">Բեռնվում է…</div></div></div>
+<script type="application/json" id="tokj">""</script>
+<script>
+/* NXCHAT:BEGIN — ավտոմատ տեղադրված src/chat.js-ից */
+/* ============== NxChat — ընդհանուր չաթ (օգտագործվում է և՛ թիմի, և՛ հաճախորդի էջում) ==============
+   NxChat.mount(el, { thread, side, call, onConvert, convertLabel, canConvert, onInfo, compact })
+   call(action, payload) → Promise<data> */
+const NxChat = (function () {
+  const CSS = `
+.nxc{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--nxc-bg,#eef2f8);border-radius:inherit;position:relative;font-size:14.5px}
+.nxc *{box-sizing:border-box}
+.nxc-top{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel,#fff);border-bottom:1px solid var(--line,#e5e9f2)}
+.nxc-top .t{flex:1;min-width:0;font-size:13px;color:var(--muted,#64748b)}
+.nxc-top button{border:1px solid var(--line,#e5e9f2);background:#fff;border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:600;cursor:pointer;color:inherit}
+.nxc-top button.on{background:var(--brand,#2457f5);color:#fff;border-color:transparent}
+.nxc-top input{flex:1;min-width:0;border:1px solid var(--line,#e5e9f2);border-radius:8px;padding:6px 10px;font:inherit;font-size:13.5px}
+.nxc-list{flex:1;min-height:0;overflow-y:auto;padding:10px 12px 6px;display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain}
+.nxc-day{align-self:center;background:rgba(15,23,42,.06);color:#475569;font-size:11.5px;font-weight:600;border-radius:10px;padding:2px 10px;margin:8px 0 4px}
+.nxc-sys{align-self:center;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:12.5px;border-radius:10px;padding:5px 12px;margin:6px 0;max-width:90%;text-align:center}
+.nxc-m{display:flex;flex-direction:column;max-width:82%;align-self:flex-start;position:relative;margin-top:2px}
+.nxc-m.nxc-me{align-self:flex-end;align-items:flex-end}
+.nxc-b{background:#fff;border-radius:14px;border-bottom-left-radius:4px;padding:6px 10px 4px;box-shadow:0 1px 1px rgba(15,23,42,.08);position:relative;min-width:72px;max-width:100%}
+.nxc-m.nxc-me .nxc-b{background:var(--nxc-me,#d9e6ff);border-bottom-left-radius:14px;border-bottom-right-radius:4px}
+.nxc-m.flash .nxc-b{animation:nxcFlash 1.4s}
+@keyframes nxcFlash{0%,60%{box-shadow:0 0 0 3px #fbbf24}}
+.nxc-a{font-size:12px;font-weight:700;color:var(--brand,#2457f5);margin-bottom:1px}
+.nxc-tx{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.42}
+.nxc-tx a{color:var(--brand,#2457f5)}
+.nxc-tx mark{background:#fde68a;border-radius:3px}
+.nxc-del{font-style:italic;color:#94a3b8}
+.nxc-ft{display:flex;gap:4px;justify-content:flex-end;align-items:center;font-size:11px;color:#64748b;margin-top:1px;white-space:nowrap}
+.nxc-ck{font-size:12px;letter-spacing:-3px;color:#94a3b8;margin-left:2px}
+.nxc-ck.r{color:#0ea5e9}
+.nxc-q{border-left:3px solid var(--brand,#2457f5);background:rgba(36,87,245,.07);border-radius:6px;padding:3px 8px;margin:2px 0 4px;font-size:12.5px;cursor:pointer;max-width:100%}
+.nxc-q b{display:block;font-size:11.5px;color:var(--brand,#2457f5)}
+.nxc-q span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475569}
+.nxc-img{display:block;max-width:100%;width:260px;max-height:320px;object-fit:cover;border-radius:10px;margin:2px 0;background:#e2e8f0;cursor:zoom-in;min-height:120px}
+.nxc-vid,.nxc-doc,.nxc-aud{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(15,23,42,.05);margin:2px 0;cursor:pointer;min-width:200px;max-width:280px;border:0;font:inherit;color:inherit;text-align:left;width:100%}
+.nxc-vid .ic,.nxc-doc .ic,.nxc-aud .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--brand,#2457f5);color:#fff;flex:none;font-size:15px}
+.nxc-doc .ic{border-radius:8px;background:#64748b}
+.nxc-vid span,.nxc-doc span,.nxc-aud span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.nxc-vid small,.nxc-doc small,.nxc-aud small{color:#64748b;font-size:11.5px;flex:none}
+.nxc-m audio{width:260px;max-width:100%;height:40px;margin:2px 0}
+.nxc-m video{width:280px;max-width:100%;border-radius:10px;margin:2px 0;background:#000}
+.nxc-rx{display:flex;gap:3px;flex-wrap:wrap;margin-top:-4px;padding:0 6px;position:relative;z-index:1}
+.nxc-rx button{border:1px solid #e2e8f0;background:#fff;border-radius:12px;padding:0 6px;font-size:12.5px;cursor:pointer;line-height:20px}
+.nxc-rx button.on{border-color:var(--brand,#2457f5);background:#eef3ff}
+.nxc-more{position:absolute;top:2px;right:-30px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(255,255,255,.9);box-shadow:0 1px 3px rgba(0,0,0,.15);cursor:pointer;opacity:0;transition:.15s;font-size:14px;line-height:1}
+.nxc-m.nxc-me .nxc-more{right:auto;left:-30px}
+.nxc-m:hover .nxc-more,.nxc-more:focus{opacity:1}
+@media (hover:none){.nxc-more{opacity:.55}}
+.nxc-menu{position:fixed;z-index:120;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.25);padding:6px;min-width:190px}
+.nxc-menu .rx{display:flex;gap:2px;padding:2px 2px 6px;border-bottom:1px solid #eef1f7;margin-bottom:4px}
+.nxc-menu .rx button{border:0;background:transparent;font-size:20px;padding:2px 4px;border-radius:8px;cursor:pointer}
+.nxc-menu .rx button:hover{background:#f1f5f9}
+.nxc-menu .it{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;border-radius:8px;font:inherit;font-size:13.5px;cursor:pointer;color:#0f172a}
+.nxc-menu .it:hover{background:#f1f5f9}
+.nxc-menu .it.d{color:#dc2626}
+.nxc-typ{font-size:12px;color:#64748b;padding:2px 14px 4px;min-height:20px;font-style:italic}
+.nxc-new{position:absolute;right:16px;bottom:96px;background:var(--brand,#2457f5);color:#fff;border:0;border-radius:18px;padding:6px 12px;font-size:12.5px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;z-index:3}
+.nxc-cmp{background:var(--panel,#fff);border-top:1px solid var(--line,#e5e9f2);padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+.nxc-ctx{display:flex;align-items:center;gap:8px;background:#f1f5f9;border-left:3px solid var(--brand,#2457f5);border-radius:8px;padding:5px 8px;margin-bottom:6px;font-size:12.5px}
+.nxc-ctx span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxc-ctx button{border:0;background:transparent;cursor:pointer;font-size:16px;color:#64748b}
+.nxc-st{display:flex;gap:6px;overflow-x:auto;margin-bottom:6px}
+.nxc-st .f{position:relative;flex:none;width:64px;height:64px;border-radius:10px;background:#e2e8f0;display:grid;place-items:center;font-size:24px;overflow:hidden}
+.nxc-st .f img,.nxc-st .f video{width:100%;height:100%;object-fit:cover}
+.nxc-st .f small{position:absolute;bottom:0;left:0;right:0;font-size:9.5px;background:rgba(0,0,0,.5);color:#fff;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxc-st .f button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:12px;cursor:pointer;line-height:1}
+.nxc-row{display:flex;align-items:flex-end;gap:6px}
+.nxc-row textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line,#e5e9f2);border-radius:20px;padding:9px 14px;font:inherit;font-size:15px;max-height:140px;line-height:1.35;outline:none;background:#fff}
+.nxc-row textarea:focus{border-color:var(--brand,#2457f5)}
+.nxc-ib{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:transparent;font-size:20px;cursor:pointer;display:grid;place-items:center;color:#475569}
+.nxc-ib:hover{background:#f1f5f9}
+.nxc-send{background:var(--brand,#2457f5)!important;color:#fff!important;font-size:18px}
+.nxc-att{position:absolute;bottom:64px;left:10px;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(15,23,42,.25);padding:6px;display:grid;grid-template-columns:repeat(4,72px);gap:4px;z-index:5}
+.nxc-att button{border:0;background:transparent;border-radius:10px;padding:8px 2px;cursor:pointer;font-size:11.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px;color:#334155}
+.nxc-att button b{font-size:22px;font-weight:400}
+.nxc-att button:hover{background:#f1f5f9}
+.nxc-rec{display:flex;align-items:center;gap:10px;padding:4px 4px;font-weight:600;color:#991b1b}
+.nxc-rec .dot{width:10px;height:10px;border-radius:50%;background:#dc2626;animation:nxcBlink 1s infinite}
+@keyframes nxcBlink{50%{opacity:.25}}
+.nxc-rec .sp{flex:1}
+.nxc-err{color:#dc2626;font-size:12.5px;padding-top:4px}
+.nxc-files{flex:1;overflow:auto;padding:12px}
+.nxc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-bottom:14px}
+.nxc-grid .g{aspect-ratio:1;border-radius:8px;background:#e2e8f0;overflow:hidden;cursor:pointer;display:grid;place-items:center;font-size:26px;position:relative;border:0;padding:0}
+.nxc-grid .g img{width:100%;height:100%;object-fit:cover}
+.nxc-grid .g small{position:absolute;bottom:2px;right:4px;font-size:10px;background:rgba(0,0,0,.55);color:#fff;border-radius:4px;padding:0 4px}
+.nxc-h{font-size:12px;font-weight:700;color:#64748b;margin:4px 0 8px;text-transform:uppercase;letter-spacing:.03em}
+.nxc-empty{text-align:center;color:#64748b;font-size:13.5px;padding:30px 10px}
+.nxc-view{position:fixed;inset:0;background:rgba(2,6,23,.94);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px}
+.nxc-view img,.nxc-view video{max-width:100%;max-height:78vh;border-radius:8px}
+.nxc-view .vb{display:flex;gap:10px}
+.nxc-view .vb button{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;font:inherit}
+.nxc-view .nm{color:#cbd5e1;font-size:13px;max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+`;
+  let cssDone = false;
+  const MEDIA = new Map();           // file id → Promise<{url, mime, name}>
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const linkify = (s, q) => {
+    let h = esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    if (q) { const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'); h = h.replace(/(^|>)([^<]+)/g, (m, a, t) => a + t.replace(re, '<mark>$1</mark>')); }
+    return h;
+  };
+  const size = n => { n = +n || 0; return n > 1048576 ? (n / 1048576).toFixed(1) + ' ՄԲ' : Math.max(1, Math.round(n / 1024)) + ' ԿԲ'; };
+  const hm = s => String(s || '').slice(11, 16);
+  const pad = n => String(n).padStart(2, '0');
+  const todayS = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  const dayLabel = d => {
+    const t = todayS(), y = new Date(Date.now() - 864e5), ys = y.getFullYear() + '-' + pad(y.getMonth() + 1) + '-' + pad(y.getDate());
+    if (d === t) return 'Այսօր'; if (d === ys) return 'Երեկ';
+    const p = d.split('-'); return p[2] + '.' + p[1] + '.' + p[0];
+  };
+  const kindIcon = k => ({ image: '🖼️', video: '🎥', audio: '🎤', file: '📄' }[k] || '📄');
+  const fileKindLocal = f => /^image\//.test(f.type) ? 'image' : /^video\//.test(f.type) ? 'video' : /^audio\//.test(f.type) ? 'audio' : 'file';
+  function readB64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Չհաջողվեց կարդալ ' + f.name)); r.readAsDataURL(f); }); }
+  async function shrinkImage(f) {
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size < 1.2 * 1048576 || !window.createImageBitmap) return f;
+    try {
+      const bmp = await createImageBitmap(f), k = Math.min(1, 2048 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+      return blob && blob.size < f.size ? new File([blob], f.name.replace(/\.(png|webp|jpe?g)$/i, '') + '.jpg', { type: 'image/jpeg' }) : f;
+    } catch (e) { return f; }
+  }
+  const stamp = () => { const d = new Date(); return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; };
+
+  function mount(root, o) {
+    if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st); cssDone = true; }
+    const S = { info: null, msgs: [], v: '', reply: null, edit: null, files: [], q: '', search: false, tab: 'chat', rec: null, alive: true, timer: null, typingAt: 0, err: '', busy: false, atBottom: true, lastCount: 0, firstLoad: true };
+    const call = o.call;
+    root.innerHTML = `<div class="nxc">
+      <div class="nxc-top"><div class="t" data-r="ttl"></div><input data-r="q" placeholder="Որոնել զրույցում…" style="display:none"><button data-r="sbtn" title="Որոնում">🔍</button><button data-r="fbtn" title="Բոլոր ֆայլերը">📁 Ֆայլեր</button></div>
+      <div class="nxc-list" data-r="list"><div class="nxc-empty">Բեռնվում է…</div></div>
+      <div class="nxc-files" data-r="files" style="display:none"></div>
+      <div class="nxc-typ" data-r="typ"></div>
+      <div class="nxc-cmp" data-r="cmp"></div>
+    </div>`;
+    const $r = k => root.querySelector(`[data-r="${k}"]`);
+    const list = $r('list');
+    list.addEventListener('scroll', () => { S.atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80; if (S.atBottom) { const nb = root.querySelector('.nxc-new'); if (nb) nb.remove(); } });
+
+    /* ---------- մեդիա ---------- */
+    function media(id) {
+      if (!MEDIA.has(id)) MEDIA.set(id, call('chatFile', { id }).then(f => {
+        const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        return { url: URL.createObjectURL(new Blob([u8], { type: f.mime })), mime: f.mime, name: f.name };
+      }).catch(e => { MEDIA.delete(id); throw e; }));
+      return MEDIA.get(id);
+    }
+    const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return; io.unobserve(e.target);
+      media(e.target.dataset.fid).then(m => { e.target.src = m.url; }).catch(() => { e.target.alt = '⚠'; });
+    }), { root: list, rootMargin: '300px' }) : null;
+    function viewer(f) {
+      media(f.id).then(m => {
+        const save = () => { const a = document.createElement('a'); a.href = m.url; a.download = m.name || f.name; document.body.appendChild(a); a.click(); a.remove(); };
+        if (!/^(image|video|audio)\//.test(m.mime)) return save();
+        const v = document.createElement('div'); v.className = 'nxc-view';
+        v.innerHTML = (/^image/.test(m.mime) ? `<img src="${m.url}">` : /^video/.test(m.mime) ? `<video src="${m.url}" controls autoplay playsinline></video>` : `<div style="font-size:54px">🎤</div><audio src="${m.url}" controls autoplay></audio>`)
+          + `<div class="nm">${esc(f.name)}</div><div class="vb"><button data-a="s" style="background:#fff">⬇ Պահպանել</button><button data-a="c" style="background:#334155;color:#fff">✕ Փակել</button></div>`;
+        document.body.appendChild(v);
+        v.onclick = e => { const a = e.target.dataset.a; if (a === 's') save(); if (a === 'c' || e.target === v) v.remove(); };
+      }).catch(e => alert(e.message));
+    }
+    function fileHtml(f) {
+      if (f.kind === 'image') return `<img class="nxc-img" data-fid="${esc(f.id)}" data-view="${esc(f.id)}" alt="">`;
+      if (f.kind === 'audio') return `<button class="nxc-aud" data-play="${esc(f.id)}"><span class="ic">▶</span><span>🎤 Ձայնային հաղորդագրություն</span><small>${size(f.size)}</small></button>`;
+      if (f.kind === 'video') return `<button class="nxc-vid" data-play="${esc(f.id)}"><span class="ic">▶</span><span>${esc(f.name)}</span><small>${size(f.size)}</small></button>`;
+      return `<button class="nxc-doc" data-view="${esc(f.id)}"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} ⬇</small></button>`;
+    }
+    const allFiles = () => { const m = {}; S.msgs.forEach(x => x.files.forEach(f => { m[f.id] = f; })); return m; };
+
+    /* ---------- հաղորդագրությունների ցուցակ (փոփոխվում են միայն փոխված տողերը) ---------- */
+    function msgKey(m) { return JSON.stringify([m.text, m.edited, m.deleted, m.reactions, m.read, m.files.length, S.q && m.text.toLowerCase().includes(S.q) ? S.q : '']); }
+    function msgHtml(m) {
+      if (m.side === 'sys') return `<div class="nxc-sys">${linkify(m.text)} <span style="opacity:.6;font-size:11px">${hm(m.at)}</span></div>`;
+      const by = S.msgs.find(x => x.id === m.replyTo);
+      const showAuthor = !m.mine && (o.side === 'team' || m.side === 'team');
+      const rx = Object.entries(m.reactions || {});
+      const me = o.meName || '';
+      return `<div class="nxc-m ${m.mine ? 'nxc-me' : ''}" data-id="${esc(m.id)}">
+        <div class="nxc-b">${showAuthor ? `<div class="nxc-a" style="${m.side === 'client' ? 'color:#0f766e' : ''}">${esc(m.author)}${m.side === 'client' && o.side === 'team' ? ' · հաճախորդ' : ''}</div>` : ''}
+          ${by ? `<div class="nxc-q" data-jump="${esc(by.id)}"><b>${esc(by.mine ? 'Դուք' : by.author)}</b><span>${esc(by.deleted ? 'ջնջված հաղորդագրություն' : (by.text || (by.files[0] ? kindIcon(by.files[0].kind) + ' ' + by.files[0].name : '')))}</span></div>` : ''}
+          ${m.deleted ? '<div class="nxc-tx nxc-del">🚫 Հաղորդագրությունը ջնջված է</div>' : m.files.map(fileHtml).join('') + (m.text ? `<div class="nxc-tx">${linkify(m.text, S.q)}</div>` : '')}
+          <div class="nxc-ft">${m.edited ? 'խմբագրված · ' : ''}${hm(m.at)}${m.mine && !m.deleted ? `<span class="nxc-ck ${m.read ? 'r' : ''}" title="${m.read ? 'Կարդացված է' : 'Ուղարկված է'}">${m.read ? '✓✓' : '✓'}</span>` : ''}</div>
+          ${m.deleted ? '' : `<button class="nxc-more" data-menu="${esc(m.id)}" title="Գործողություններ">⋯</button>`}
+        </div>
+        ${rx.length ? `<div class="nxc-rx">${rx.map(([e, w]) => `<button data-react="${esc(m.id)}" data-e="${e}" class="${w.includes(me) ? 'on' : ''}" title="${esc(w.join(', '))}">${e}${w.length > 1 ? ' ' + w.length : ''}</button>`).join('')}</div>` : ''}
+      </div>`;
+    }
+    function drawList() {
+      const items = [];
+      let day = '';
+      const q = S.q;
+      const msgs = q ? S.msgs.filter(m => !m.deleted && (m.text.toLowerCase().includes(q) || m.files.some(f => f.name.toLowerCase().includes(q)))) : S.msgs;
+      msgs.forEach(m => {
+        const d = String(m.at).slice(0, 10);
+        if (d !== day) { day = d; items.push({ id: 'd-' + d, key: d, html: `<div class="nxc-day">${dayLabel(d)}</div>` }); }
+        items.push({ id: m.id, key: msgKey(m), html: msgHtml(m) });
+      });
+      if (!items.length) { list.innerHTML = `<div class="nxc-empty">${q ? 'Ոչինչ չի գտնվել' : (o.emptyText || 'Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը 👋')}</div>`; return; }
+      if (list.querySelector('.nxc-empty')) list.innerHTML = '';
+      const have = {}; [...list.children].forEach(el => { if (el.dataset.k !== undefined) have[el.dataset.i] = el; });
+      const keep = new Set();
+      items.forEach((it, i) => {
+        let el = have[it.id];
+        if (!el || el.dataset.k !== it.key) {
+          const t = document.createElement('div'); t.innerHTML = it.html.trim(); const n = t.firstElementChild;
+          n.dataset.i = it.id; n.dataset.k = it.key;
+          if (el) el.replaceWith(n); el = n;
+          el.querySelectorAll('img[data-fid]').forEach(img => io ? io.observe(img) : media(img.dataset.fid).then(m => { img.src = m.url; }));
+        }
+        keep.add(el);
+        if (list.children[i] !== el) list.insertBefore(el, list.children[i] || null);
+      });
+      [...list.children].forEach(el => { if (!keep.has(el)) el.remove(); });
+    }
+    function drawFiles() {
+      const box = $r('files'), fs = Object.values(allFiles()).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+      const med = fs.filter(f => f.kind === 'image' || f.kind === 'video'), aud = fs.filter(f => f.kind === 'audio'), doc = fs.filter(f => f.kind === 'file');
+      box.innerHTML = !fs.length ? '<div class="nxc-empty">Ֆայլեր դեռ չկան</div>' :
+        (med.length ? `<div class="nxc-h">Նկարներ և տեսանյութեր (${med.length})</div><div class="nxc-grid">${med.map(f => `<button class="g" data-view="${esc(f.id)}">${f.kind === 'image' ? `<img data-fid="${esc(f.id)}" alt="">` : '🎥'}<small>${size(f.size)}</small></button>`).join('')}</div>` : '')
+        + (aud.length ? `<div class="nxc-h">Ձայնային (${aud.length})</div>${aud.map(f => `<button class="nxc-aud" data-view="${esc(f.id)}" style="max-width:none;margin-bottom:6px"><span class="ic">▶</span><span>${esc(f.at.slice(0, 16))} · ${esc(f.by)}</span><small>${size(f.size)}</small></button>`).join('')}` : '')
+        + (doc.length ? `<div class="nxc-h" style="margin-top:12px">Փաստաթղթեր (${doc.length})</div>${doc.map(f => `<button class="nxc-doc" data-view="${esc(f.id)}" style="max-width:none;margin-bottom:6px"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} · ${esc(f.at.slice(0, 10))}</small></button>`).join('')}` : '');
+      box.querySelectorAll('img[data-fid]').forEach(img => media(img.dataset.fid).then(m => { img.src = m.url; }).catch(() => {}));
+    }
+    function drawTop() {
+      const i = S.info;
+      $r('ttl').innerHTML = o.topText ? o.topText(i) : '';
+      $r('fbtn').classList.toggle('on', S.tab === 'files');
+      $r('sbtn').classList.toggle('on', S.search);
+      $r('q').style.display = S.search ? '' : 'none';
+      $r('ttl').style.display = S.search ? 'none' : '';
+      $r('list').style.display = S.tab === 'chat' ? '' : 'none';
+      $r('files').style.display = S.tab === 'files' ? '' : 'none';
+      $r('cmp').style.display = S.tab === 'chat' ? '' : 'none';
+      $r('typ').style.display = S.tab === 'chat' ? '' : 'none';
+    }
+
+    /* ---------- գրելու դաշտ ---------- */
+    function drawComposer() {
+      const c = $r('cmp');
+      if (S.rec) {
+        c.innerHTML = `<div class="nxc-rec"><span class="dot"></span><span data-r="rt">00:00</span><span class="sp"></span><button class="nxc-ib" data-a="rx" title="Չեղարկել">🗑</button><button class="nxc-ib nxc-send" data-a="rs" title="Ուղարկել">➤</button></div>`;
+        return;
+      }
+      const ctx = S.edit ? `<div class="nxc-ctx">✏️<span>Խմբագրում՝ ${esc(S.edit.text)}</span><button data-a="cx">✕</button></div>`
+        : S.reply ? `<div class="nxc-ctx">↩️<span><b>${esc(S.reply.mine ? 'Դուք' : S.reply.author)}</b>՝ ${esc(S.reply.text || (S.reply.files[0] ? S.reply.files[0].name : ''))}</span><button data-a="cx">✕</button></div>` : '';
+      const draft = c.querySelector('textarea') ? c.querySelector('textarea').value : (S.edit ? S.edit.text : '');
+      c.innerHTML = ctx + (S.files.length ? `<div class="nxc-st">${S.files.map((f, i) => `<div class="f">${fileKindLocal(f) === 'image' ? `<img src="${URL.createObjectURL(f)}">` : fileKindLocal(f) === 'video' ? `<video src="${URL.createObjectURL(f)}" muted playsinline></video>` : kindIcon(fileKindLocal(f))}<small>${esc(f.name)}</small><button data-rm="${i}">✕</button></div>`).join('')}</div>` : '')
+        + `<div class="nxc-row">
+          ${S.edit ? '' : `<button class="nxc-ib" data-a="att" title="Կցել">📎</button>`}
+          <textarea rows="1" placeholder="${S.edit ? 'Խմբագրել…' : 'Հաղորդագրություն…'}" ${S.busy ? 'disabled' : ''}>${esc(draft)}</textarea>
+          <button class="nxc-ib ${draft.trim() || S.files.length || S.edit ? 'nxc-send' : ''}" data-a="${draft.trim() || S.files.length || S.edit ? 'send' : 'mic'}" title="${draft.trim() || S.files.length || S.edit ? 'Ուղարկել' : 'Ձայնային հաղորդագրություն'}">${S.busy ? '⏳' : (draft.trim() || S.files.length || S.edit ? '➤' : '🎤')}</button>
+        </div>
+        <input type="file" data-f="cam" accept="image/*" capture="environment" hidden>
+        <input type="file" data-f="vid" accept="video/*" capture="environment" hidden>
+        <input type="file" data-f="gal" accept="image/*,video/*" multiple hidden>
+        <input type="file" data-f="any" multiple hidden>
+        <input type="file" data-f="aud" accept="audio/*" capture hidden>
+        ${S.err ? `<div class="nxc-err">${esc(S.err)}</div>` : ''}`;
+      const ta = c.querySelector('textarea');
+      const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
+      fit();
+      ta.oninput = () => {
+        fit();
+        const btn = c.querySelector('[data-a=send],[data-a=mic]'), has = ta.value.trim() || S.files.length || S.edit;
+        btn.dataset.a = has ? 'send' : 'mic'; btn.textContent = has ? '➤' : '🎤'; btn.classList.toggle('nxc-send', !!has);
+        if (Date.now() - S.typingAt > 3000 && ta.value.trim()) { S.typingAt = Date.now(); call('chatTyping', { thread: o.thread }).catch(() => {}); }
+      };
+      ta.onkeydown = e => {
+        if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); send(); }
+        if (e.key === 'Escape') { S.reply = null; S.edit = null; drawComposer(); }
+      };
+      c.querySelectorAll('input[type=file]').forEach(fi => fi.onchange = async () => { await addFiles(fi.files); fi.value = ''; });
+    }
+    async function addFiles(fl) {
+      S.err = '';
+      const max = (S.info && S.info.maxFileMb) || 25;
+      for (let f of [...fl]) {
+        if (S.files.length >= 10) { S.err = 'Առավելագույնը 10 ֆայլ'; break; }
+        f = await shrinkImage(f);
+        if (f.size > max * 1048576) { S.err = `«${f.name}» ֆայլը մեծ է ${max} ՄԲ-ից${/^video/.test(f.type) ? '։ Նկարեք ավելի կարճ տեսանյութ։' : ''}`; continue; }
+        if (S.files.reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { S.err = 'Մեկ անգամում՝ մինչև 45 ՄԲ'; break; }
+        S.files.push(f);
+      }
+      drawComposer();
+    }
+    function attachMenu() {
+      const old = root.querySelector('.nxc-att'); if (old) { old.remove(); return; }
+      const m = document.createElement('div'); m.className = 'nxc-att';
+      m.innerHTML = [['cam', '📷', 'Նկարել'], ['vid', '🎥', 'Տեսանյութ'], ['gal', '🖼️', 'Գալերեա'], ['any', '📄', 'Ֆայլ']].map(([k, i, l]) => `<button data-pick="${k}"><b>${i}</b>${l}</button>`).join('');
+      root.querySelector('.nxc').appendChild(m);
+      m.onclick = e => { const b = e.target.closest('[data-pick]'); if (!b) return; m.remove(); root.querySelector(`[data-f="${b.dataset.pick}"]`).click(); };
+    }
+    async function send() {
+      const ta = $r('cmp').querySelector('textarea'); const text = ta ? ta.value.trim() : '';
+      if (S.busy || (!text && !S.files.length)) return;
+      S.busy = true; S.err = ''; drawComposer();
+      try {
+        let r;
+        if (S.edit) r = await call('chatEdit', { id: S.edit.id, text });
+        else {
+          const files = await Promise.all(S.files.map(async f => ({ name: f.name, mime: f.type, data: await readB64(f) })));
+          r = await call('chatSend', { thread: o.thread, text, files, replyTo: S.reply ? S.reply.id : '' });
+        }
+        S.files = []; S.reply = null; S.edit = null; S.busy = false;
+        $r('cmp').innerHTML = ''; apply(r, true); drawComposer();
+        const t2 = $r('cmp').querySelector('textarea'); if (t2 && !('ontouchstart' in window)) t2.focus();
+      } catch (e) { S.busy = false; S.err = e.message; drawComposer(); }
+    }
+    async function startRec() {
+      let stream;
+      try {
+        if (!navigator.mediaDevices || !window.MediaRecorder) throw new Error('nosupport');
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        if (e && e.name === 'NotAllowedError') { S.err = 'Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)'; drawComposer(); return; }
+        root.querySelector('[data-f="aud"]').click(); return;
+      }
+      const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined), chunks = [], t0 = Date.now();
+      let cancel = false;
+      S.rec = mr; drawComposer();
+      mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      const tm = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000), el = $r('rt'); if (el) el.textContent = pad(Math.floor(s / 60)) + ':' + pad(s % 60); if (s >= 300) mr.stop(); }, 250);
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop()); clearInterval(tm); S.rec = null;
+        if (cancel || !chunks.length || Date.now() - t0 < 700) { drawComposer(); return; }
+        const type = (mr.mimeType || mime || 'audio/webm').split(';')[0], ext = /mp4/.test(type) ? 'm4a' : /ogg/.test(type) ? 'ogg' : 'webm';
+        S.files = [new File(chunks, `Ձայնային-${stamp()}.${ext}`, { type })];
+        drawComposer(); send();
+      };
+      root.querySelector('[data-a=rx]').onclick = () => { cancel = true; mr.stop(); };
+      root.querySelector('[data-a=rs]').onclick = () => mr.stop();
+      mr.start(1000);
+    }
+
+    /* ---------- գործողությունների մենյու ---------- */
+    function menu(m, btn) {
+      closeMenu();
+      const d = document.createElement('div'); d.className = 'nxc-menu';
+      const conv = o.canConvert && o.canConvert(m, S.info);
+      d.innerHTML = `<div class="rx">${(S.info.reactions || []).map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>
+        <button class="it" data-a="reply">↩️ Պատասխանել</button>
+        ${m.text ? '<button class="it" data-a="copy">📋 Պատճենել</button>' : ''}
+        ${m.mine && m.text ? '<button class="it" data-a="edit">✏️ Խմբագրել</button>' : ''}
+        ${conv ? `<button class="it" data-a="conv">${o.convertLabel || '➕ Թասք'}</button>` : ''}
+        ${m.mine ? '<button class="it d" data-a="del">🗑 Ջնջել բոլորի մոտ</button>' : ''}`;
+      document.body.appendChild(d);
+      const r = btn.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight;
+      d.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left - w / 2)) + 'px';
+      d.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6) + 'px';
+      d.onclick = async e => {
+        const b = e.target.closest('button'); if (!b) return;
+        closeMenu();
+        try {
+          if (b.dataset.e) return apply(await call('chatReact', { id: m.id, emoji: b.dataset.e }));
+          const a = b.dataset.a;
+          if (a === 'reply') { S.reply = m; S.edit = null; drawComposer(); $r('cmp').querySelector('textarea').focus(); }
+          if (a === 'copy') { try { await navigator.clipboard.writeText(m.text); } catch (x) { const t = document.createElement('textarea'); t.value = m.text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } }
+          if (a === 'edit') { S.edit = m; S.reply = null; $r('cmp').innerHTML = ''; drawComposer(); const t = $r('cmp').querySelector('textarea'); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+          if (a === 'del' && confirm('Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։')) apply(await call('chatDelete', { id: m.id }));
+          if (a === 'conv') o.onConvert(m, S.info);
+        } catch (x) { alert(x.message); }
+      };
+      setTimeout(() => document.addEventListener('click', closeMenu, { once: true }), 0);
+    }
+    function closeMenu() { document.querySelectorAll('.nxc-menu').forEach(x => x.remove()); }
+
+    /* ---------- իրադարձություններ ---------- */
+    root.addEventListener('click', async e => {
+      const t = e.target;
+      const att = root.querySelector('.nxc-att'); if (att && !t.closest('.nxc-att') && !t.closest('[data-a=att]')) att.remove();
+      const g = sel => t.closest(sel);
+      let el;
+      if ((el = g('[data-menu]'))) { e.stopPropagation(); return menu(S.msgs.find(x => x.id === el.dataset.menu), el); }
+      if ((el = g('[data-react]'))) { try { apply(await call('chatReact', { id: el.dataset.react, emoji: el.dataset.e })); } catch (x) { alert(x.message); } return; }
+      if ((el = g('[data-jump]'))) { const n = list.querySelector(`[data-id="${el.dataset.jump}"]`); if (n) { n.scrollIntoView({ block: 'center', behavior: 'smooth' }); n.classList.add('flash'); setTimeout(() => n.classList.remove('flash'), 1500); } return; }
+      if ((el = g('[data-view]'))) { const f = allFiles()[el.dataset.view]; if (f) viewer(f); return; }
+      if ((el = g('[data-play]'))) {
+        const f = allFiles()[el.dataset.play]; if (!f) return;
+        el.querySelector('.ic').textContent = '⏳';
+        try {
+          const m = await media(f.id);
+          const n = document.createElement(f.kind === 'video' ? 'video' : 'audio');
+          n.src = m.url; n.controls = true; n.autoplay = true; n.setAttribute('playsinline', '');
+          el.replaceWith(n);
+        } catch (x) { el.querySelector('.ic').textContent = '⚠'; }
+        return;
+      }
+      if ((el = g('[data-rm]'))) { S.files.splice(+el.dataset.rm, 1); drawComposer(); return; }
+      if ((el = g('[data-a]'))) {
+        const a = el.dataset.a;
+        if (a === 'send') send();
+        if (a === 'mic') startRec();
+        if (a === 'att') attachMenu();
+        if (a === 'cx') { S.reply = null; S.edit = null; $r('cmp').innerHTML = ''; drawComposer(); }
+        return;
+      }
+      if (t === $r('sbtn')) { S.search = !S.search; if (!S.search) { S.q = ''; $r('q').value = ''; drawList(); } drawTop(); if (S.search) $r('q').focus(); return; }
+      if (t === $r('fbtn')) { S.tab = S.tab === 'files' ? 'chat' : 'files'; drawTop(); if (S.tab === 'files') drawFiles(); else scrollEnd(); return; }
+      if (t.classList.contains('nxc-new')) { scrollEnd(true); t.remove(); }
+    });
+    let qT = null;
+    $r('q').oninput = () => { clearTimeout(qT); qT = setTimeout(() => { S.q = $r('q').value.trim().toLowerCase(); drawList(); if (!S.q) scrollEnd(); }, 200); };
+    // ֆայլեր քաշել-թողնել (համակարգչում)
+    root.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+    root.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
+    // Ctrl+V՝ նկար պատճենից
+    root.addEventListener('paste', e => { const fs = [...(e.clipboardData || {}).files || []]; if (fs.length) { e.preventDefault(); addFiles(fs.map((f, i) => f.name && f.name !== 'image.png' ? f : new File([f], `Նկար-${stamp()}-${i}.png`, { type: f.type }))); } });
+
+    function scrollEnd(smooth) { list.scrollTo({ top: list.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); S.atBottom = true; }
+    function apply(r, own) {
+      if (!S.alive || !r) return;
+      if (r.typing) $r('typ').textContent = r.typing.length ? r.typing.join(', ') + (r.typing.length > 1 ? '-ը գրում են…' : '-ը գրում է…') : '';
+      if (r.same) return;
+      const wasBottom = S.atBottom, prevN = S.msgs.length;
+      S.info = r; S.v = r.v; S.msgs = r.msgs || [];
+      drawTop(); drawList(); if (S.tab === 'files') drawFiles();
+      if (o.onInfo) o.onInfo(r);
+      const grew = S.msgs.length > prevN;
+      if (S.firstLoad || own || (grew && wasBottom)) { requestAnimationFrame(() => scrollEnd(!S.firstLoad)); S.firstLoad = false; }
+      else if (grew && !root.querySelector('.nxc-new')) { const b = document.createElement('button'); b.className = 'nxc-new'; b.textContent = '↓ Նոր հաղորդագրություն'; root.querySelector('.nxc').appendChild(b); }
+    }
+    async function tick() {
+      if (!S.alive) return;
+      if (!document.hidden && !S.busy) { try { apply(await call('chatGet', { thread: o.thread, since: S.v })); } catch (e) { if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.message)) { S.alive = false; return; } } }
+      S.timer = setTimeout(tick, document.hidden ? 15000 : 3000);
+    }
+    drawTop(); drawComposer();
+    call('chatGet', { thread: o.thread }).then(r => { apply(r); S.timer = setTimeout(tick, 3000); })
+      .catch(e => { list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; });
+    const onVis = () => { if (!document.hidden && S.alive) { clearTimeout(S.timer); tick(); } };
+    document.addEventListener('visibilitychange', onVis);
+    return {
+      destroy() { S.alive = false; clearTimeout(S.timer); document.removeEventListener('visibilitychange', onVis); closeMenu(); if (S.rec) try { S.rec.stop(); } catch (e) {} },
+      refresh() { clearTimeout(S.timer); tick(); },
+      busy() { return !!(S.rec || S.files.length || ($r('cmp').querySelector('textarea') || {}).value); }
+    };
+  }
+  return { mount };
+})();
+
+/* NXCHAT:END */
+
+/* Առանձին հոսթինգի դեպքում (GitHub Pages) լրացրեք Apps Script-ի …/exec հղումը */
+const API_URL = ''; // ← ԱՅՍՏԵՂ տեղադրեք Apps Script-ի …/exec հղումը, օր.՝ 'https://script.google.com/macros/s/XXXX/exec'
+const TOKEN = (function () { try { return JSON.parse(document.getElementById('tokj').textContent) || ''; } catch (e) { return ''; } })() || new URLSearchParams(location.search).get('p') || '';
+const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+const ST_COLORS = { 'Նոր': '#2563eb', 'Դիտված': '#0ea5e9', 'Թասք է դարձել': '#7c3aed', 'Կատարված': '#16a34a', 'Մերժված': '#dc2626' };
+const ST_LABEL = { 'Նոր': 'Ստացված', 'Դիտված': 'Դիտված', 'Թասք է դարձել': 'Կատարման մեջ', 'Կատարված': 'Կատարված', 'Մերժված': 'Մերժված' };
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let INFO = null, FILES = [], SENT = false;
+
+function call(action, payload) {
+  payload = Object.assign({ p: TOKEN }, payload || {});
+  return new Promise((resolve, reject) => {
+    const done = r => r && r.ok ? resolve(r.data) : reject(new Error((r && r.error) || 'Կապի սխալ'));
+    const fail = e => reject(new Error('Կապի սխալ՝ ' + (e && e.message || e)));
+    if (IS_GAS) google.script.run.withSuccessHandler(done).withFailureHandler(fail).api(action, '', payload);
+    else if (API_URL) fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: '', payload }) }).then(r => r.json()).then(done).catch(fail);
+    else fail(new Error('API_URL'));
+  });
+}
+function fmtDT(s) { if (!s) return ''; const d = s.slice(0, 10).split('-'); return `${d[2]}.${d[1]}.${d[0]}${s.length > 10 ? ' ' + s.slice(11, 16) : ''}`; }
+function fmtSize(n) { n = +n || 0; return n > 1048576 ? (n / 1048576).toFixed(1) + ' ՄԲ' : Math.max(1, Math.round(n / 1024)) + ' ԿԲ'; }
+function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+function render() {
+  const d = INFO;
+  $('#root').innerHTML = `
+  <div class="head"><div class="mark">N</div><div><h1>${esc(d.companyName)}</h1><small>Հարցումներ Numetrix-ին</small></div></div>
+  <div class="card">
+    <h2>Նոր հարցում</h2>
+    <p class="sub">Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։</p>
+    ${SENT ? '<div class="ok">✔ Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։</div>' : ''}
+    <form id="f" class="grid" novalidate>
+      <div><label class="f">Ձեր անունը *</label><input class="inp" name="author" maxlength="100" value="${esc(lsGet('nx_portal_author'))}" required></div>
+      <div><label class="f">Ցանկալի ժամկետ</label><input class="inp" type="date" name="due"></div>
+      <div class="full"><label class="f">Ի՞նչ է պետք անել *</label><input class="inp" name="title" maxlength="300" placeholder="Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը" required></div>
+      <div class="full"><label class="f">Մանրամասներ</label><textarea class="inp" name="description" maxlength="5000" placeholder="Լրացուցիչ տեղեկություններ…"></textarea></div>
+      <div class="full"><label class="f">Հղում փաստաթղթին (եթե կա)</label><input class="inp" name="link" placeholder="https://…"></div>
+      <div class="full"><label class="f">Ֆայլեր (մինչև 5 հատ, յուրաքանչյուրը մինչև ${d.maxFileMb} ՄԲ)</label>
+        <div class="drop" id="drop">📎 Սեղմեք կամ քաշեք ֆայլերը այստեղ</div>
+        <input type="file" id="fi" multiple hidden>
+        <div class="flist" id="fl"></div></div>
+      <div class="full"><button class="btn" type="submit" id="go">Ուղարկել հարցումը</button><div class="err" id="err"></div></div>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Ձեր հարցումները</h2>
+    ${d.requests.length ? d.requests.map(r => `<div class="req"><div style="min-width:0;flex:1">
+        <div class="t">${esc(r.title)}</div>
+        <div class="m">${esc(fmtDT(r.createdAt))}${r.due ? ' · ժամկետ՝ ' + esc(fmtDT(r.due)) : ''}${r.files.length ? ' · 📎 ' + r.files.length : ''}</div>
+        ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
+      </div><span class="pill" style="--c:${ST_COLORS[r.status] || '#64748b'}">${esc(ST_LABEL[r.status] || r.status)}</span></div>`).join('') : '<div class="empty">Դեռ հարցումներ չկան</div>'}
+  </div>`;
+  bind();
+}
+function drawFiles() {
+  $('#fl').innerHTML = FILES.map((f, i) => `<div class="fitem">📄<span>${esc(f.name)}</span><small class="sub" style="margin:0">${fmtSize(f.size)}</small><button type="button" data-i="${i}" title="Հեռացնել">×</button></div>`).join('');
+  $('#fl').querySelectorAll('button').forEach(b => b.onclick = () => { FILES.splice(+b.dataset.i, 1); drawFiles(); });
+}
+function addFiles(list) {
+  const err = $('#err'); err.textContent = '';
+  [...list].forEach(f => {
+    if (FILES.length >= 5) { err.textContent = 'Առավելագույնը 5 ֆայլ'; return; }
+    if (f.size > INFO.maxFileMb * 1048576) { err.textContent = `«${f.name}» ֆայլը մեծ է ${INFO.maxFileMb} ՄԲ-ից`; return; }
+    FILES.push(f);
+  });
+  drawFiles();
+}
+function readB64(f) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Չհաջողվեց կարդալ ' + f.name)); r.readAsDataURL(f); });
+}
+function bind() {
+  const drop = $('#drop'), fi = $('#fi');
+  drop.onclick = () => fi.click();
+  fi.onchange = () => { addFiles(fi.files); fi.value = ''; };
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('on'); };
+  drop.ondragleave = () => drop.classList.remove('on');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('on'); addFiles(e.dataTransfer.files); };
+  drawFiles();
+  $('#f').onsubmit = async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target), err = $('#err'), go = $('#go');
+    const data = Object.fromEntries(fd.entries());
+    if (!data.author.trim() || !data.title.trim()) { err.textContent = 'Լրացրեք Ձեր անունը և թե ինչ է պետք անել'; return; }
+    go.disabled = true; go.textContent = FILES.length ? 'Ֆայլերը բեռնվում են…' : 'Ուղարկվում է…'; err.textContent = '';
+    try {
+      data.files = await Promise.all(FILES.map(async f => ({ name: f.name, mime: f.type, data: await readB64(f) })));
+      lsSet('nx_portal_author', data.author.trim());
+      INFO = await call('portalSubmit', data);
+      FILES = []; SENT = true; render(); window.scrollTo(0, 0);
+    } catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = 'Ուղարկել հարցումը'; }
+  };
+}
+
+/* ======================= ՀԱՃԱԽՈՐԴԻ ՊԱՏՈՒՀԱՆ (մուտքանուն + PIN) ======================= */
+const CL = { tok: lsGet('nx_client_tok'), v: null, screen: 'home', thread: null, filter: 'open', files: [], login: '', check: null, q: '', res: null };
+function ccall(action, payload) {
+  return new Promise((resolve, reject) => {
+    const done = r => {
+      if (r && r.ok) return resolve(r.data);
+      const msg = (r && r.error) || 'Կապի սխալ';
+      if (/^AUTH:/.test(msg)) { CL.tok = ''; lsSet('nx_client_tok', ''); clLogin(msg.replace(/^AUTH:\s*/, '')); }
+      reject(new Error(msg.replace(/^AUTH:\s*/, '')));
+    };
+    const fail = e => reject(new Error('Կապի սխալ՝ ' + (e && e.message || e)));
+    if (IS_GAS) google.script.run.withSuccessHandler(done).withFailureHandler(fail).api(action, CL.tok, payload || {});
+    else if (API_URL) fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: CL.tok, payload: payload || {} }) }).then(r => r.json()).then(done).catch(fail);
+    else fail(new Error('API_URL'));
+  });
+}
+const OPEN_ST = ['Նոր', 'Դիտված', 'Թասք է դարձել'];
+
+/* ======================= ՀԵՌԱԽՈՍԻ ՀԱՎԵԼՎԱԾ (PWA) ======================= */
+const STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let installEvt = null, swReg = null;
+if (!IS_GAS && location.protocol !== 'file:') {
+  // manifest-ը և service worker-ը աշխատում են միայն առանձին հոսթինգի դեպքում (GitHub Pages և այլն)
+  [['manifest', 'manifest.webmanifest'], ['apple-touch-icon', 'apple-touch-icon.png'], ['icon', 'favicon.png']].forEach(([rel, href]) => { const l = document.createElement('link'); l.rel = rel; l.href = href; document.head.appendChild(l); });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(() => {});
+  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.open && CL.v) { if (CHAT) { CHAT.destroy(); CHAT = null; } clOpen(e.data.open); } });
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (CL.v && CL.screen === 'home') clRender(); });
+window.addEventListener('appinstalled', () => { installEvt = null; if (CL.v) clRender(); });
+function canInstall() { return !STANDALONE && (installEvt || (IOS && !IS_GAS)); }
+function canNotify() { return 'Notification' in window && Notification.permission === 'default' && !IS_GAS; }
+function appBar() {
+  const b = [];
+  if (canInstall()) b.push('<button id="inst">📲 Տեղադրել հեռախոսում</button>');
+  if (canNotify()) b.push('<button id="ntf">🔔 Միացնել ծանուցումները</button>');
+  return b.length ? `<div class="appbar">${b.join('')}</div>` : '';
+}
+function bindAppBar() {
+  const i = $('#inst'); if (i) i.onclick = async () => {
+    if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; clRender(); return; }
+    const d = document.createElement('div'); d.className = 'ios';
+    d.innerHTML = `<div><b>Տեղադրել iPhone-ում</b><ol><li>Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)</li><li>Ընտրեք <b>«Add to Home Screen» / «На экран Домой»</b></li><li>Սեղմեք <b>Add</b></li></ol><p class="sub">Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։</p><button class="btn" id="iosok">Լավ</button></div>`;
+    document.body.appendChild(d); d.onclick = e => { if (e.target === d || e.target.id === 'iosok') d.remove(); };
+  };
+  const n = $('#ntf'); if (n) n.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} clRender(); };
+}
+/** Նոր պատասխան կամ կարգավիճակի փոփոխություն՝ ծանուցում + պատկերակի նշան */
+/** Նոր հաղորդագրություն կամ կարգավիճակի փոփոխություն՝ ծանուցում + պատկերակի նշան */
+function allThreads(v) { return v.chats.map(c => Object.assign({ title: c.companyName, id: c.thread }, c)).concat(v.requests.map(r => Object.assign({ thread: r.id }, r))); }
+function notifyChanges(prev, next) {
+  try {
+    const total = allThreads(next).reduce((a, r) => a + r.unread, 0);
+    if (navigator.setAppBadge) total ? navigator.setAppBadge(total) : navigator.clearAppBadge();
+    if (!prev || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const old = Object.fromEntries(allThreads(prev).map(r => [r.thread, r]));
+    allThreads(next).forEach(r => {
+      const o = old[r.thread]; if (!o || r.thread === CL.thread) return;
+      let body = '';
+      if (r.unread > o.unread && r.last) body = '💬 ' + r.last.by + '՝ ' + r.last.text;
+      else if (r.status && r.status !== o.status) body = 'Կարգավիճակ՝ ' + (ST_LABEL[r.status] || r.status);
+      if (!body) return;
+      const opt = { body: body.slice(0, 180), icon: 'icon-192.png', badge: 'icon-192.png', tag: r.thread, data: { id: r.thread } };
+      if (swReg && swReg.showNotification) swReg.showNotification(String(r.title).slice(0, 80), opt);
+      else new Notification(String(r.title).slice(0, 80), opt);
+    });
+  } catch (e) {}
+}
+
+function clientInit() {
+  if (!IS_GAS && !API_URL) { $('#root').innerHTML = `<div class="card bad"><div class="big">⚙️</div><b>Հավելվածը դեռ կարգավորված չէ</b><p class="sub">index.html ֆայլում լրացրեք API_URL-ը (Apps Script-ի …/exec հղումը)։</p></div>`; return; }
+  if (!CL.tok) return clLogin();
+  ccall('clientInfo', {}).then(v => {
+    CL.v = v; notifyChanges(null, v);
+    const h = location.hash.slice(1);
+    if (h && allThreads(v).some(r => r.thread === h)) { history.replaceState(null, '', location.pathname + location.search); clOpen(h); }
+    else if (!v.requests.length && v.chats.length === 1 && !v.chats[0].n) { CL.screen = 'home'; clRender(); }
+    else clRender();
+    clPoll();
+  }).catch(() => {});
+}
+
+function clLogin(err) {
+  const c = CL.check;
+  $('#root').innerHTML = `<div class="head"><div class="mark">N</div><div><h1>Numetrix</h1><small>Հաճախորդի պատուհան</small></div></div>
+  <div class="card" style="max-width:420px;margin:30px auto 0">
+    <h2>${c ? 'Բարև, ' + esc(c.name) : 'Մուտք'}</h2>
+    <p class="sub">${c ? (c.hasPin ? 'Մուտքագրեք Ձեր PIN-ը' : 'Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։') : 'Մուտքանունը տրամադրել է Numetrix-ը'}</p>
+    <form id="lf" novalidate>
+      ${c ? `<input type="hidden" name="login" value="${esc(CL.login)}">
+        <label class="f">${c.hasPin ? 'PIN' : 'Նոր PIN'}</label><input class="inp" name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="${c.hasPin ? 'current-password' : 'new-password'}" autofocus>
+        ${c.hasPin ? '' : '<label class="f" style="margin-top:12px">Կրկնեք PIN-ը</label><input class="inp" name="pin2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password">'}`
+      : `<label class="f">Մուտքանուն</label><input class="inp" name="login" value="${esc(CL.login || lsGet('nx_client_login'))}" autocomplete="username" autocapitalize="none" autofocus>`}
+      <button class="btn" style="margin-top:16px" id="lgo">${c ? 'Մուտք' : 'Շարունակել'}</button>
+      ${c ? '<div style="text-align:center;margin-top:10px"><button type="button" class="lnk" id="lback">← Այլ մուտքանուն</button></div>' : ''}
+      <div class="err" id="lerr">${esc(err || '')}</div>
+    </form>
+  </div>`;
+  const back = $('#lback'); if (back) back.onclick = () => { CL.check = null; clLogin(); };
+  $('#lf').onsubmit = async e => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target).entries()), go = $('#lgo'), le = $('#lerr');
+    go.disabled = true; le.textContent = '';
+    try {
+      if (!CL.check) {
+        CL.login = d.login.trim(); if (!CL.login) throw new Error('Գրեք մուտքանունը');
+        CL.check = await ccall('clientCheck', { login: CL.login }); return clLogin();
+      }
+      if (!CL.check.hasPin && d.pin !== d.pin2) throw new Error('PIN-երը չեն համընկնում');
+      const r = await ccall('clientLogin', { login: CL.login, pin: d.pin, pin2: d.pin2, device: navigator.userAgent.slice(0, 150) });
+      CL.tok = r.token; lsSet('nx_client_tok', r.token); lsSet('nx_client_login', CL.login); CL.check = null;
+      clientInit();
+    } catch (ex) { le.textContent = ex.message; go.disabled = false; }
+  };
+}
+function stPill(st) { return `<span class="pill" style="--c:${ST_COLORS[st] || '#64748b'}">${esc(ST_LABEL[st] || st)}</span>`; }
+function ago(at) {
+  if (!at) return '';
+  const d = at.slice(0, 10), t = new Date(), z = n => String(n).padStart(2, '0'), td = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate());
+  return d === td ? at.slice(11, 16) : fmtDT(d);
+}
+function initials(n) { return String(n || '?').replace(/[«»"']/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase(); }
+function clHead() {
+  const v = CL.v;
+  return `<div class="top"><div class="mark">N</div><div><h1 style="margin:0;font-size:19px">${esc(v.firm || 'Numetrix')}</h1><small style="color:var(--muted)">Հաճախորդի պատուհան</small></div>
+    <div class="who"><b>${esc(v.me.name)}</b>${esc(v.companies.map(c => c.name).join(', '))}<br><button class="lnk" id="lo">Ելք</button></div></div>`;
+}
+function clRender() {
+  const v = CL.v; if (!v) return;
+  if (CL.screen === 'chat') return;           // չաթի էկրանը ինքն է թարմանում
+  if (CL.screen === 'new') return clNewScreen();
+  const reqs = v.requests.filter(r => CL.filter === 'all' || (CL.filter === 'open' ? OPEN_ST.includes(r.status) : !OPEN_ST.includes(r.status)));
+  const q = (CL.q || '').trim();
+  $('#root').innerHTML = clHead() + appBar() + `
+  <div class="card" style="padding:12px">
+    <input class="inp" id="gq" placeholder="🔍 Որոնել հաղորդագրություններում և ֆայլերում…" value="${esc(q)}">
+    ${CL.res ? `<div style="margin-top:8px">${CL.res.length ? CL.res.map(x => `<div class="it" data-open="${esc(x.thread)}"><div style="flex:1;min-width:0"><div class="m">${esc(x.author)} · ${esc(fmtDT(x.at))}</div><div class="t" style="font-weight:500">${esc(x.text)}</div></div></div>`).join('') : '<div class="empty">Ոչինչ չի գտնվել</div>'}</div>` : ''}
+  </div>
+  <div class="card" style="padding:12px 12px 6px">
+    <h2 style="margin:4px 6px 8px">💬 Չաթ Numetrix-ի հետ</h2>
+    ${v.chats.map(c => `<div class="it" data-open="${esc(c.thread)}"><div class="av">${esc(initials(c.companyName))}</div><div style="flex:1;min-width:0">
+        <div class="t">${esc(c.companyName)}</div><div class="m ell">${c.last ? (c.last.mine ? 'Դուք՝ ' : esc(c.last.by) + '՝ ') + esc(c.last.text) : 'Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…'}</div></div>
+        <div style="text-align:right;flex:none"><div class="m">${c.last ? esc(ago(c.last.at)) : ''}</div>${c.unread ? `<span class="un">${c.unread}</span>` : ''}</div></div>`).join('')}
+  </div>
+  <div class="card" style="padding:12px 12px 6px">
+    <div style="display:flex;align-items:center;gap:10px;margin:4px 6px 8px"><h2 style="margin:0;flex:1">📋 Անելիքներ</h2><button class="btn" id="nopen" style="width:auto;padding:8px 14px">＋ Նոր անելիք</button></div>
+    <div class="seg" style="margin-left:6px">${[['open', 'Ընթացիկ'], ['done', 'Ավարտված'], ['all', 'Բոլորը']].map(([k, l]) => `<button data-f="${k}" class="${CL.filter === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    ${reqs.length ? reqs.map(r => `<div class="it" data-open="${esc(r.id)}"><div style="flex:1;min-width:0">
+        <div class="t">${esc(r.title)}${r.unread ? `<span class="un">${r.unread}</span>` : ''}</div>
+        <div class="m ell">${v.companies.length > 1 ? esc(r.companyName) + ' · ' : ''}${r.last ? (r.last.mine ? 'Դուք՝ ' : esc(r.last.by) + '՝ ') + esc(r.last.text) : esc(fmtDT(r.createdAt))}</div></div>
+        <div style="text-align:right;flex:none">${stPill(r.status)}<div class="m">${esc(ago(r.lastAt))}</div></div></div>`).join('')
+      : '<div class="empty">Այստեղ դեռ ոչինչ չկա</div>'}
+  </div>`;
+  $('#lo').onclick = clLogout;
+  bindAppBar();
+  $('#nopen').onclick = () => { CL.screen = 'new'; CL.files = []; clRender(); window.scrollTo(0, 0); };
+  document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { CL.filter = b.dataset.f; clRender(); });
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => clOpen(b.dataset.open));
+  let t = null; const gq = $('#gq');
+  gq.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
+    CL.q = gq.value; if (CL.q.trim().length < 2) { CL.res = null; clRender(); return; }
+    try { CL.res = (await ccall('chatSearch', { q: CL.q })).rows; } catch (e) { CL.res = []; }
+    clRender(); const g2 = $('#gq'); g2.focus(); g2.setSelectionRange(g2.value.length, g2.value.length);
+  }, 400); };
+}
+function clNewScreen() {
+  const v = CL.v;
+  $('#root').innerHTML = clHead() + `<div class="card">
+    <button class="lnk" id="bk">← Հետ</button>
+    <h2 style="margin-top:10px">Նոր անելիք Numetrix-ին</h2><p class="sub">Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։</p>
+    <form id="nf" class="grid" novalidate>
+      ${v.companies.length > 1 ? `<div class="full"><label class="f">Կազմակերպություն *</label><select class="inp" name="companyId"><option value="">— ընտրեք —</option>${v.companies.map(c => `<option value="${esc(c.id)}" ${lsGet('nx_client_comp') === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : `<input type="hidden" name="companyId" value="${esc((v.companies[0] || {}).id || '')}">`}
+      <div class="full"><label class="f">Ի՞նչ է պետք անել *</label><input class="inp" name="title" maxlength="300" placeholder="Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին"></div>
+      <div class="full"><label class="f">Մանրամասներ</label><textarea class="inp" name="description" maxlength="5000" placeholder="Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…"></textarea></div>
+      <div><label class="f">Ցանկալի ժամկետ</label><input class="inp" type="date" name="due"></div>
+      <div><label class="f">Հղում (եթե կա)</label><input class="inp" name="link" placeholder="https://…"></div>
+      <div class="full"><label class="f">Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ ${v.maxFileMb} ՄԲ)</label><div class="drop" id="drop" style="display:var(--dropd,block)">📎 Սեղմեք կամ քաշեք ֆայլերը այստեղ</div>${mediaBar('n')}<div class="flist" id="fl"></div></div>
+      <div class="full"><button class="btn" id="ngo">Ուղարկել</button></div>
+      <div class="full err" id="nerr"></div>
+    </form></div>`;
+  $('#lo').onclick = clLogout;
+  $('#bk').onclick = () => { CL.screen = 'home'; CL.files = []; clRender(); };
+  clBindNew();
+}
+
+function mediaBar(p) {
+  return `<div class="mbar">
+    <button type="button" data-pick="${p}cam"><b>📷</b>Նկարել</button>
+    <button type="button" data-pick="${p}vid"><b>🎥</b>Տեսանյութ</button>
+    <button type="button" data-pick="${p}gal"><b>🖼️</b>Գալերեա</button>
+    <button type="button" id="${p}mic"><b>🎤</b>Ձայն</button>
+    <button type="button" data-pick="${p}any"><b>📎</b>Ֆայլ</button>
+  </div>
+  <input type="file" id="${p}cam" accept="image/*" capture="environment" hidden>
+  <input type="file" id="${p}vid" accept="video/*" capture="environment" hidden>
+  <input type="file" id="${p}gal" accept="image/*,video/*" multiple hidden>
+  <input type="file" id="${p}aud" accept="audio/*" capture hidden>
+  <input type="file" id="${p}any" multiple hidden>
+  <div class="rec hidden" id="${p}rec"><span class="dot"></span><span id="${p}rt">00:00</span><button type="button" class="x" id="${p}rx">Չեղարկել</button><button type="button" id="${p}rs">■ Կանգնեցնել</button></div>`;
+}
+const URLS = new WeakMap();
+function objUrl(f) { if (!URLS.has(f)) URLS.set(f, URL.createObjectURL(f)); return URLS.get(f); }
+function fileIcon(t) { return /^image\//.test(t) ? '🖼️' : /^video\//.test(t) ? '🎥' : /^audio\//.test(t) ? '🎤' : '📄'; }
+/** Մեծ նկարները փոքրացվում են (մինչև 2048px), որ արագ ուղարկվեն */
+async function shrinkImage(f) {
+  if (!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size < 1.2 * 1048576 || !window.createImageBitmap) return f;
+  try {
+    const bmp = await createImageBitmap(f), k = Math.min(1, 2048 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    if (!blob || blob.size >= f.size) return f;
+    return new File([blob], f.name.replace(/\.(png|webp|jpe?g)$/i, '') + '.jpg', { type: 'image/jpeg' });
+  } catch (e) { return f; }
+}
+function stamp() { const d = new Date(), z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`; }
+let REC = null;
+function bindMedia(listKey, p, flId, errId, max, dropId) {
+  const er = () => $('#' + errId);
+  const draw = () => {
+    $('#' + flId).innerHTML = CL[listKey].map((f, i) => `<div class="fitem">${/^image\//.test(f.type) ? `<img class="th" src="${objUrl(f)}">` : /^video\//.test(f.type) ? `<video class="th" src="${objUrl(f)}" muted playsinline></video>` : fileIcon(f.type)}
+      ${/^audio\//.test(f.type) ? `<audio controls src="${objUrl(f)}"></audio>` : `<span>${esc(f.name)}</span>`}<small style="color:var(--muted);margin-left:auto">${fmtSize(f.size)}</small><button type="button" data-i="${i}">×</button></div>`).join('');
+    $('#' + flId).querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { CL[listKey].splice(+b.dataset.i, 1); draw(); });
+  };
+  const add = async list => {
+    if (er()) er().textContent = '';
+    for (let f of [...list]) {
+      if (CL[listKey].length >= max) { if (er()) er().textContent = 'Առավելագույնը ' + max + ' ֆայլ'; break; }
+      f = await shrinkImage(f);
+      if (f.size > CL.v.maxFileMb * 1048576) { if (er()) er().textContent = `«${f.name}» ֆայլը մեծ է ${CL.v.maxFileMb} ՄԲ-ից${/^video\//.test(f.type) ? '։ Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։' : ''}`; continue; }
+      if (CL[listKey].reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { if (er()) er().textContent = 'Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։'; break; }
+      CL[listKey].push(f);
+    }
+    draw();
+  };
+  ['cam', 'vid', 'gal', 'any', 'aud'].forEach(k => { const fi = $('#' + p + k); if (fi) fi.onchange = () => { add(fi.files); fi.value = ''; }; });
+  document.querySelectorAll(`[data-pick^="${p}"]`).forEach(b => b.onclick = () => $('#' + b.dataset.pick).click());
+  const mic = $('#' + p + 'mic'); if (mic) mic.onclick = () => startRec(p, f => add([f]));
+  const drop = dropId && $('#' + dropId);
+  if (drop) {
+    drop.onclick = () => $('#' + p + 'any').click();
+    drop.ondragover = e => { e.preventDefault(); drop.classList.add('on'); };
+    drop.ondragleave = () => drop.classList.remove('on');
+    drop.ondrop = e => { e.preventDefault(); drop.classList.remove('on'); add(e.dataTransfer.files); };
+  }
+  draw();
+}
+/** Ձայնագրություն միկրոֆոնով (չստացվելու դեպքում՝ հեռախոսի ձայնագրիչ) */
+async function startRec(p, done) {
+  if (REC) return;
+  const box = $('#' + p + 'rec');
+  let stream;
+  try {
+    if (!navigator.mediaDevices || !window.MediaRecorder) throw new Error('nosupport');
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    const fi = $('#' + p + 'aud');
+    if (e && e.name === 'NotAllowedError') { alert('Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։'); return; }
+    if (fi) fi.click(); return;
+  }
+  const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+  const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined), chunks = [];
+  let cancel = false; const t0 = Date.now();
+  REC = mr;
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = () => {
+    stream.getTracks().forEach(t => t.stop()); clearInterval(tm); box.classList.add('hidden'); REC = null;
+    if (cancel || !chunks.length) return;
+    const type = (mr.mimeType || mime || 'audio/webm').split(';')[0], ext = /mp4/.test(type) ? 'm4a' : /ogg/.test(type) ? 'ogg' : 'webm';
+    done(new File(chunks, `Ձայնային-${stamp()}.${ext}`, { type }));
+  };
+  box.classList.remove('hidden');
+  const tm = setInterval(() => {
+    const s = Math.floor((Date.now() - t0) / 1000); $('#' + p + 'rt').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    if (s >= 300) mr.stop();   // առավելագույնը 5 րոպե
+  }, 250);
+  $('#' + p + 'rs').onclick = () => mr.stop();
+  $('#' + p + 'rx').onclick = () => { cancel = true; mr.stop(); };
+  mr.start(1000);
+}
+function clBindNew() {
+  bindMedia('files', 'n', 'fl', 'nerr', 10, 'drop');
+  $('#nf').onsubmit = async e => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target).entries()), go = $('#ngo'), er = $('#nerr');
+    if (!d.companyId) { er.textContent = 'Ընտրեք կազմակերպությունը'; return; }
+    if (!d.title.trim()) { er.textContent = 'Գրեք, թե ինչ է պետք անել'; return; }
+    go.disabled = true; go.textContent = CL.files.length ? 'Ֆայլերը բեռնվում են…' : 'Ուղարկվում է…'; er.textContent = '';
+    try {
+      d.files = await Promise.all(CL.files.map(async f => ({ name: f.name, mime: f.type, data: await readB64(f) })));
+      lsSet('nx_client_comp', d.companyId);
+      const r = await ccall('clientSubmit', d);
+      CL.v = r.view; CL.files = []; CL.filter = 'open'; CL.screen = 'home';
+      toastC('✔ Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։'); clOpen(r.id);
+    } catch (ex) { er.textContent = ex.message; go.disabled = false; go.textContent = 'Ուղարկել'; }
+  };
+}
+function toastC(t) {
+  const d = document.createElement('div'); d.className = 'ok'; d.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:9;box-shadow:0 6px 20px rgba(0,0,0,.15);max-width:90vw';
+  d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 4000);
+}
+let CHAT = null;
+function clOpen(thread) {
+  const v = CL.v, r = v.requests.find(x => x.id === thread), c = v.chats.find(x => x.thread === thread);
+  if (!r && !c) return;
+  CL.screen = 'chat'; CL.thread = thread;
+  if (CHAT) { CHAT.destroy(); CHAT = null; }
+  const title = r ? r.title : c.companyName;
+  const sub = r ? `${esc(r.companyName)} · ${esc(r.id)}` : 'Չաթ Numetrix-ի հետ';
+  $('#root').innerHTML = `<div class="chatpage">
+    <div class="chbar"><button class="lnk" id="bk" style="font-size:22px;padding:0 6px">←</button><div class="av">${esc(initials(r ? r.companyName : c.companyName))}</div>
+      <div style="flex:1;min-width:0"><div class="t ell">${esc(title)}</div><div class="m ell" id="chsub">${sub}</div></div>
+      ${r ? '<button class="btn2" id="inf" style="padding:6px 10px">ℹ</button>' : ''}</div>
+    ${r ? `<div class="chinfo" id="chinfo" style="display:none">${stPill(r.status)}${r.description ? `<p style="white-space:pre-wrap;margin:8px 0 0">${esc(r.description)}</p>` : ''}${r.link ? `<p style="margin:6px 0 0">🔗 <a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link)}</a></p>` : ''}${r.due ? `<p class="m" style="margin:6px 0 0">Ցանկալի ժամկետ՝ ${esc(fmtDT(r.due))}</p>` : ''}${r.note ? `<p style="margin:6px 0 0">💬 ${esc(r.note)}</p>` : ''}<p class="m" style="margin:6px 0 0">Ուղարկվել է՝ ${esc(fmtDT(r.createdAt))}</p></div>` : ''}
+    <div class="chbody" id="chbox"></div></div>`;
+  $('#bk').onclick = clBack;
+  const inf = $('#inf'); if (inf) inf.onclick = () => { const x = $('#chinfo'); x.style.display = x.style.display === 'none' ? '' : 'none'; };
+  CHAT = NxChat.mount($('#chbox'), {
+    thread, side: 'client', call: ccall, meName: v.me.name,
+    emptyText: r ? 'Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։' : 'Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային 👋',
+    topText: i => i && i.req ? `${stPill(i.req.status)}` : '',
+    onInfo: i => { if (i.req) { const p = document.querySelector('#chinfo .pill'); if (p) p.outerHTML = stPill(i.req.status); } },
+    canConvert: (m, i) => i && i.kind === 'G' && m.mine && m.side === 'client' && !m.deleted,
+    convertLabel: '📋 Դարձնել անելիք',
+    onConvert: async (m, i) => {
+      if (!confirm('Ստեղծե՞լ անելիք այս հաղորդագրությունից։ Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։')) return;
+      const title = (m.text || (m.files[0] ? m.files[0].name : 'Անելիք')).split('\n')[0].slice(0, 200);
+      const res = await ccall('clientSubmit', { companyId: i.companyId, title, description: m.text, fromMsg: m.id });
+      CL.v = res.view; toastC('✔ Ստեղծվեց անելիք ' + res.id); CHAT.refresh();
+    }
+  });
+}
+async function clBack() {
+  if (CHAT) { CHAT.destroy(); CHAT = null; }
+  CL.screen = 'home'; CL.thread = null;
+  try { CL.v = await ccall('clientInfo', {}); } catch (e) {}
+  clRender(); window.scrollTo(0, 0);
+}
+window.addEventListener('popstate', () => { if (CL.screen !== 'home' && CL.v) clBack(); });
+
+async function clLogout() {
+  try { await ccall('clientLogout', {}); } catch (e) {}
+  if (CHAT) { CHAT.destroy(); CHAT = null; }
+  CL.tok = ''; CL.v = null; CL.screen = 'home'; CL.thread = null; lsSet('nx_client_tok', ''); clLogin();
+}
+let clTimer = null;
+function homeBusy() { return CL.screen !== 'home' || (CL.q || '').trim() || (document.activeElement && document.activeElement.id === 'gq'); }
+function clPoll() {
+  clearInterval(clTimer);
+  clTimer = setInterval(async () => {
+    if (!CL.tok || !CL.v) return;
+    try {
+      const v = await ccall('clientInfo', {});
+      if (JSON.stringify(v) !== JSON.stringify(CL.v)) { notifyChanges(CL.v, v); CL.v = v; if (!homeBusy()) clRender(); }
+    } catch (e) {}
+  }, 30000);
+}
+// հավելվածը նորից բացելիս՝ անմիջապես թարմացնել
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || !CL.tok || !CL.v) return;
+  try { const v = await ccall('clientInfo', {}); if (JSON.stringify(v) !== JSON.stringify(CL.v)) { notifyChanges(CL.v, v); CL.v = v; if (!homeBusy()) clRender(); } } catch (e) {}
+});
+
+(async function init() {
+  if (!TOKEN) return clientInit();
+  try { INFO = await call('portalInfo', {}); render(); }
+  catch (e) { $('#root').innerHTML = `<div class="card bad"><div class="big">🔒</div><b>${esc(e.message)}</b></div>`; }
+})();
+</script>
+</body>
+</html>
