@@ -1584,13 +1584,16 @@ function fbStart() {
       const go = () => { loadChatUnread(); if (S.view === 'chats') loadChats(); };
       FBSIG_T = [setTimeout(go, 2500), setTimeout(go, 7000)];
     });
-    // ամբողջ տվյալների թարմացումը՝ ակնթարթորեն (ուրիշի փոփոխությունը երևում է մեկ վայրկյանում)
-    const offSnap = NxFb.listenSnap((d, t) => {
-      if (!S.d || !S.token || t <= (S.snapT || 0)) return;
-      S.snapT = t; S.snapLive = true;
-      if (d.dv !== S.d.dv || d.nv !== S.d.nv) applyBoot(d);
+    // ուրիշի փոփոխությունը՝ ազդանշանով, տվյալները բեռնվում են ֆոնային ռեժիմում
+    let dT = null;
+    const offData = NxFb.onSig('data', sg => {
+      if (!S.d || !S.token || (sg && sg.s && sg.s === S.d.dv)) return;   // մեր իսկ փոփոխությունն է
+      clearTimeout(dT); dT = setTimeout(() => { refresh(true).catch(() => {}); }, 400);
     });
-    FBSIG = () => { offSig(); offSnap(); S.snapLive = false; };
+    const me0 = NxFb.me();
+    const offNv = me0 ? NxFb.onSig(me0.k, () => { pollOnce(); }) : () => {};
+    S.snapLive = true;
+    FBSIG = () => { offSig(); offData(); offNv(); S.snapLive = false; };
   });
 }
 function fbStop() { if (typeof FBSIG === 'function') try { FBSIG(); } catch (e) {} FBSIG = null; FBSIG_T.forEach(clearTimeout); NxFb.stop(); }
@@ -2525,14 +2528,40 @@ function viewCompanies() {
     return `<tr class="click" data-act="${isMgr() ? 'editCompany' : 'companyTasks'}" data-id="${esc(c.id)}" style="${c.active === 'Ոչ' ? 'opacity:.5' : ''}">${cols.map(x => cell[x.k]()).join('')}</tr>`;
   }).join('')}</tbody></table>` : `<div class="list"><div class="empty"><div class="big">🏢</div>Կազմակերպություններ դեռ չկան</div></div>`}`;
 }
-function companyForm(c) {
+/** Փաստաթղթային դաշտերը կազմակերպության պատուհանում (d_ նախածանցով) */
+function compDocFields(D) {
+  const d = D.data;
+  const hv = [['', '— ընտրեք —']].concat(D.hvsv.map(h => [h.id, h.name + (h.head ? ' · ' + h.head : '')]));
+  const au = [['', '— պատասխանատու հաշվապահը —']].concat(D.auth.map(a => [a.emp, a.emp + (a.has ? '' : ' ⚠ անձն. տվյալներ չկան')]));
+  return `${fH('📄 Փաստաթղթերի տվյալներ <span class="muted" style="font-weight:400;font-size:12px">(լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ)</span>')}
+    ${fIn('d_regNo', 'Պետռեգիստրի գրանցման համար', d.regNo)}
+    ${fSel('d_hvsv', 'Սպասարկող ՀՎՍՎ', d.hvsv, hv)}
+    ${fIn('d_legalAddr', 'Իրավաբանական հասցե', d.legalAddr, { full: true })}
+    ${fIn('d_bank', 'Բանկ', d.bank)}${fIn('d_account', 'Հաշվեհամար', d.account)}
+    ${fIn('d_fee', 'Ամսական վճար (դրամ)', d.fee, { ph: 'օր. 50000' })}
+    ${fSel('d_authEmp', 'Լիազորվող աշխատակից', d.authEmp, au)}
+    <div class="full hint">Լիազորագրերում կգրվի ընտրված աշխատակիցը (դատարկ՝ կազմակերպության պատասխանատու հաշվապահը)։ Նրա անձնագրային տվյալները լրացվում են «Թիմ» բաժնում՝ աշխատակցի քարտում։</div>
+    ${fH('👤 Տնօրեն')}
+    <div class="full" id="dirMiss"></div>
+    ${fIn('d_dirName', 'Անուն Ազգանուն', d.dirName)}${fIn('d_dirPos', 'Պաշտոն', d.dirPos, { ph: 'տնօրեն' })}
+    ${fSel('d_dirDocType', 'Փաստաթուղթ', d.dirDocType, ['Անձնագիր', 'Նույնականացման քարտ'])}${fIn('d_dirDocNo', 'Համար', d.dirDocNo)}
+    ${fIn('d_dirDocDate', 'Տրման ամսաթիվ', isoD(d.dirDocDate), { type: 'date' })}${fIn('d_dirDocBy', 'Ում կողմից', d.dirDocBy, { ph: 'օր. 001' })}
+    ${fIn('d_dirSsn', 'ՀԾՀ', d.dirSsn)}${fIn('d_dirPhone', 'Հեռախոս', d.dirPhone)}
+    ${fIn('d_dirAddr', 'Հաշվառման հասցե', d.dirAddr, { full: true })}
+    ${fH('📍 Գործունեության հասցեներ <span class="muted" style="font-weight:400;font-size:12px">(տեղեկատվական թերթիկը կստեղծվի յուրաքանչյուրի համար)</span>')}
+    <div class="full"><div id="addrBox">${addrRows(d.addrs || [])}</div><button type="button" class="btn sm" data-addaddr>+ Ավելացնել հասցե</button></div>`;
+}
+const DIRF = { d_dirName: 'տնօրենի անուն', d_dirDocNo: 'փաստաթղթի համար', d_dirDocDate: 'տրման ամսաթիվ', d_dirDocBy: 'ում կողմից', d_dirSsn: 'ՀԾՀ', d_dirAddr: 'հաշվառման հասցե', d_dirPhone: 'հեռախոս' };
+const dirMissList = d => Object.keys(DIRF).filter(k => !String(d[k.slice(2)] || '').trim()).map(k => DIRF[k]);
+const missBox = miss => miss.length ? `<div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:8px 12px;font-size:13px">👤 Տնօրենի տվյալներից լրացված չէ՝ ${esc(miss.join(', '))}</div>` : '';
+function companyForm(c, D) {
   c = c || { active: 'Այո', regime: S.d.settings.regimes[0] || '', startDate: '' };
   const sel = compReports(c), ra = parseRA(c.reportAssignees);
   const emps = S.d.employees.filter(e => e.active);
   const types = S.d.reportTypes.filter(r => r.active !== 'Ոչ' || sel.includes(r.code));
   return `<div class="fgrid">
     <div class="full"><label class="f">Անվանում *</label><input class="inp" name="name" value="${esc(c.name || '')}" required></div>
-    <div><label class="f">ՀՎՀՀ</label><input class="inp" name="tin" value="${esc(c.tin || '')}"></div>
+    <div><label class="f">ՀՎՀՀ</label><div style="display:flex;gap:6px"><input class="inp" name="tin" value="${esc(c.tin || '')}" style="flex:1"><button type="button" class="btn sm" id="tinLook" title="Բեռնել տվյալները մյուս պլատֆորմից ըստ ՀՎՀՀ">🔄 Բեռնել</button></div><div class="hint" id="tinHint"></div></div>
     <div><label class="f">ՊԵԿ մուտքանուն</label><input class="inp" name="srcLogin" value="${esc(c.srcLogin || '')}" placeholder="file-online մուտքանունը" autocomplete="off"><div class="hint">Գաղտնաբառը այստեղ չի պահվում</div></div>
     <div><label class="f">Հարկման ռեժիմ (տեղեկատվական)</label><select class="inp" name="regime">${S.d.settings.regimes.map(r => `<option ${c.regime === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></div>
     <div><label class="f">Պատասխանատու հաշվապահ</label><select class="inp" name="responsible"><option value="">—</option>${emps.map(e => `<option ${c.responsible === e.name ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
@@ -2546,19 +2575,52 @@ function companyForm(c) {
     <div><label class="f">Ակտիվ</label><select class="inp" name="active"><option ${c.active !== 'Ոչ' ? 'selected' : ''}>Այո</option><option ${c.active === 'Ոչ' ? 'selected' : ''}>Ոչ</option></select></div>
     <div class="full"><label class="f">Նշումներ</label><input class="inp" name="notes" value="${esc(c.notes || '')}"></div>
     <div class="full preview" id="cPrev"></div>
+    ${D ? compDocFields(D) : ''}
   </div>`;
 }
-function editCompany(id) {
+async function editCompany(id) {
   const c = id ? company(id) : null;
-  const m = openModal(c ? 'Խմբագրել կազմակերպությունը' : 'Նոր կազմակերպություն', companyForm(c), async f => {
+  let D = null;
+  try { D = await call('docGet', { id: c ? c.id : '' }, { silent: true }); } catch (e) { D = null; }
+  const m = openModal(c ? 'Խմբագրել կազմակերպությունը' : 'Նոր կազմակերպություն', companyForm(c, D), async f => {
     const reports = [].concat(f.reports || []);
     const reportAssignees = {};
     Object.keys(f).forEach(k => { if (k.startsWith('ra_') && f[k]) reportAssignees[k.slice(3)] = f[k]; });
     const payload = { id: c ? c.id : '', name: f.name, tin: f.tin, srcLogin: f.srcLogin, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
+    if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); payload.docs = docs; }
     const r = await call('saveCompany', payload);
     await refresh();
     setTimeout(() => showDiag(f.name, r), 0);
-  }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Փաստաթղթեր</button>` : '' });
+  }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր</button>` : '' });
+  if (D) {
+    bindAddrs(m);
+    const missDraw = () => { const f = formData(m), d = {}; Object.keys(f).forEach(k => { if (k.startsWith('d_')) d[k.slice(2)] = f[k]; }); m.querySelector('#dirMiss').innerHTML = missBox(dirMissList(d)); };
+    missDraw(); m.addEventListener('input', missDraw);
+    m.__missDraw = missDraw;
+  }
+  const tl = m.querySelector('#tinLook');
+  if (tl) tl.onclick = async () => {
+    const tin = m.querySelector('[name=tin]').value, hint = m.querySelector('#tinHint');
+    if (!tin.trim()) { hint.textContent = 'Նախ գրեք ՀՎՀՀ-ն'; return; }
+    tl.disabled = true; hint.textContent = '⏳ Որոնում…';
+    try {
+      const x = await call('extLookup', { tin }, { silent: true });
+      if (!x.found) { hint.textContent = 'Մյուս պլատֆորմում չի գտնվել'; return; }
+      m.querySelector('[name=tin]').value = x.tin;
+      const map = { name: x.name, d_regNo: x.regNo, d_bank: x.bank, d_account: x.account, d_legalAddr: x.legalAddr, d_dirName: x.dirName, d_dirPos: x.dirPos, d_dirPhone: x.phone };
+      const el = k => m.querySelector(`[name=${k}]`);
+      const keys = Object.keys(map).filter(k => map[k] && el(k));
+      const filled = keys.filter(k => el(k).value.trim() && el(k).value.trim() !== map[k]);
+      const hasAddr = D && readAddrs(m).length;
+      const over = (filled.length || (hasAddr && x.addrs.length)) ? await NxDlg.confirm('Փոխարինե՞լ արդեն լրացված դաշտերը\nՈրոշ դաշտեր արդեն լրացված են և տարբերվում են մյուս պլատֆորմի տվյալներից։ «Ոչ»-ի դեպքում կլրացվեն միայն դատարկները։', { ok: 'Այո, փոխարինել', cancel: 'Միայն դատարկները', danger: false }) : false;
+      let n = 0;
+      keys.forEach(k => { if (!el(k).value.trim() || over) { if (el(k).value !== map[k]) n++; el(k).value = map[k]; } });
+      if (D && x.addrs.length && (!hasAddr || over)) { m.querySelector('#addrBox').innerHTML = addrRows(x.addrs); n++; }
+      if (m.__missDraw) m.__missDraw();
+      hint.innerHTML = `✔ Գտնվեց, լրացվեց ${n} դաշտ։ Ստուգեք, լրացրեք տնօրենի անձնագրային տվյալները և սեղմեք «Պահպանել»։` + (x.accountWarn ? '<br><span style="color:#b45309">⚠ Հաշվեհամարի վերջին թվանշանները կարող են սխալ լինել՝ ստուգեք։</span>' : '');
+    } catch (e) { hint.textContent = '⚠ ' + e.message; }
+    finally { tl.disabled = false; }
+  };
   const prev = () => {
     const fd = formData(m), codes = [].concat(fd.reports || []);
     m.querySelectorAll('.ritem').forEach(it => it.classList.toggle('on', it.querySelector('input').checked));
@@ -2901,8 +2963,8 @@ async function editEmp(name) {
     <div><label class="f">Դեր</label><select class="inp" name="role"><option ${e.role === 'Աշխատակից' ? 'selected' : ''}>Աշխատակից</option><option ${e.role === 'Ղեկավար' ? 'selected' : ''}>Ղեկավար</option></select></div>
     <div><label class="f">Ակտիվ</label><select class="inp" name="active"><option ${e.active ? 'selected' : ''}>Այո</option><option ${!e.active ? 'selected' : ''}>Ոչ</option></select></div>
     <div class="full"><label class="f">Գույն</label><div class="swatches">${S.d.consts.COLORS.map(c => `<label style="background:${c}"><input type="radio" name="color" value="${c}" ${e.color === c ? 'checked' : ''}></label>`).join('')}</div></div>
-    <label class="chk full" style="color:var(--text);font-weight:600;margin-top:4px"><input type="checkbox" id="isAuth" ${A.active ? 'checked' : ''}> ✍️ Լիազորվող է <span class="muted" style="font-weight:400">(տվյալները կլրացվեն լիազորագրերում)</span></label>
-    <div class="full" id="authBox" style="display:${A.active ? '' : 'none'}"><div class="fgrid" style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px">
+    <div class="full" style="font-weight:600;margin-top:4px">🪪 Անձնական տվյալներ <span class="muted" style="font-weight:400">(լրացվում են լիազորագրերում, երբ աշխատակիցը լիազորվող է)</span></div>
+    <div class="full" id="authBox"><div class="fgrid" style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px">
       ${fIn('a_fullName', 'Անուն Ազգանուն (ինչպես փաստաթղթում)', A.fullName || e.name || '', { full: true })}
       ${fIn('a_birth', 'Ծննդյան ամսաթիվ', isoD(A.birth), { type: 'date' })}${fSel('a_docType', 'Փաստաթուղթ', A.docType, ['Անձնագիր', 'Նույնականացման քարտ'])}
       ${fIn('a_docNo', 'Անձնագրի համար', A.docNo)}${fIn('a_docDate', 'Տրման ամսաթիվ', isoD(A.docDate), { type: 'date' })}
@@ -2914,14 +2976,11 @@ async function editEmp(name) {
   </div>`, async f => {
     const base = { name: f.name, role: f.role, active: f.active, color: f.color };
     await call('saveEmployee', Object.assign({ origName: name || '' }, base));
-    const isA = m.querySelector('#isAuth').checked;
-    if (isA || A.active) {
-      const data = {}; Object.keys(f).forEach(k => { if (k.startsWith('a_')) data[k.slice(2)] = f[k]; });
-      await call('authSave', { emp: f.name.trim(), origEmp: name || '', active: isA, data });
-    }
+    const data = {}; Object.keys(f).forEach(k => { if (k.startsWith('a_')) data[k.slice(2)] = f[k]; });
+    const any = ['birth', 'docNo', 'docDate', 'docBy', 'idCard', 'ssn', 'phone', 'addr'].some(k => String(data[k] || '').trim());
+    if (any || A.active || A.docNo) await call('authSave', { emp: f.name.trim(), origEmp: name || '', active: true, data });
     toast('Պահպանված է', 'ok'); await refresh();
   }, { submit: 'Պահպանել', wide: true });
-  m.querySelector('#isAuth').onchange = ev => { m.querySelector('#authBox').style.display = ev.target.checked ? '' : 'none'; };
 }
 
 /* ====================== ՓԱՍՏԱԹՂԹԵՐ (լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ) ====================== */
@@ -2941,50 +3000,22 @@ function bindAddrs(m) {
   });
 }
 
+/** «📄 Ստեղծել փաստաթղթեր»՝ տվյալները խմբագրվում են կազմակերպության պատուհանում */
 async function docsOpen(companyId) {
   let D;
   try { D = await call('docGet', { id: companyId }); } catch (e) { return toast(esc(e.message), 'err'); }
-  const d = D.data, c = D.company;
-  const hv = [['', '— ընտրեք —']].concat(D.hvsv.map(h => [h.id, h.name + (h.head ? ' · ' + h.head : '')]));
-  const au = [['', '— ընտրեք —']].concat(D.auth.map(a => [a.emp, a.emp + (a.fullName && a.fullName !== a.emp ? ' (' + a.fullName + ')' : '')]));
-  const body = `<div class="fgrid">
-    ${fH('🏢 Կազմակերպություն')}
-    <div class="full muted" style="font-size:12.5px">${esc(c.name)} · ՀՎՀՀ ${esc(c.tin || '—')} (անվանումը և ՀՎՀՀ-ն փոխվում են կազմակերպության քարտում)</div>
-    ${fIn('regNo', 'Պետռեգիստրի գրանցման համար', d.regNo)}
-    ${fSel('hvsv', 'Սպասարկող ՀՎՍՎ', d.hvsv, hv)}
-    ${fIn('legalAddr', 'Իրավաբանական հասցե', d.legalAddr, { full: true })}
-    ${fIn('bank', 'Բանկ', d.bank)}${fIn('account', 'Հաշվեհամար', d.account)}
-    ${fIn('fee', 'Ամսական վճար (դրամ)', d.fee, { ph: 'օր. 50000' })}
-    ${fH('👤 Տնօրեն')}
-    ${fIn('dirName', 'Անուն Ազգանուն', d.dirName)}${fIn('dirPos', 'Պաշտոն', d.dirPos, { ph: 'տնօրեն' })}
-    ${fSel('dirDocType', 'Փաստաթուղթ', d.dirDocType, ['Անձնագիր', 'Նույնականացման քարտ'])}${fIn('dirDocNo', 'Համար', d.dirDocNo)}
-    ${fIn('dirDocDate', 'Տրման ամսաթիվ', isoD(d.dirDocDate), { type: 'date' })}${fIn('dirDocBy', 'Ում կողմից', d.dirDocBy, { ph: 'օր. 001' })}
-    ${fIn('dirSsn', 'ՀԾՀ', d.dirSsn)}${fIn('dirPhone', 'Հեռախոս', d.dirPhone)}
-    ${fIn('dirAddr', 'Հաշվառման հասցե', d.dirAddr, { full: true })}
-    ${fH('📍 Գործունեության հասցեներ <span class="muted" style="font-weight:400;font-size:12px">(տեղեկատվական թերթիկը կստեղծվի յուրաքանչյուրի համար)</span>')}
-    <div class="full"><div id="addrBox">${addrRows(d.addrs || [])}</div><button type="button" class="btn sm" data-addaddr>+ Ավելացնել հասցե</button></div>
-    ${fH('✍️ Լիազորվող աշխատակից')}
-    ${fSel('authEmp', 'Նախնական լիազորվողը', d.authEmp, au, { full: true })}
-    ${D.auth.length ? '' : '<div class="full hint">Լիազորվողներ դեռ չկան։ Նշեք աշխատակցին «Թիմ» բաժնում՝ «Լիազորվող է»։</div>'}
-  </div>`;
-  const m = openModal('📄 Փաստաթղթեր — ' + c.name, body, async f => {
-    await call('docSave', { id: companyId, data: Object.assign({}, f, { addrs: readAddrs(m) }) });
-    toast('Պահպանված է', 'ok');
-  }, { wide: true, submit: '💾 Պահպանել', extra: `<button type="button" class="btn primary" id="docGo" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր…</button>` });
-  bindAddrs(m);
-  m.querySelector('#docGo').onclick = async () => {
-    const f = formData(m);
-    try { await call('docSave', { id: companyId, data: Object.assign({}, f, { addrs: readAddrs(m) }) }, { silent: true }); } catch (e) { return toast(esc(e.message), 'err'); }
-    docsPick(companyId, D, f.authEmp, readAddrs(m));
-  };
+  docsPick(companyId, D, D.data.authEmp, D.data.addrs || []);
 }
 function docsPick(companyId, D, authEmp, addrs) {
   const today0 = today();
-  const au = [['', '— ընտրեք —']].concat(D.auth.map(a => [a.emp, a.emp]));
+  const au = D.auth.map(a => [a.emp, a.emp + (a.has ? '' : ' ⚠')]);
+  authEmp = authEmp || D.company.responsible || (D.auth[0] || {}).emp || '';
   const m = openModal('📄 Ստեղծել փաստաթղթեր — ' + D.company.name, `<div class="fgrid">
+    <div class="full">${missBox(dirMissList(D.data))}${!D.data.regNo || !D.data.hvsv ? '<div class="hint" style="color:#b45309">Լրացված չէ՝ ' + esc([!D.data.regNo && 'գրանցման համար', !D.data.hvsv && 'ՀՎՍՎ'].filter(Boolean).join(', ')) + '</div>' : ''}</div>
     <div class="full"><label class="f">Որ փաստաթղթերը</label><div class="cbox" style="max-height:none">${D.types.map(t => `<label><input type="checkbox" name="doc" value="${t.n}" checked> ${t.n}. ${esc(DOC_LBL[t.n] || t.name)}</label>`).join('')}</div>
       ${addrs.length ? '' : '<div class="hint" style="color:#b45309">Գործունեության հասցե նշված չէ. տեղեկատվական թերթիկը կստեղծվի առանց հասցեի։</div>'}</div>
     ${fSel('authEmp', 'Լիազորվող աշխատակից', authEmp, au)}
+    <div class="full" id="authWarn"></div>
     ${fIn('date', 'Ամսաթիվ', today0, { type: 'date' })}
     ${fSel('years', 'Լիազորագրի ժամկետ', '3', [['1', '1 տարի'], ['2', '2 տարի'], ['3', '3 տարի']])}
     ${fIn('until', 'Գործում է մինչև (դատարկ՝ ավտոմատ)', '', { type: 'date' })}
@@ -2995,7 +3026,10 @@ function docsPick(companyId, D, authEmp, addrs) {
     const opts = { id: companyId, docs, authEmp: f.authEmp, date: f.date, years: f.years, until: f.until, place: f.place };
     const P = await call('docPreview', opts);
     setTimeout(() => docsReview(opts, P, addrs), 0);
-  }, { wide: true, submit: 'Շարունակել →' });
+  }, { wide: true, submit: 'Շարունակել →', extra: `<button type="button" class="btn" id="docEdit" style="margin-right:auto">✏️ Խմբագրել տվյալները</button>` });
+  m.querySelector('#docEdit').onclick = () => { closeModal(); editCompany(companyId); };
+  const aw = () => { const v = m.querySelector('[name=authEmp]').value, a = D.auth.find(x => x.emp === v); m.querySelector('#authWarn').innerHTML = a && !a.has ? `<div class="hint" style="color:#b45309">⚠ ${esc(v)}-ի անձնագրային տվյալները լրացված չեն։ Լրացրեք «Թիմ» բաժնում՝ աշխատակցի քարտում, կամ ուղղեք հաջորդ քայլում։</div>` : ''; };
+  m.querySelector('[name=authEmp]').onchange = aw; aw();
 }
 /** Ստուգում. ցույց է տալիս բոլոր լրացվող տվյալները (կարելի է ուղղել), դատարկները՝ կարմիր */
 function docsReview(opts, P, addrs) {
