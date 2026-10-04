@@ -1725,7 +1725,7 @@ function showApp() {
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   S.view = lsGet('nx_view', 'tasks');
   S.rf.scope = isMgr() ? 'all' : 'mine';
-  if ((S.view === 'stats' || S.view === 'docs') && !isMgr()) S.view = 'tasks';
+  if (S.view === 'stats' && !isMgr()) S.view = 'tasks';
   handleNotifs(S.d.notifs, true);
   renderShell(); renderView(); updateNotifCta();
   startPolling();
@@ -1833,7 +1833,7 @@ function navDefs() {
     isMgr() ? { k: 'stats', i: 'chart', l: 'Վիճակագրություն', c: '' } : null,
     { k: 'sep1', sep: true },
     { k: 'companies', i: 'building', l: 'Կազմակերպություններ', c: S.d.companies.filter(c => c.active !== 'Ոչ').length },
-    isMgr() ? { k: 'docs', i: 'docs', l: 'Փաստաթղթեր', c: '' } : null,
+    { k: 'docs', i: 'docs', l: 'Փաստաթղթեր', c: '' },
     { k: 'team', i: 'users', l: 'Թիմ', c: S.d.employees.filter(e => e.active).length },
     { k: 'settings', i: 'gear', l: 'Կարգավորումներ', c: '', req: true },
     S.d.settings.srcUrl ? { k: 'src', i: 'gov', l: 'Մուտք ՊԵԿ', ext: 'src' } : null,
@@ -1880,7 +1880,7 @@ function renderShell() {
     nav.innerHTML = navItems().filter(it => !it.hidden).map(navItemHtml).join('')
       + `<button class="navedit" data-act="navEdit" title="Փոխել բաժինների հերթականությունը, թաքցնել չօգտագործվողները">⇅ Դասավորել մենյուն</button>`;
   }
-  $('#meBox').innerHTML = `${av(me(), 'lg')}<div><div class="nm">${esc(me())}</div><div class="rl">${esc(S.d.me.role)}</div></div><button data-act="logout" title="Դուրս գալ">${ico('logout')}</button>`;
+  $('#meBox').innerHTML = `${av(me(), 'lg')}<div><div class="nm">${esc(me())}</div><div class="rl">${S.d.me.tempUntil ? '👑 Ժամ. ղեկավար՝ մինչև ' + esc(fmtD(S.d.me.tempUntil)) : esc(S.d.me.role)}</div></div><button data-act="logout" title="Դուրս գալ">${ico('logout')}</button>`;
 }
 /* ====================== ԱՆՁՆԱԿԱՆ ԴԱՍԱՎՈՐՈՒԹՅՈՒՆ ====================== */
 function myLayout() { return (S.d && S.d.me.layout) || {}; }
@@ -2000,7 +2000,7 @@ const COLS = {
     { k: 'open', l: 'Բաց թասքեր' },
     S.d.settings.srcUrl ? { k: 'src', l: 'ՊԵԿ կոճակ', th: '' } : null,
     isMgr() ? { k: 'portal', l: 'Գործընկերոջ հղում', th: '' } : null,
-    isMgr() ? { k: 'docs', l: 'Փաստաթղթեր', th: '' } : null
+    { k: 'docs', l: 'Փաստաթղթեր', th: '' }
   ].filter(Boolean),
   archive: () => [
     { k: 'title', l: 'Թասք', req: true },
@@ -2064,7 +2064,7 @@ function colsModal(view) {
   m.querySelector('#colReset').onclick = () => { list = COLS[view]().map(d => Object.assign({}, d, { on: d.req || !d.hide })); m.querySelector('#colWrap').innerHTML = draw(); bind(); };
 }
 
-const TITLES = { chats: 'Չաթեր հաճախորդների հետ', clients: 'Հաճախորդների մուտքեր', requests: 'Գործընկերների հարցումներ', stats: 'Վիճակագրություն', tasks: 'Թասքեր', reports: 'Հաշվետվություններ', archive: 'Արխիվ', companies: 'Կազմակերպություններ', docs: 'Փաստաթղթեր', team: 'Թիմ', settings: 'Կարգավորումներ' };
+const TITLES = { chats: 'Չաթեր', clients: 'Հաճախորդների մուտքեր', requests: 'Գործընկերների հարցումներ', stats: 'Վիճակագրություն', tasks: 'Թասքեր', reports: 'Հաշվետվություններ', archive: 'Արխիվ', companies: 'Կազմակերպություններ', docs: 'Փաստաթղթեր', team: 'Թիմ', settings: 'Կարգավորումներ' };
 function renderView() {
   if (!S.d) return;
   $('#pageTitle').textContent = TITLES[S.view] || '';
@@ -2686,7 +2686,13 @@ function viewRequests() {
   const list = S.reqs.rows.filter(r => (!S.qf.company.length || S.qf.company.includes(r.companyId)) && (!S.qf.status.length || S.qf.status.includes(r.status))
     && (!q || (r.title + ' ' + r.description + ' ' + r.companyName + ' ' + r.author + ' ' + r.id).toLowerCase().includes(q)));
   if (!list.length) return bar + `<div class="list"><div class="empty"><div class="big">📨</div>Հարցումներ չկան${S.reqs.rows.length ? ' ընտրված ֆիլտրերով' : '։ Գործընկերոջ հղումը ստեղծեք «Կազմակերպություններ» բաժնից։'}</div></div>`;
-  return bar + list.map(r => `<div class="rq ${r.status === 'Նոր' ? 'new' : ''}">
+  const canTake = r => ['Նոր', 'Դիտված', 'Թասք է դարձել'].includes(r.status) && (r.assignee || r.handledBy) !== me();
+  const takeBtn = r => canTake(r) ? `<button class="btn sm" data-act="reqTake" data-id="${esc(r.id)}" title="Վերցնել այս հարցումը (և նրա թասքը) ինձ">✋ Վերցնել ինձ</button>` : '';
+  return bar + list.map(r => r.lite ? `<div class="rq ${r.status === 'Նոր' ? 'new' : ''}" style="opacity:.92">
+    <div class="rh"><b>🏢 ${esc(r.companyName)}</b><span>${esc(r.id)} · ${esc(fmtDT(r.createdAt))}</span><span class="pill" style="--c:${REQ_COLORS[r.status] || '#64748b'};margin-left:auto">${esc(r.status)}</span></div>
+    <div class="rt">${esc(r.title)}</div>
+    <div class="muted" style="font-size:12.5px;margin-top:4px">Ուրիշի կազմակերպություն${r.assignee || r.handledBy ? ' · կատարող՝ <b>' + esc(r.assignee || r.handledBy) + '</b>' : ' · դեռ ոչ ոք չի վերցրել'}. մանրամասները կերևան վերցնելուց հետո։</div>
+    <div class="ra">${takeBtn(r)}</div></div>` : `<div class="rq ${r.status === 'Նոր' ? 'new' : ''}">
     <div class="rh"><b>🏢 ${esc(r.companyName)}</b><span>${esc(r.id)} · ${esc(fmtDT(r.createdAt))} · գրել է՝ ${esc(r.author)}${r.extId ? ' <span class="tag" title="Գրանցված հաճախորդ (մուտքանունով)">👤 հաճախորդ</span>' : ''}</span>${r.due ? `<span>· ցանկալի ժամկետ՝ <b>${esc(fmtD(r.due))}</b></span>` : ''}<span class="pill" style="--c:${REQ_COLORS[r.status] || '#64748b'};margin-left:auto">${esc(r.status)}</span></div>
     <div class="rt">${esc(r.title)}</div>
     ${r.description ? `<div class="rd">${linkify(r.description)}</div>` : ''}
@@ -2699,8 +2705,16 @@ function viewRequests() {
       ${r.status === 'Նոր' ? `<button class="btn sm" data-act="reqStatus" data-id="${esc(r.id)}" data-s="Դիտված">👁 Դիտված</button>` : ''}
       ${r.extId ? `<button class="btn sm ${r.cUnread ? 'primary' : ''}" data-act="reqChat" data-id="${esc(r.id)}">💬 Զրույց${r.cCount ? ' (' + r.cCount + ')' : ''}${r.cUnread ? ' · ' + r.cUnread + ' նոր' : ''}</button>` : `<button class="btn sm" data-act="reqNote" data-id="${esc(r.id)}">💬 Պատասխան</button>`}
       ${['Նոր', 'Դիտված'].includes(r.status) ? `<button class="btn sm danger" data-act="reqReject" data-id="${esc(r.id)}">✕ Մերժել</button>` : ''}
+      ${r.assignee ? `<span class="muted" style="font-size:12.5px;margin-left:auto">կատարող՝ <b>${esc(r.assignee)}</b></span>` : ''}${takeBtn(r)}
     </div>
   </div>`).join('');
+}
+async function reqTake(id) {
+  const r = reqById(id); if (!r) return;
+  const who = r.assignee || r.handledBy;
+  if (!await NxDlg.confirm('Վերցնե՞լ «' + r.title + '»-ը Ձեզ' + (who ? '\nԱյն կփոխանցվի ' + who + '-ից Ձեզ, ' + who + '-ը կստանա ծանուցում։' : ''), { ok: '✋ Վերցնել', danger: false })) return;
+  try { const x = await call('takeRequest', { id }); toast('✔ Հարցումը Ձերն է' + (x.taskId ? '՝ թասք ' + esc(x.taskId) : ''), 'ok'); S.reqs = null; await refresh(); if (S.view === 'requests') loadRequests(); }
+  catch (e) { toast(esc(e.message), 'err'); }
 }
 function reqById(id) { return S.reqs && S.reqs.rows.find(r => r.id === id); }
 async function setReqStatus(id, status, note) {
@@ -2743,15 +2757,15 @@ async function portalLinkModal(companyId, reset) {
 function teamChatOpts(thread) {
   return {
     thread, side: 'team', meName: me(), call: (a, p) => call(a, p, { silent: true }),
-    emptyText: 'Հաղորդագրություններ դեռ չկան։ Գրածը կտեսնի հաճախորդը իր հավելվածում։',
-    topText: i => i ? (i.req ? `<span class="pill" style="--c:${REQ_COLORS[i.req.status] || '#64748b'}">${esc(i.req.status)}</span> ${i.req.taskId ? `<a href="#" data-act="open" data-id="${esc(i.req.taskId)}" style="font-size:12.5px">Թասք ${esc(i.req.taskId)} →</a>` : ''}` : `🏢 ${esc(i.companyName)}`) : '',
+    emptyText: /^I-/.test(thread) ? (thread === 'I-ALL' ? 'Թիմի ընդհանուր չաթ։ Գրածը տեսնում են բոլոր աշխատակիցները (հաճախորդները՝ ոչ)։' : 'Անձնական չաթ։ Գրածը տեսնում եք միայն դուք երկուսով։') : 'Հաղորդագրություններ դեռ չկան։ Գրածը կտեսնի հաճախորդը իր հավելվածում։',
+    topText: i => i ? (i.kind === 'I' ? '🔒 Ներքին · հաճախորդները չեն տեսնում' : i.req ? `<span class="pill" style="--c:${REQ_COLORS[i.req.status] || '#64748b'}">${esc(i.req.status)}</span> ${i.req.taskId ? `<a href="#" data-act="open" data-id="${esc(i.req.taskId)}" style="font-size:12.5px">Թասք ${esc(i.req.taskId)} →</a>` : ''}` : `🏢 ${esc(i.companyName)}`) : '',
     canConvert: (m, i) => !m.deleted && m.side !== 'sys',
     convertLabel: '➕ Ստեղծել թասք',
     onConvert: (m, i) => {
       const c = company(i.companyId);
       const title = (m.text || (m.files[0] ? m.files[0].name : 'Թասք')).split('\n')[0].slice(0, 200);
       const desc = [m.text, `— ${m.author}${m.side === 'client' ? ' (հաճախորդ)' : ''}, ${fmtDT(m.at)}, չաթից`].filter(Boolean).join('\n\n');
-      newTask({ companyId: i.companyId, title, description: desc, msgId: m.id, fromClient: m.side === 'client' && i.kind === 'G', assignee: c && c.responsible, nFiles: m.files.length });
+      newTask({ companyId: i.kind === 'I' ? '' : i.companyId, title, description: desc, msgId: m.id, fromClient: m.side === 'client' && i.kind === 'G', assignee: c && c.responsible, nFiles: m.files.length });
     },
     onInfo: () => { setTimeout(loadChatUnread, 300); }
   };
@@ -2761,7 +2775,7 @@ function reqChatModal(id) { openChat(id, true); }
 /** Չաթը բացել. modal=true՝ պատուհանով (հարցումներից/թասքից), այլապես «Չաթեր» բաժնում */
 function openChat(thread, modal) {
   if (!thread) return;
-  if (!modal) { S.ch.thread = thread; if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
+  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (S.ch.scope === 'int') S.ch.scope = isMgr() ? 'all' : 'mine'; if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
   const m = openModal('Զրույց հաճախորդի հետ', '<div id="mchat" style="height:min(70vh,640px);margin:-4px -4px 0;border-radius:12px;overflow:hidden;border:1px solid var(--line)"></div>', null, { okOnly: true, wide: true });
   if (MODALCHAT) MODALCHAT.destroy();
   MODALCHAT = NxChat.mount(m.querySelector('#mchat'), teamChatOpts(thread));
@@ -2777,14 +2791,14 @@ async function loadChatUnread() {
 }
 function chatRows() {
   const q = (S.q || '').trim().toLowerCase();
-  return (S.ch.list || []).filter(x => (S.ch.scope === 'all' || x.responsible === me())
+  return (S.ch.list || []).filter(x => (S.ch.scope === 'int' ? x.kind === 'I' : x.kind !== 'I' && (S.ch.scope === 'all' || !isMgr() || x.responsible === me()))
     && (!q || (x.companyName + ' ' + x.title + ' ' + x.lastText).toLowerCase().includes(q)));
 }
 function viewChats() {
   if (!S.ch.scope) S.ch.scope = isMgr() ? 'all' : 'mine';
   return `<div class="chats ${S.ch.thread ? 'has' : ''}">
     <div class="chl">
-      <div class="chl-top"><div class="seg">${[['mine', 'Իմ կազմ.'], ['all', 'Բոլորը']].map(([k, l]) => `<button class="${S.ch.scope === k ? 'on' : ''}" data-act="chScope" data-k="${k}">${l}</button>`).join('')}</div>
+      <div class="chl-top"><div class="seg">${(isMgr() ? [['mine', 'Իմ կազմ.'], ['all', 'Բոլորը'], ['int', '👥 Թիմ']] : [['mine', 'Հաճախորդներ'], ['int', '👥 Թիմ']]).map(([k, l]) => { const u = k === 'int' ? (S.ch.list || []).filter(x => x.kind === 'I').reduce((a, x) => a + x.unread, 0) : 0; return `<button class="${S.ch.scope === k ? 'on' : ''}" data-act="chScope" data-k="${k}" ${k === 'int' ? 'title="Ներքին չաթ աշխատակիցների միջև"' : ''}>${l}${u ? ` <span class="cu" style="position:static;display:inline-block;margin-left:4px">${u}</span>` : ''}</button>`; }).join('')}</div>
         <button class="btn sm" data-act="chSearch" title="Որոնել բոլոր զրույցներում">🔍</button></div>
       <div id="chl"></div>
     </div>
@@ -2795,9 +2809,9 @@ function drawChatList() {
   const box = $('#chl'); if (!box) return;
   const rows = chatRows();
   box.innerHTML = rows.length ? rows.map(x => `<div class="chi ${S.ch.thread === x.thread ? 'on' : ''}" data-act="chOpen" data-id="${esc(x.thread)}">
-      <div class="cav ${x.kind === 'R' ? 'r' : ''}">${x.kind === 'R' ? '📋' : esc(cInit(x.companyName))}</div>
+      <div class="cav ${x.kind === 'R' ? 'r' : ''}" ${x.kind === 'I' && x.who ? `style="background:${esc((emp(x.who) || {}).color || '#64748b')};color:#fff"` : ''}>${x.kind === 'R' ? '📋' : x.kind === 'I' ? (x.who ? esc(cInit(x.who)) : '👥') : esc(cInit(x.companyName))}</div>
       <div style="flex:1;min-width:0"><div class="cn">${esc(x.title)}</div>
-        <div class="cl">${x.kind === 'R' ? esc(x.companyName) + ' · ' : ''}${x.lastText ? (x.lastSide === 'client' ? '' : esc(x.lastBy) + '՝ ') + esc(x.lastText) : '<i>դեռ չեն գրել</i>'}</div></div>
+        <div class="cl">${x.kind === 'R' ? esc(x.companyName) + ' · ' : ''}${x.lastText ? (x.lastSide === 'client' || (x.kind === 'I' && x.who && x.lastBy !== me()) ? '' : esc(x.lastBy === me() ? 'Դուք' : x.lastBy) + '՝ ') + esc(x.lastText) : '<i>դեռ չեն գրել</i>'}</div></div>
       <div style="text-align:right;flex:none"><div class="ct">${esc(x.lastAt ? (x.lastAt.slice(0, 10) === today() ? x.lastAt.slice(11, 16) : fmtD(x.lastAt)) : '')}</div>${x.unread ? `<span class="cu">${x.unread}</span>` : ''}</div>
     </div>`).join('') : `<div class="empty" style="padding:30px 10px">${S.ch.list ? 'Զրույցներ չկան։ Զրույցը հասանելի է այն կազմակերպությունների համար, որոնք ունեն արտաքին օգտագործող («Հաճախորդների մուտքեր»)։' : 'Բեռնվում է…'}</div>`;
 }
@@ -2808,7 +2822,7 @@ function mountChatPane() {
   if (TEAMCHAT && TEAMCHAT.thread === S.ch.thread && pane.querySelector('.nxc')) return;
   if (TEAMCHAT) TEAMCHAT.destroy();
   const x = (S.ch.list || []).find(r => r.thread === S.ch.thread);
-  pane.innerHTML = `<div class="chh"><button class="btn sm chback" data-act="chBack">←</button><div style="flex:1;min-width:0"><b>${esc(x ? x.title : S.ch.thread)}</b><div class="muted" style="font-size:12px">${x ? (x.kind === 'R' ? esc(x.companyName) + ' · ' + esc(x.thread) : 'Անձնական չաթ' + (x.responsible ? ' · պատասխանատու՝ ' + esc(x.responsible) : '')) : ''}</div></div>${isMgr() ? `<button class="btn sm" data-act="chClear" title="Ջնջել այս զրույցի բոլոր հաղորդագրությունները">🧹 Մաքրել</button>` : ''}</div><div id="chbody" style="flex:1;min-height:0"></div>`;
+  pane.innerHTML = `<div class="chh"><button class="btn sm chback" data-act="chBack">←</button><div style="flex:1;min-width:0"><b>${esc(x ? x.title : S.ch.thread)}</b><div class="muted" style="font-size:12px">${x ? (x.kind === 'I' ? (x.who ? '🔒 Անձնական ներքին չաթ' : '🔒 Ներքին՝ ամբողջ թիմը') : x.kind === 'R' ? esc(x.companyName) + ' · ' + esc(x.thread) : 'Անձնական չաթ' + (x.responsible ? ' · պատասխանատու՝ ' + esc(x.responsible) : '')) : ''}</div></div>${isMgr() ? `<button class="btn sm" data-act="chClear" title="Ջնջել այս զրույցի բոլոր հաղորդագրությունները">🧹 Մաքրել</button>` : ''}</div><div id="chbody" style="flex:1;min-height:0"></div>`;
   TEAMCHAT = NxChat.mount($('#chbody'), teamChatOpts(S.ch.thread));
   TEAMCHAT.thread = S.ch.thread;
 }
@@ -2943,13 +2957,17 @@ function srcPick() {
 /* ====================== TEAM VIEW ====================== */
 function viewTeam() {
   const td = today();
+  if (!isMgr()) {
+    const L = S.d.employees.filter(e => e.active).sort((a, b) => HY_COLLATOR.compare(a.name, b.name));
+    return `<div class="toolbar"><span class="muted">${L.length} աշխատակից</span></div><div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">${L.map(e => `<div class="card" style="display:flex;gap:12px;align-items:center;padding:12px 14px">${av(e.name, 'lg')}<div style="flex:1;min-width:0"><b>${esc(e.name)}</b><div class="muted" style="font-size:12px">${e.tempMgr ? '👑 ժամ. ղեկավար' : esc(e.role)}</div></div>${e.name !== me() ? `<button class="btn sm" data-act="dmOpen" data-n="${esc(e.name)}" title="Գրել ներքին չաթում">💬</button>` : ''}</div>`).join('')}</div>`;
+  }
   const list = S.d.employees.slice().sort((a, b) => (b.active - a.active) || (a.role === 'Ղեկավար' ? -1 : 1));
   return `<div class="toolbar"><span class="muted">Ծանրաբեռնվածություն և մուտքի սարքեր</span><span class="sp"></span>${isMgr() ? `<button class="btn primary" data-act="editEmp">${ico('plus')} Աշխատակից</button>` : ''}</div>
   <div class="cards">${list.map(e => {
     const ts = S.d.tasks.filter(t => t.assignee === e.name);
     const devs = (S.d.devices || []).filter(d => d.employee === e.name);
     return `<div class="card" style="${e.active ? '' : 'opacity:.55'}">
-      <div style="display:flex;gap:12px;align-items:center">${av(e.name, 'lg')}<div style="flex:1;min-width:0"><h3>${esc(e.name)}</h3><div class="muted" style="font-size:12.5px">${esc(e.role)}${e.active ? '' : ' · ապաակտիվ'} · ${e.hasPin ? '🔒 PIN-ը սահմանված է' : '⚪ դեռ մուտք չի գործել'}</div></div>
+      <div style="display:flex;gap:12px;align-items:center">${av(e.name, 'lg')}<div style="flex:1;min-width:0"><h3>${esc(e.name)}</h3><div class="muted" style="font-size:12.5px">${esc(e.role)}${e.tempMgr ? ` · <b style="color:#b45309">👑 ժամ. ղեկավար՝ մինչև ${esc(fmtD(e.tempMgr))}</b>` : ''}${e.active ? '' : ' · ապաակտիվ'} · ${e.hasPin ? '🔒 PIN-ը սահմանված է' : '⚪ դեռ մուտք չի գործել'}</div></div>
       ${isMgr() ? `<button class="btn sm" data-act="editEmp" data-n="${esc(e.name)}">Խմբագրել</button>` : ''}</div>
       <div class="kv"><div><b>${ts.filter(t => t.kind === 'Թասք').length}</b>թասք</div><div><b>${ts.filter(t => t.kind !== 'Թասք').length}</b>հաշվետվ.</div><div><b style="color:${ts.filter(t => t.due < td).length ? 'var(--red)' : 'inherit'}">${ts.filter(t => t.due && t.due < td).length}</b>ժամկետանց</div><div><b>${ts.filter(t => t.due === td).length}</b>այսօր</div></div>
       ${isMgr() ? devs.map(d => `<div class="dev">💻<span title="${esc(d.device)}">${esc(d.device || 'Սարք')} · ${esc(fmtDT(d.lastSeen))}</span><button class="btn sm danger" data-act="revoke" data-tid="${esc(d.tid)}">Անջատել</button></div>`).join('') + (e.hasPin ? `<div class="dev"><span>Մոռացե՞լ է PIN-ը</span><button class="btn sm" data-act="resetPin" data-n="${esc(e.name)}">Զրոյացնել PIN</button></div>` : '') : ''}
@@ -2963,9 +2981,13 @@ async function editEmp(name) {
   if (name) { try { A = await call('authGet', { emp: name }, { silent: true }); } catch (x) {} }
   const m = openModal(name ? 'Խմբագրել աշխատակցին' : 'Նոր աշխատակից', `<div class="fgrid">
     <div class="full"><label class="f">Անուն Ազգանուն *</label><input class="inp" name="name" value="${esc(e.name || '')}" required>${name ? '<div class="hint">Անունը փոխելու դեպքում աշխատակիցը պետք է նոր PIN ստեղծի</div>' : ''}</div>
-    <div><label class="f">Դեր</label><select class="inp" name="role"><option ${e.role === 'Աշխատակից' ? 'selected' : ''}>Աշխատակից</option><option ${e.role === 'Ղեկավար' ? 'selected' : ''}>Ղեկավար</option></select></div>
+    ${S.d.me.owner ? `<div><label class="f">Դեր</label><select class="inp" name="role"><option ${e.role === 'Աշխատակից' ? 'selected' : ''}>Աշխատակից</option><option ${e.role === 'Ղեկավար' ? 'selected' : ''}>Ղեկավար</option></select></div>` : `<input type="hidden" name="role" value="${esc(e.role || 'Աշխատակից')}">`}
     <div><label class="f">Ակտիվ</label><select class="inp" name="active"><option ${e.active ? 'selected' : ''}>Այո</option><option ${!e.active ? 'selected' : ''}>Ոչ</option></select></div>
     <div class="full"><label class="f">Գույն</label><div class="swatches">${S.d.consts.COLORS.map(c => `<label style="background:${c}"><input type="radio" name="color" value="${c}" ${e.color === c ? 'checked' : ''}></label>`).join('')}</div></div>
+    ${S.d.me.owner && e.role !== 'Ղեկավար' && name !== me() ? `<div class="full" id="tmBox" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px">
+      <label class="chk" style="font-weight:600;color:var(--text)"><input type="checkbox" id="tmOn" ${e.tempMgr ? 'checked' : ''}> 👑 Ժամանակավոր ղեկավար (օր.՝ արձակուրդի ժամանակ)</label>
+      <div id="tmDate" style="margin-top:8px;display:${e.tempMgr ? '' : 'none'}"><label class="f">Մինչև (ներառյալ)</label><input class="inp" type="date" name="mgrUntil" min="${today()}" value="${esc(e.tempMgr || '')}" style="max-width:220px">
+      <div class="hint">Այս օրը ներառյալ կունենա ղեկավարի բոլոր հնարավորությունները (բացի ղեկավար նշանակելուց և Ձեր տվյալները փոխելուց)։ Հաջորդ օրը ավտոմատ կդառնա սովորական աշխատակից։</div></div></div>` : ''}
     <div class="full" style="font-weight:600;margin-top:4px">🪪 Անձնական տվյալներ <span class="muted" style="font-weight:400">(լրացվում են լիազորագրերում, երբ աշխատակիցը լիազորվող է)</span></div>
     <div class="full" id="authBox"><div class="fgrid" style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px">
       ${fIn('a_fullName', 'Անուն Ազգանուն (ինչպես փաստաթղթում)', A.fullName || e.name || '', { full: true })}
@@ -2979,12 +3001,19 @@ async function editEmp(name) {
     </div></div>
   </div>`, async f => {
     const base = { name: f.name, role: f.role, active: f.active, color: f.color };
+    if (m.querySelector('#tmOn')) {
+      const on = m.querySelector('#tmOn').checked;
+      if (on && !f.mgrUntil) throw new Error('Նշեք, մինչև որ օրն է ժամանակավոր ղեկավար');
+      base.mgrUntil = on ? f.mgrUntil : '';
+    }
     await call('saveEmployee', Object.assign({ origName: name || '' }, base));
     const data = {}; Object.keys(f).forEach(k => { if (k.startsWith('a_')) data[k.slice(2)] = f[k]; });
     const any = ['birth', 'docNo', 'docDate', 'docBy', 'idCard', 'ssn', 'phone', 'addr'].some(k => String(data[k] || '').trim());
     if (any || A.active || A.docNo) await call('authSave', { emp: f.name.trim(), origEmp: name || '', active: true, data });
     toast('Պահպանված է', 'ok'); await refresh();
   }, { submit: 'Պահպանել', wide: true });
+  const tm = m.querySelector('#tmOn');
+  if (tm) tm.onchange = () => { m.querySelector('#tmDate').style.display = tm.checked ? '' : 'none'; if (tm.checked && !m.querySelector('[name=mgrUntil]').value) m.querySelector('[name=mgrUntil]').focus(); };
 }
 
 /* ====================== ՓԱՍՏԱԹՂԹԵՐ (լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ) ====================== */
@@ -3013,16 +3042,64 @@ async function docsOpen(companyId, sel) {
 /* «Փաստաթղթեր» բաժին՝ ցանկացած կազմակերպության համար ցանկացած փաստաթուղթ */
 const DOC_ICO = { 1: '🏛️', 2: '📝', 3: '🛃', 4: '📊', 5: '🤝', 6: '📍' };
 const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար առանձին' };
+const docTabs = () => `<div class="seg" style="margin-bottom:14px">${[['make', '📄 Ստեղծել'], ['log', '📒 Մատյան']].map(([k, l]) => `<button class="${(S.docTab || 'make') === k ? 'on' : ''}" data-act="docTab" data-k="${k}">${l}</button>`).join('')}</div>`;
 function viewDocs() {
+  if (S.docTab === 'log') return docTabs() + viewDocLog();
+  return docTabs() + viewDocsMake();
+}
+/* ---------- 📒 Փաստաթղթերի մատյան ---------- */
+const DOC_SHORT = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ' };
+function docLogF() {
+  if (!S.dl) { const t = today(); S.dl = { from: t.slice(0, 8) + '01', to: t, type: '', comp: '', q: '', rows: null, busy: false }; }
+  return S.dl;
+}
+async function loadDocLog() {
+  const F = docLogF(); F.busy = true;
+  try { const r = await call('docLog', { from: F.from, to: F.to, types: F.type ? [F.type] : [], companyIds: F.comp ? [F.comp] : [], q: F.q }, { silent: true }); F.rows = r.rows || []; F.err = ''; }
+  catch (e) { F.rows = []; F.err = e.message; }
+  F.busy = false; if (S.view === 'docs' && S.docTab === 'log') renderView();
+}
+function viewDocLog() {
+  const F = docLogF();
+  if (!F.rows && !F.busy) setTimeout(loadDocLog, 0);
+  const comps = (S.d.compNames || S.d.companies).slice().sort(compCmp);
+  const sentHtml = t => String(t || '').split('\n').filter(Boolean).map(x => `<div style="white-space:nowrap">${esc(x)}</div>`).join('') || '<span class="muted">—</span>';
+  return `<div class="card" style="padding:14px 16px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+      <div><label class="f">Սկսած</label><input class="inp" type="date" data-dl="from" value="${esc(F.from)}"></div>
+      <div><label class="f">Մինչև</label><input class="inp" type="date" data-dl="to" value="${esc(F.to)}"></div>
+      <div style="min-width:200px"><label class="f">Փաստաթղթի տեսակ</label><select class="inp" data-dl="type"><option value="">Բոլորը</option>${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${String(F.type) === String(n) ? 'selected' : ''}>${n}. ${esc(DOC_SHORT[n])}</option>`).join('')}</select></div>
+      <div style="flex:1;min-width:200px"><label class="f">Կազմակերպություն</label><select class="inp" data-dl="comp"><option value="">Բոլորը</option>${comps.map(c => `<option value="${esc(c.id)}" ${F.comp === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <div style="min-width:160px"><label class="f">Որոնում</label><input class="inp" data-dl="q" value="${esc(F.q)}" placeholder="Համար, անուն…"></div>
+      <button class="btn" data-act="docLogCsv" ${F.rows && F.rows.length ? '' : 'disabled'} title="Ներբեռնել ֆիլտրված ցանկը (բացվում է Excel-ով)">📥 Excel</button>
+    </div>
+  </div>
+  <div style="margin-top:12px">${F.err ? `<div class="lerr" style="display:block">${esc(F.err)}</div>` : !F.rows ? '<div class="list"><div class="empty">Բեռնվում է…</div></div>'
+    : !F.rows.length ? '<div class="list"><div class="empty"><div class="big">📒</div>Այս ֆիլտրերով փաստաթղթեր չկան</div></div>'
+    : `<div class="muted" style="font-size:12.5px;margin:0 0 6px 2px">${F.rows.length} փաստաթուղթ${F.busy ? ' · ⏳' : ''}</div><div style="overflow:auto"><table class="tbl"><thead><tr><th>№</th><th>Ամսաթիվ</th><th>Փաստաթուղթ</th><th>Կազմակերպություն</th><th>Ստեղծող</th><th>Ուղարկվել է</th><th></th></tr></thead><tbody>
+      ${F.rows.map(r => `<tr><td style="white-space:nowrap"><b>${esc(r.no)}</b></td><td style="white-space:nowrap">${esc(fmtD(r.at.slice(0, 10)))} <span class="muted">${esc(r.at.slice(11, 16))}</span></td>
+        <td>${esc(r.type ? r.type + '. ' + (DOC_SHORT[r.type] || r.typeName) : r.typeName)}${r.addr ? `<div class="muted" style="font-size:12px">📍 ${esc(r.addr)}</div>` : ''}</td><td>${esc(r.companyName)}</td><td style="white-space:nowrap">${esc(r.by)}</td>
+        <td style="font-size:12px">${sentHtml(r.sent)}</td>
+        <td style="white-space:nowrap">${r.fid ? `<button class="btn sm" data-act="docLogDl" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" data-f="pdf">PDF</button> <button class="btn sm" data-act="docLogDl" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" data-f="docx">Word</button> <button class="btn sm" data-act="docLogSend" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" title="Ուղարկել">📤</button>` : ''}</td></tr>`).join('')}
+    </tbody></table></div>`}</div>`;
+}
+function docLogCsv() {
+  const F = docLogF(); if (!F.rows || !F.rows.length) return;
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [['№', 'Ամսաթիվ', 'Փաստաթուղթ', 'Հասցե', 'Կազմակերպություն', 'Ստեղծող', 'Ուղարկվել է'].map(q).join(';')]
+    .concat(F.rows.map(r => [r.no, r.at.slice(0, 16), r.type ? r.type + '. ' + (DOC_SHORT[r.type] || r.typeName) : r.typeName, r.addr, r.companyName, r.by, String(r.sent || '').replace(/\n/g, '; ')].map(q).join(';')));
+  saveFileAs(new File(['\ufeff' + lines.join('\r\n')], 'Փաստաթղթերի մատյան ' + F.from + ' — ' + F.to + '.csv', { type: 'text/csv;charset=utf-8' }));
+}
+function viewDocsMake() {
   S.docSel = S.docSel || [1, 2, 3, 4, 5, 6];
-  const comps = S.d.companies.filter(c => c.active !== 'Ոչ').slice().sort(compCmp);
+  const comps = (S.d.compNames || S.d.companies.filter(c => c.active !== 'Ոչ')).slice().sort(compCmp);
   const cid = S.docComp && comps.some(c => c.id === S.docComp) ? S.docComp : '';
   return `<div class="card" style="padding:18px;max-width:980px">
     <h3 style="margin:0 0 4px">📄 Ստեղծել փաստաթղթեր</h3>
     <p class="muted" style="font-size:13px;margin:0 0 14px">Ընտրեք կազմակերպությունը և պետք եղած փաստաթղթերը։ Տվյալները վերցվում են կազմակերպության քարտից, ստեղծելուց առաջ կարող եք ստուգել և ուղղել։</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:16px">
       <div style="flex:1;min-width:240px"><label class="f">Կազմակերպություն</label><select class="inp" id="docComp"><option value="">— ընտրեք —</option>${comps.map(c => `<option value="${esc(c.id)}" ${c.id === cid ? 'selected' : ''}>${esc(c.name)}${c.tin ? ' · ' + esc(c.tin) : ''}</option>`).join('')}</select></div>
-      <button class="btn" data-act="docCompEdit" ${cid ? '' : 'disabled'}>✏️ Կազմակերպության տվյալները</button>
+      ${isMgr() ? `<button class="btn" data-act="docCompEdit" ${cid ? '' : 'disabled'}>✏️ Կազմակերպության տվյալները</button>` : ''}
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:14px">Փաստաթղթեր</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="docSelAll">${S.docSel.length === 6 ? 'Հանել բոլորը' : 'Նշել բոլորը'}</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
@@ -3068,8 +3145,8 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
     const opts = { id: companyId, docs, authEmp: f.authEmp, date: f.date, years: f.years, until: f.until, place: f.place };
     const P = await call('docPreview', opts);
     setTimeout(() => docsReview(opts, P, addrs), 0);
-  }, { wide: true, submit: 'Շարունակել →', extra: `<button type="button" class="btn" id="docEdit" style="margin-right:auto">✏️ Խմբագրել տվյալները</button>` });
-  m.querySelector('#docEdit').onclick = () => { closeModal(); editCompany(companyId); };
+  }, { wide: true, submit: 'Շարունակել →', extra: isMgr() ? `<button type="button" class="btn" id="docEdit" style="margin-right:auto">✏️ Խմբագրել տվյալները</button>` : '' });
+  if (m.querySelector('#docEdit')) m.querySelector('#docEdit').onclick = () => { closeModal(); editCompany(companyId); };
   const aw = () => { const v = m.querySelector('[name=authEmp]').value, a = D.auth.find(x => x.emp === v); m.querySelector('#authWarn').innerHTML = a && !a.has ? `<div class="hint" style="color:#b45309">⚠ ${esc(v)}-ի անձնագրային տվյալները լրացված չեն։ Լրացրեք «Թիմ» բաժնում՝ աշխատակցի քարտում, կամ ուղղեք հաջորդ քայլում։</div>` : ''; };
   m.querySelector('[name=authEmp]').onchange = aw; aw();
 }
@@ -3088,7 +3165,7 @@ function docsReview(opts, P, addrs) {
     toast('⏳ Ստեղծվում են փաստաթղթերը… (մինչև 1 րոպե)', '', null, 60000);
     const r = await call('docGenerate', Object.assign({}, opts, { tags, addrs }));
     document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են/.test(t.textContent)) t.remove(); });
-    if (S.docList) delete S.docList[opts.id];
+    if (S.docList) delete S.docList[opts.id]; if (S.dl) S.dl.rows = null;
     setTimeout(() => { docsDone(r, opts.id); if (S.view === 'docs') renderView(); }, 0);
   }, { wide: true, submit: '📄 Ստեղծել' });
 }
@@ -3147,19 +3224,21 @@ async function docsSend(companyId, files) {
     if (via === 'chat') {
       if (!f.extId) throw new Error('Ընտրեք ստացողին');
       const r = await call('docSend', { id: companyId, fids, via: 'chat', extId: f.extId, text: f.text });
-      toast('✔ Ուղարկվեց չաթով՝ ' + esc(r.to), 'ok'); return;
+      if (S.dl) S.dl.rows = null; toast('✔ Ուղարկվեց չաթով՝ ' + esc(r.to), 'ok'); return;
     }
     if (via === 'email') {
       const r = await call('docSend', { id: companyId, fids, via: 'email', to: f.to, subject: f.subject, text: f.text });
-      toast('✔ Ուղարկվեց՝ ' + esc(r.to), 'ok'); return;
+      if (S.dl) S.dl.rows = null; toast('✔ Ուղարկվեց՝ ' + esc(r.to), 'ok'); return;
     }
     // WhatsApp / Telegram՝ ֆայլերը սարքից
     if (!blobs || blobsKey !== fids.join()) throw new Error('⏳ Ֆայլերը դեռ բեռնվում են, մի քանի վայրկյանից նորից սեղմեք');
     const fl = blobs.map(x => new File([b64Bytes(x.data)], x.name, { type: 'application/pdf' }));
+    const logIt = () => { call('docSentLog', { id: companyId, fids, via, to: f.phone }, { silent: true }).catch(() => {}); if (S.dl) S.dl.rows = null; };
     if (navigator.canShare && navigator.canShare({ files: fl })) {
       try { await navigator.share({ files: fl, text: f.text }); } catch (e) { if (e && e.name === 'AbortError') throw new Error('Չեղարկվեց'); throw e; }
-      return;
+      logIt(); return;
     }
+    logIt();
     const ph = phoneIntl(f.phone);
     const url = via === 'wa' ? WEB + 'wa.me/' + ph + '?text=' + encodeURIComponent(f.text) : (ph ? WEB + 't.me/+' + ph : WEB + 'web.telegram.org/');
     window.open(url, '_blank', 'noopener');
@@ -3229,7 +3308,7 @@ function viewSettings() {
     </div>
     ${mg ? `<div class="card"><h3>📄 Փաստաթղթեր</h3><p class="muted" style="font-size:13px;margin:8px 0 12px">Լիազորագրերի, դիմումների, պայմանագրի և թերթիկների համար։ Ձևանմուշները՝ Drive-ի «Ձևանմուշներ» թղթապանակում։</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="firmOpen">🏢 Numetrix-ի տվյալներ</button><button class="btn" data-act="hvsvOpen">🏛 ՀՎՍՎ-ների ցանկ</button></div></div>` : ''}
-    <div class="card"><h3>⚙️ Ընդհանուր</h3>
+    ${mg ? `    <div class="card"><h3>⚙️ Ընդհանուր</h3>
       <form id="setForm" class="fgrid" style="margin-top:12px">
         <div class="full"><label class="f">Ընկերության անվանում</label><input class="inp" name="companyName" value="${esc(s.companyName)}" ${dis}></div>
         <div class="full"><label class="f">Հարկման ռեժիմներ (ստորակետով)</label><input class="inp" name="regimes" value="${esc(s.regimes.join(', '))}" ${dis}></div>
@@ -3245,14 +3324,14 @@ function viewSettings() {
         <label class="chk full"><input type="checkbox" name="autoPriority" ${s.autoPriority ? 'checked' : ''} ${dis}> Հաշվետվության կարևորությունը ավտոմատ բարձրացնել ժամկետը մոտենալիս</label>
         ${mg ? '<div class="full"><button class="btn primary" type="button" data-act="saveSettings">Պահպանել</button></div>' : ''}
       </form>
-    </div>
+    </div>` : ''}
   </div>
-  <div class="toolbar" style="margin-top:26px"><h3 style="margin:0">Հաշվետվությունների տեսակներ</h3><span class="sp"></span>${mg ? `<button class="btn" data-act="cleanupOld">🧹 Հեռացնել ժամկետանց հինները</button><button class="btn" data-act="genReports">↻ Ստեղծել պակասողները</button><button class="btn primary" data-act="editRT">${ico('plus')} Տեսակ</button>` : ''}</div>
+  ${mg ? `  <div class="toolbar" style="margin-top:26px"><h3 style="margin:0">Հաշվետվությունների տեսակներ</h3><span class="sp"></span>${mg ? `<button class="btn" data-act="cleanupOld">🧹 Հեռացնել ժամկետանց հինները</button><button class="btn" data-act="genReports">↻ Ստեղծել պակասողները</button><button class="btn primary" data-act="editRT">${ico('plus')} Տեսակ</button>` : ''}</div>
   <table class="tbl"><thead><tr><th>Կոդ</th><th>Անվանում</th><th>Պարբերականություն</th><th>Ժամկետ</th><th>Կազմակերպություններ</th><th>Ակտիվ</th></tr></thead><tbody>
   ${S.d.reportTypes.map(r => `<tr class="${mg ? 'click' : ''}" ${mg ? `data-act="editRT" data-code="${esc(r.code)}"` : ''} style="${r.active === 'Ոչ' ? 'opacity:.5' : ''}">
     <td><b>${esc(r.code)}</b></td><td>${esc(r.name)}${r.notes ? `<div class="muted" style="font-size:12px">${esc(r.notes)}</div>` : ''}</td><td>${periodOk(r) ? esc(r.period) : `<span style="color:var(--red);font-weight:600">⚠ «${esc(r.periodRaw || r.period)}» — չի ճանաչվել</span>`}</td>
     <td>${esc(dueText(r))}</td><td>${S.d.companies.filter(c => applies(r, c)).length}</td><td>${r.active === 'Ոչ' ? 'Ոչ' : '✓'}</td></tr>`).join('')}
-  </tbody></table>
+  </tbody></table>` : ''}
   <div class="hint" style="margin-top:8px">Թասքը ստեղծվում է ժամանակաշրջանի ավարտին հաջորդող օրը։ Ժամկետը, որ ընկնում է շաբաթ/կիրակի կամ տոնական օր, տեղափոխվում է հաջորդ աշխատանքային օր։ ⚠️ Ժամկետները լրացված են օրինակով՝ ստուգեք։</div>`;
 }
 function dueText(r) {
@@ -3580,15 +3659,21 @@ function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTM
 
 /* ====================== EVENTS ====================== */
 const ACT = {
-  go: el => { closeMs(); S.view = el.dataset.v; if ((S.view === 'stats' || S.view === 'docs') && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
+  go: el => { closeMs(); S.view = el.dataset.v; if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => $('#side').classList.toggle('on'),
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
   srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id); },
   portalLink: (el, e) => { e.stopPropagation(); portalLinkModal(el.dataset.id); },
+  reqTake: el => reqTake(el.dataset.id),
+  dmOpen: el => { const k = (S.ch.list || []).find(x => x.kind === 'I' && x.who === el.dataset.n); if (k) openChat(k.thread); else { call('chatList', {}, { silent: true }).then(r => { S.ch.list = r.rows || []; const x = S.ch.list.find(y => y.kind === 'I' && y.who === el.dataset.n); if (x) openChat(x.thread); }); } },
   docsOpen: (el, e) => { if (e) e.stopPropagation(); docsOpen(el.dataset.id); },
   docTog: el => { const n = +el.dataset.n; S.docSel = S.docSel.includes(n) ? S.docSel.filter(x => x !== n) : S.docSel.concat(n).sort(); renderView(); },
   docSelAll: () => { S.docSel = S.docSel.length === 6 ? [] : [1, 2, 3, 4, 5, 6]; renderView(); },
   docCompEdit: () => { if (S.docComp) editCompany(S.docComp); },
+  docTab: el => { S.docTab = el.dataset.k; renderView(); },
+  docLogCsv: () => docLogCsv(),
+  docLogDl: el => docsDownload(el.dataset.c, [el.dataset.fid], el.dataset.f),
+  docLogSend: el => { const r = (docLogF().rows || []).find(x => x.fid === el.dataset.fid); docsSend(el.dataset.c, [{ fid: el.dataset.fid, name: r ? r.name : 'Փաստաթուղթ' }]); },
   docListRe: () => { if (S.docList) delete S.docList[S.docComp]; renderView(); },
   docDlSel: el => { const L = (S.docList || {})[S.docComp]; if (L) docsDownload(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => f.fid), el.dataset.f); },
   docSendSel: () => { const L = (S.docList || {})[S.docComp]; if (L) docsSend(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => ({ fid: f.fid, name: f.name }))); },
@@ -3743,6 +3828,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.dataset && el.dataset.dl) { const F = docLogF(); F[el.dataset.dl] = el.value; F.rows = null; renderView(); return; }
   if (el.id === 'docComp') { S.docComp = el.value; S.docMark = {}; renderView(); return; }
   if (el.hasAttribute && el.hasAttribute('data-markall')) { const L = (S.docList || {})[S.docComp]; S.docMark = {}; if (el.checked && L) L.files.forEach(f => { S.docMark[f.fid] = true; }); renderView(); return; }
   if (el.dataset.mark) { S.docMark = S.docMark || {}; S.docMark[el.dataset.mark] = el.checked; renderView(); return; }
@@ -3761,6 +3847,8 @@ document.addEventListener('change', e => {
   }
 });
 let rzTimer;
+// ժամանակավոր ղեկավարի ժամկետը լրացավ՝ վերաբեռնել (ադմինի բաժինները կփակվեն)
+setInterval(() => { if (S.d && S.d.me && S.d.me.tempUntil && today() > S.d.me.tempUntil) { S.d.me.tempUntil = ''; toast('👑 Ժամանակավոր ղեկավարի ժամկետը ավարտվեց', ''); refresh(); } }, 60000);
 window.addEventListener('resize', () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { if (S.d && S.view === 'stats' && S.stats) renderView(); }, 250); });
 let qTimer;
 $('#q').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { S.q = e.target.value; if (S.view === 'archive') { S.arch = null; } renderView(); }, 200); });
