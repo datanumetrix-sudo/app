@@ -55,16 +55,18 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .lerr{color:var(--red);font-size:13px;min-height:18px;margin-top:8px}
 
 /* ---------- shell ---------- */
-#app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+#app{display:grid;grid-template-columns:292px 1fr;min-height:100vh}
 .side{background:var(--side);color:var(--sideText);display:flex;flex-direction:column;padding:18px 12px;position:sticky;top:0;height:100vh}
 .side .logo{padding:4px 8px 18px}
 .side .logo b{color:#fff;font-size:17px}
 .side .logo small{color:#8ea0d6;font-size:12px}
-.nav{display:flex;flex-direction:column;gap:2px}
-.nav button{display:flex;align-items:center;gap:12px;padding:10px 12px;border:0;background:transparent;color:var(--sideText);border-radius:10px;text-align:left;font-weight:500}
+.nav{display:flex;flex-direction:column;gap:2px;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.nav.editing .navbar{position:sticky;bottom:0;background:var(--side);padding:8px 0 4px;z-index:2}
+.nav button{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;font-size:13.5px;border:0;background:transparent;color:var(--sideText);border-radius:10px;text-align:left;font-weight:500}
 .nav button:hover{background:var(--side2);color:#fff}
 .nav button.on{background:var(--brand);color:#fff}
-.nav button>span:not(.cnt){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav button>span:not(.cnt):not(.arr){min-width:0;flex:1;white-space:normal;line-height:1.25;overflow-wrap:break-word}
+.nav button svg,.nav a svg{flex:none}
 .nav .cnt{margin-left:auto;background:rgba(255,255,255,.14);border-radius:20px;padding:0 8px;font-size:12px;min-width:22px;text-align:center}
 .nav button.on .cnt{background:rgba(255,255,255,.25)}
 .nav a.ext{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;margin-top:10px;background:linear-gradient(135deg,#7c3aed,#2457f5);box-shadow:0 4px 14px rgba(36,87,245,.35)}
@@ -406,12 +408,12 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 /* ---------- անձնական դասավորություն ---------- */
 .nav .navedit{margin-top:8px;border:0;background:transparent;color:#8ea0d6;font-size:12px;padding:6px 10px;border-radius:8px;display:flex;gap:6px;align-items:center;width:100%}
 .nav .navedit:hover{color:#fff;background:rgba(255,255,255,.06)}
-.nav.editing{outline:1px dashed rgba(255,255,255,.3);outline-offset:4px;border-radius:12px}
+.nav.editing{outline:1px dashed rgba(255,255,255,.3);outline-offset:-1px;border-radius:12px;flex:1 1 auto}
 .navi{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;color:#cfd8f3;background:rgba(255,255,255,.05);margin-bottom:4px;cursor:grab;user-select:none;font-size:13.5px}
 .navi.sepi{background:transparent;border:1px dashed rgba(255,255,255,.18);justify-content:center;color:#8ea0d6;font-size:11.5px;padding:4px}
 .navi.off{opacity:.4}
 .navi .h{opacity:.6}
-.navi .t{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navi .t{min-width:0;flex:1;white-space:normal;line-height:1.25}
 .navi button{border:0;background:transparent;color:inherit;padding:2px 4px;border-radius:6px;font-size:14px;cursor:pointer}
 .navi button:hover{background:rgba(255,255,255,.12)}
 .navi.drag,.coli.drag,th.drag{opacity:.35}
@@ -464,7 +466,7 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 }
 @media (max-width:860px){
   #app{grid-template-columns:1fr}
-  .side{position:fixed;left:0;top:0;z-index:70;width:260px;transform:translateX(-100%);transition:.2s}
+  .side{position:fixed;left:0;top:0;z-index:70;width:292px;transform:translateX(-100%);transition:.2s}
   .side.on{transform:none;box-shadow:var(--shadow2)}
   .menubtn{display:grid}
   .top{padding:12px 16px;flex-wrap:wrap}
@@ -3174,7 +3176,7 @@ function docsDone(r, companyId) {
     ${companyId ? `<div class="hint" style="margin:0">Նշեք փաստաթղթերը և ընտրեք՝ <b>📤 Ուղարկել</b> կամ <b>📥 Ներբեռնել</b> մեզ մոտ (PDF կամ Word)։</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;border-radius:10px;background:var(--panel2)"><label class="chk" style="margin-right:auto"><input type="checkbox" id="ddAll" checked> Բոլորը</label>
       <button type="button" class="btn primary sm" id="docSendNow">📤 Ուղարկել</button><button type="button" class="btn sm" data-dl="pdf">📥 PDF</button><button type="button" class="btn sm" data-dl="docx">📥 Word</button></div>` : ''}
-    ${r.files.map(f => `<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap">${companyId && f.fid ? `<input type="checkbox" data-dd="${esc(f.fid)}" checked style="width:18px;height:18px">` : ''}<div style="flex:1;min-width:200px;font-size:13.5px"><b>${esc(f.name)}</b></div>
+    ${r.files.map(f => `<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap">${companyId && f.fid ? `<input type="checkbox" data-dd="${esc(f.fid)}" checked style="width:18px;height:18px">` : ''}<div style="flex:1;min-width:200px;font-size:13.5px">${f.no ? `<span class="tag" style="margin-right:6px">№ ${esc(f.no)}</span>` : ''}<b>${esc(f.name)}</b></div>
     <a class="btn sm" href="${esc(f.doc)}" target="_blank" rel="noopener">📝 Բացել</a><a class="btn sm" href="${esc(f.pdf)}" target="_blank" rel="noopener">PDF</a><a class="btn sm" href="${esc(f.docx)}" target="_blank" rel="noopener">Word</a></div>`).join('')}
     <a class="btn" href="${esc(r.folder)}" target="_blank" rel="noopener" style="align-self:flex-start;margin-top:6px">📁 Բացել «Փաստաթղթեր» թղթապանակը</a></div>`, null, { okOnly: true, wide: true });
   if (!companyId) return;
