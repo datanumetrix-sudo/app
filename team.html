@@ -923,6 +923,7 @@ const NxChat = (function () {
 
   function mount(root, o) {
     CALL = o.call;
+    const INT = /^I-/.test(String(o.thread || ''));   // ներքին (թիմի) չաթ
     if (!cssDone) { const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st); cssDone = true; }
     const S = { info: null, msgs: [], v: '', reply: null, edit: null, files: [], q: '', search: false, tab: 'chat', rec: null, alive: true, timer: null, typingAt: 0, err: '', busy: false, atBottom: true, lastCount: 0, firstLoad: true,
       gas: [], fs: new Map(), pend: new Map(), gasTy: [], fsTy: {}, fbUnsub: null, fbPath: null, readT: null };
@@ -1107,7 +1108,7 @@ const NxChat = (function () {
           fl.forEach((x, i) => { x.m.n = NxFb.chunks(data[i].data); });
           await NxFb.putFiles(pth, fl.map((x, i) => ({ id: x.m.id, b64: data[i].data })));
         }
-        const msg = { author: me.n, side: sd, x: me.x || '', text, at, replyTo, files: fl.map(x => x.m), edited: false, deleted: false, reactions: {}, rt: sd === 'team', rc: sd === 'client' };
+        const msg = { author: me.n, side: sd, x: me.x || '', text, at, replyTo, files: fl.map(x => x.m), edited: false, deleted: false, reactions: {}, rt: INT ? false : sd === 'team', rc: sd === 'client' };
         await NxFb.send(pth, id, msg, S.info.companyId, o.thread);
       } catch (e) { ok = false; }
       const payload = { thread: o.thread, text, replyTo, fid: id, fat: at, files: data };
@@ -1250,7 +1251,7 @@ const NxChat = (function () {
       const mine = d.side === sd && (sd === 'team' ? d.author === me.n : d.x === me.x);
       (Array.isArray(d.files) ? d.files : []).forEach(f => { if (f && f.live && S.fbPath) LIVE.set(f.id, { pth: S.fbPath, n: +f.n || 1, mime: f.mime, name: f.name }); });
       return { id, author: d.author || '', side: d.side || 'team', text: d.text || '', at: String(d.at || ''), replyTo: d.replyTo || '', edited: !!d.edited, deleted: !!d.deleted,
-        reactions: d.reactions || {}, files: Array.isArray(d.files) ? d.files : [], mine, read: mine ? !!(d.side === 'team' ? d.rc : d.rt) : true, _rt: !!d.rt, _rc: !!d.rc };
+        reactions: d.reactions || {}, files: Array.isArray(d.files) ? d.files : [], mine, read: mine ? !!(INT ? d.rt : (d.side === 'team' ? d.rc : d.rt)) : true, _rt: !!d.rt, _rc: !!d.rc };
     }
     function merged() {
       const map = new Map();
@@ -1275,7 +1276,7 @@ const NxChat = (function () {
     }
     function drawTyping() {
       const me = NxFb.me(), t = NxFb.now(), names = (S.gasTy || []).slice();
-      Object.values(S.fsTy || {}).forEach(x => { if (x && me && x.s !== me.s && t - (+x.at || 0) < 7000 && !names.includes(x.n)) names.push(x.n); });
+      Object.values(S.fsTy || {}).forEach(x => { if (x && me && (INT ? x.n !== me.n : x.s !== me.s) && t - (+x.at || 0) < 7000 && !names.includes(x.n)) names.push(x.n); });
       $r('typ').textContent = names.length ? names.join(', ') + (names.length > 1 ? '-ը գրում են…' : '-ը գրում է…') : '';
     }
     /** Մյուս կողմի նոր հաղորդագրությունները նշել կարդացված (Firebase-ում՝ անմիջապես, աղյուսակում՝ քիչ անց) */
@@ -1283,7 +1284,7 @@ const NxChat = (function () {
       if (!S.fbPath || document.hidden || S.tab !== 'chat') return;
       const me = NxFb.me(); if (!me) return;
       const other = me.s === 't' ? 'client' : 'team', fl = me.s === 't' ? '_rt' : '_rc';
-      const ids = [...S.fs.values()].filter(m => m.side === other && !m[fl]).map(m => m.id);
+      const ids = [...S.fs.values()].filter(m => (INT ? m.side === 'team' && !m.mine : m.side === other) && !m[fl]).map(m => m.id);
       if (!ids.length) return;
       ids.forEach(id => { const m = S.fs.get(id); if (m) m[fl] = true; });
       NxFb.markRead(S.fbPath, ids);
