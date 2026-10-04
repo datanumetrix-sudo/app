@@ -3052,12 +3052,12 @@ function viewDocs() {
 /* ---------- 📒 Փաստաթղթերի մատյան ---------- */
 const DOC_SHORT = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ' };
 function docLogF() {
-  if (!S.dl) { const t = today(); S.dl = { from: t.slice(0, 8) + '01', to: t, type: '', comp: '', q: '', rows: null, busy: false }; }
+  if (!S.dl) { const t = today(); S.dl = { from: t.slice(0, 8) + '01', to: t, type: '', comp: '', q: '', rows: null, busy: false, mark: {}, del: false }; }
   return S.dl;
 }
 async function loadDocLog() {
   const F = docLogF(); F.busy = true;
-  try { const r = await call('docLog', { from: F.from, to: F.to, types: F.type ? [F.type] : [], companyIds: F.comp ? [F.comp] : [], q: F.q }, { silent: true }); F.rows = r.rows || []; F.err = ''; }
+  try { const r = await call('docLog', { from: F.from, to: F.to, types: F.type ? [F.type] : [], companyIds: F.comp ? [F.comp] : [], q: F.q, showDeleted: !!F.del }, { silent: true }); F.rows = r.rows || []; F.err = ''; const ids = new Set(F.rows.map(x => x.fid)); Object.keys(F.mark).forEach(k => { if (!ids.has(k)) delete F.mark[k]; }); }
   catch (e) { F.rows = []; F.err = e.message; }
   F.busy = false; if (S.view === 'docs' && S.docTab === 'log') renderView();
 }
@@ -3066,6 +3066,8 @@ function viewDocLog() {
   if (!F.rows && !F.busy) setTimeout(loadDocLog, 0);
   const comps = (S.d.compNames || S.d.companies).slice().sort(compCmp);
   const sentHtml = t => String(t || '').split('\n').filter(Boolean).map(x => `<div style="white-space:nowrap">${esc(x)}</div>`).join('') || '<span class="muted">—</span>';
+  const canDel = r => !r.deletedAt && (isMgr() || r.by === me());
+  const live = (F.rows || []).filter(canDel), marked = live.filter(r => F.mark[r.fid]);
   return `<div class="card" style="padding:14px 16px">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
       <div><label class="f">Սկսած</label><input class="inp" type="date" data-dl="from" value="${esc(F.from)}"></div>
@@ -3075,21 +3077,36 @@ function viewDocLog() {
       <div style="min-width:160px"><label class="f">Որոնում</label><input class="inp" data-dl="q" value="${esc(F.q)}" placeholder="Համար, անուն…"></div>
       <button class="btn" data-act="docLogCsv" ${F.rows && F.rows.length ? '' : 'disabled'} title="Ներբեռնել ֆիլտրված ցանկը (բացվում է Excel-ով)">📥 Excel</button>
     </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
+      <label class="chk" style="font-size:13px"><input type="checkbox" data-dlx="del" ${F.del ? 'checked' : ''}> Ցույց տալ ջնջվածները</label>
+      <span style="flex:1"></span>
+      ${marked.length ? `<span class="muted" style="font-size:13px">Նշված է՝ ${marked.length}</span><button class="btn sm" data-act="docLogUnmark">Հանել նշումները</button><button class="btn sm danger" data-act="docLogDel">🗑 Ջնջել (${marked.length})</button>` : ''}
+    </div>
   </div>
   <div style="margin-top:12px">${F.err ? `<div class="lerr" style="display:block">${esc(F.err)}</div>` : !F.rows ? '<div class="list"><div class="empty">Բեռնվում է…</div></div>'
     : !F.rows.length ? '<div class="list"><div class="empty"><div class="big">📒</div>Այս ֆիլտրերով փաստաթղթեր չկան</div></div>'
-    : `<div class="muted" style="font-size:12.5px;margin:0 0 6px 2px">${F.rows.length} փաստաթուղթ${F.busy ? ' · ⏳' : ''}</div><div style="overflow:auto"><table class="tbl"><thead><tr><th>№</th><th>Ամսաթիվ</th><th>Փաստաթուղթ</th><th>Կազմակերպություն</th><th>Ստեղծող</th><th>Ուղարկվել է</th><th></th></tr></thead><tbody>
-      ${F.rows.map(r => `<tr><td style="white-space:nowrap"><b>${esc(r.no)}</b></td><td style="white-space:nowrap">${esc(fmtD(r.at.slice(0, 10)))} <span class="muted">${esc(r.at.slice(11, 16))}</span></td>
+    : `<div class="muted" style="font-size:12.5px;margin:0 0 6px 2px">${F.rows.length} փաստաթուղթ${F.busy ? ' · ⏳' : ''}</div><div style="overflow:auto"><table class="tbl"><thead><tr><th style="width:34px">${live.length ? `<input type="checkbox" data-dlx="all" title="Նշել բոլորը (ըստ ֆիլտրի)" ${marked.length && marked.length === live.length ? 'checked' : ''}>` : ''}</th><th>№</th><th>Ամսաթիվ</th><th>Փաստաթուղթ</th><th>Կազմակերպություն</th><th>Ստեղծող</th><th>Ուղարկվել է</th><th></th></tr></thead><tbody>
+      ${F.rows.map(r => `<tr style="${r.deletedAt ? 'opacity:.55' : F.mark[r.fid] ? 'background:#fef2f2' : ''}"><td>${canDel(r) ? `<input type="checkbox" data-dlm="${esc(r.fid)}" ${F.mark[r.fid] ? 'checked' : ''}>` : ''}</td><td style="white-space:nowrap;${r.deletedAt ? 'text-decoration:line-through' : ''}"><b>${esc(r.no)}</b></td><td style="white-space:nowrap">${esc(fmtD(r.at.slice(0, 10)))} <span class="muted">${esc(r.at.slice(11, 16))}</span></td>
         <td>${esc(r.type ? r.type + '. ' + (DOC_SHORT[r.type] || r.typeName) : r.typeName)}${r.addr ? `<div class="muted" style="font-size:12px">📍 ${esc(r.addr)}</div>` : ''}</td><td>${esc(r.companyName)}</td><td style="white-space:nowrap">${esc(r.by)}</td>
-        <td style="font-size:12px">${sentHtml(r.sent)}</td>
-        <td style="white-space:nowrap">${r.fid ? `<button class="btn sm" data-act="docLogDl" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" data-f="pdf">PDF</button> <button class="btn sm" data-act="docLogDl" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" data-f="docx">Word</button> <button class="btn sm" data-act="docLogSend" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" title="Ուղարկել">📤</button>` : ''}</td></tr>`).join('')}
+        <td style="font-size:12px">${r.deletedAt ? `<div style="color:#b91c1c;white-space:nowrap">🗑 ջնջվել է ${esc(fmtD(r.deletedAt.slice(0, 10)))} ${esc(r.deletedAt.slice(11, 16))} · ${esc(r.deletedBy)}</div>` : ''}${sentHtml(r.sent)}</td>
+        <td style="white-space:nowrap">${r.deletedAt ? '' : r.fid ? `${canDel(r) ? `<button class="btn sm danger" data-act="docLogDel1" data-fid="${esc(r.fid)}" title="Ջնջել">🗑</button> ` : ''}<button class="btn sm" data-act="docLogDl" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" data-f="pdf">PDF</button> <button class="btn sm" data-act="docLogDl" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" data-f="docx">Word</button> <button class="btn sm" data-act="docLogSend" data-fid="${esc(r.fid)}" data-c="${esc(r.companyId)}" title="Ուղարկել">📤</button>` : ''}</td></tr>`).join('')}
     </tbody></table></div>`}</div>`;
+}
+async function docLogDelete(rows) {
+  if (!rows.length) return;
+  const list = rows.slice(0, 8).map(r => '• ' + r.no + ' — ' + r.companyName).join('\n') + (rows.length > 8 ? '\n… և ևս ' + (rows.length - 8) : '');
+  if (!await NxDlg.confirm('Ջնջե՞լ ' + rows.length + ' փաստաթուղթ\n' + list + '\n\nՖայլերը կտեղափոխվեն Google Drive-ի աղբարկղ (30 օր հնարավոր է վերականգնել)։ Մատյանում կմնան «Ջնջված» նշումով, համարները նորից չեն օգտագործվի։', { ok: '🗑 Ջնջել' })) return;
+  try {
+    const r = await call('docDelete', { fids: rows.map(x => x.fid) });
+    const F = docLogF(); rows.forEach(x => delete F.mark[x.fid]); F.rows = null; S.docList = {};
+    toast('🗑 Ջնջվեց ' + r.n + ' փաստաթուղթ' + (r.denied ? ' (' + r.denied + '-ը Ձերը չէ, չջնջվեց)' : ''), 'ok'); renderView();
+  } catch (e) { toast(esc(e.message), 'err'); }
 }
 function docLogCsv() {
   const F = docLogF(); if (!F.rows || !F.rows.length) return;
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const lines = [['№', 'Ամսաթիվ', 'Փաստաթուղթ', 'Հասցե', 'Կազմակերպություն', 'Ստեղծող', 'Ուղարկվել է'].map(q).join(';')]
-    .concat(F.rows.map(r => [r.no, r.at.slice(0, 16), r.type ? r.type + '. ' + (DOC_SHORT[r.type] || r.typeName) : r.typeName, r.addr, r.companyName, r.by, String(r.sent || '').replace(/\n/g, '; ')].map(q).join(';')));
+  const lines = [['№', 'Ամսաթիվ', 'Փաստաթուղթ', 'Հասցե', 'Կազմակերպություն', 'Ստեղծող', 'Ուղարկվել է', 'Ջնջվել է'].map(q).join(';')]
+    .concat(F.rows.map(r => [r.no, r.at.slice(0, 16), r.type ? r.type + '. ' + (DOC_SHORT[r.type] || r.typeName) : r.typeName, r.addr, r.companyName, r.by, String(r.sent || '').replace(/\n/g, '; '), r.deletedAt ? r.deletedAt.slice(0, 16) + ' · ' + r.deletedBy : ''].map(q).join(';')));
   saveFileAs(new File(['\ufeff' + lines.join('\r\n')], 'Փաստաթղթերի մատյան ' + F.from + ' — ' + F.to + '.csv', { type: 'text/csv;charset=utf-8' }));
 }
 function viewDocsMake() {
@@ -3674,6 +3691,9 @@ const ACT = {
   docCompEdit: () => { if (S.docComp) editCompany(S.docComp); },
   docTab: el => { S.docTab = el.dataset.k; renderView(); },
   docLogCsv: () => docLogCsv(),
+  docLogUnmark: () => { docLogF().mark = {}; renderView(); },
+  docLogDel: () => { const F = docLogF(); docLogDelete((F.rows || []).filter(r => F.mark[r.fid] && !r.deletedAt)); },
+  docLogDel1: el => { const r = (docLogF().rows || []).find(x => x.fid === el.dataset.fid); if (r) docLogDelete([r]); },
   docLogDl: el => docsDownload(el.dataset.c, [el.dataset.fid], el.dataset.f),
   docLogSend: el => { const r = (docLogF().rows || []).find(x => x.fid === el.dataset.fid); docsSend(el.dataset.c, [{ fid: el.dataset.fid, name: r ? r.name : 'Փաստաթուղթ' }]); },
   docListRe: () => { if (S.docList) delete S.docList[S.docComp]; renderView(); },
@@ -3830,6 +3850,9 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.dataset && el.dataset.dlm) { const F = docLogF(); if (el.checked) F.mark[el.dataset.dlm] = true; else delete F.mark[el.dataset.dlm]; renderView(); return; }
+  if (el.dataset && el.dataset.dlx === 'all') { const F = docLogF(); F.mark = {}; if (el.checked) (F.rows || []).filter(r => !r.deletedAt && (isMgr() || r.by === me())).forEach(r => { F.mark[r.fid] = true; }); renderView(); return; }
+  if (el.dataset && el.dataset.dlx === 'del') { const F = docLogF(); F.del = el.checked; F.rows = null; renderView(); return; }
   if (el.dataset && el.dataset.dl) { const F = docLogF(); F[el.dataset.dl] = el.value; F.rows = null; renderView(); return; }
   if (el.id === 'docComp') { S.docComp = el.value; S.docMark = {}; renderView(); return; }
   if (el.hasAttribute && el.hasAttribute('data-markall')) { const L = (S.docList || {})[S.docComp]; S.docMark = {}; if (el.checked && L) L.files.forEach(f => { S.docMark[f.fid] = true; }); renderView(); return; }
