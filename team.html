@@ -3052,13 +3052,16 @@ function viewDocs() {
 /* ---------- 📒 Փաստաթղթերի մատյան ---------- */
 const DOC_SHORT = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ' };
 function docLogF() {
-  if (!S.dl) { const t = today(); S.dl = { from: t.slice(0, 8) + '01', to: t, type: '', comp: '', q: '', rows: null, busy: false, mark: {}, del: false }; }
+  if (!S.dl) { const t = today(); S.dl = { from: t.slice(0, 8) + '01', to: t, toAuto: true, type: '', comp: '', q: '', rows: null, busy: false, mark: {}, del: false }; }
+  // «Մինչև»-ն ինքնաբերաբար այսօրն է (եթե ձեռքով չի փոխվել), որ էջը երկար բաց մնալու դեպքում էլ նոր փաստաթղթերը երևան
+  if (S.dl.toAuto && S.dl.to !== today()) S.dl.to = today();
   return S.dl;
 }
 async function loadDocLog() {
-  const F = docLogF(); F.busy = true;
-  try { const r = await call('docLog', { from: F.from, to: F.to, types: F.type ? [F.type] : [], companyIds: F.comp ? [F.comp] : [], q: F.q, showDeleted: !!F.del }, { silent: true }); F.rows = r.rows || []; F.err = ''; const ids = new Set(F.rows.map(x => x.fid)); Object.keys(F.mark).forEach(k => { if (!ids.has(k)) delete F.mark[k]; }); }
+  const F = docLogF(); F.busy = true; const seq = F.seq = (F.seq || 0) + 1;
+  try { if (seq !== F.seq) return; const r = await call('docLog', { from: F.from, to: F.to, types: F.type ? [F.type] : [], companyIds: F.comp ? [F.comp] : [], q: F.q, showDeleted: !!F.del }, { silent: true }); F.rows = r.rows || []; F.err = ''; const ids = new Set(F.rows.map(x => x.fid)); Object.keys(F.mark).forEach(k => { if (!ids.has(k)) delete F.mark[k]; }); }
   catch (e) { F.rows = []; F.err = e.message; }
+  if (seq !== F.seq) return;   // ավելի նոր հարցում արդեն ուղարկվել է
   F.busy = false; if (S.view === 'docs' && S.docTab === 'log') renderView();
 }
 function viewDocLog() {
@@ -3075,6 +3078,7 @@ function viewDocLog() {
       <div style="min-width:200px"><label class="f">Փաստաթղթի տեսակ</label><select class="inp" data-dl="type"><option value="">Բոլորը</option>${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${String(F.type) === String(n) ? 'selected' : ''}>${n}. ${esc(DOC_SHORT[n])}</option>`).join('')}</select></div>
       <div style="flex:1;min-width:200px"><label class="f">Կազմակերպություն</label><select class="inp" data-dl="comp"><option value="">Բոլորը</option>${comps.map(c => `<option value="${esc(c.id)}" ${F.comp === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
       <div style="min-width:160px"><label class="f">Որոնում</label><input class="inp" data-dl="q" value="${esc(F.q)}" placeholder="Համար, անուն…"></div>
+      <button class="btn" data-act="docLogRe" title="Թարմացնել">${ico('refresh')}</button>
       <button class="btn" data-act="docLogCsv" ${F.rows && F.rows.length ? '' : 'disabled'} title="Ներբեռնել ֆիլտրված ցանկը (բացվում է Excel-ով)">📥 Excel</button>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
@@ -3184,7 +3188,7 @@ function docsReview(opts, P, addrs) {
     toast('⏳ Ստեղծվում են փաստաթղթերը… (մինչև 1 րոպե)', '', null, 60000);
     const r = await call('docGenerate', Object.assign({}, opts, { tags, addrs }));
     document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են/.test(t.textContent)) t.remove(); });
-    if (S.docList) delete S.docList[opts.id]; if (S.dl) S.dl.rows = null;
+    if (S.docList) delete S.docList[opts.id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; }
     setTimeout(() => { docsDone(r, opts.id); if (S.view === 'docs') renderView(); }, 0);
   }, { wide: true, submit: '📄 Ստեղծել' });
 }
@@ -3678,7 +3682,7 @@ function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTM
 
 /* ====================== EVENTS ====================== */
 const ACT = {
-  go: el => { closeMs(); S.view = el.dataset.v; if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
+  go: el => { closeMs(); S.view = el.dataset.v; if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => $('#side').classList.toggle('on'),
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
   srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id); },
@@ -3689,7 +3693,8 @@ const ACT = {
   docTog: el => { const n = +el.dataset.n; S.docSel = S.docSel.includes(n) ? S.docSel.filter(x => x !== n) : S.docSel.concat(n).sort(); renderView(); },
   docSelAll: () => { S.docSel = S.docSel.length === 6 ? [] : [1, 2, 3, 4, 5, 6]; renderView(); },
   docCompEdit: () => { if (S.docComp) editCompany(S.docComp); },
-  docTab: el => { S.docTab = el.dataset.k; renderView(); },
+  docTab: el => { S.docTab = el.dataset.k; if (S.docTab === 'log') { const F = docLogF(); F.rows = null; F.busy = false; } renderView(); },
+  docLogRe: () => { const F = docLogF(); F.rows = null; F.busy = false; renderView(); },
   docLogCsv: () => docLogCsv(),
   docLogUnmark: () => { docLogF().mark = {}; renderView(); },
   docLogDel: () => { const F = docLogF(); docLogDelete((F.rows || []).filter(r => F.mark[r.fid] && !r.deletedAt)); },
@@ -3853,7 +3858,7 @@ document.addEventListener('change', e => {
   if (el.dataset && el.dataset.dlm) { const F = docLogF(); if (el.checked) F.mark[el.dataset.dlm] = true; else delete F.mark[el.dataset.dlm]; renderView(); return; }
   if (el.dataset && el.dataset.dlx === 'all') { const F = docLogF(); F.mark = {}; if (el.checked) (F.rows || []).filter(r => !r.deletedAt && (isMgr() || r.by === me())).forEach(r => { F.mark[r.fid] = true; }); renderView(); return; }
   if (el.dataset && el.dataset.dlx === 'del') { const F = docLogF(); F.del = el.checked; F.rows = null; renderView(); return; }
-  if (el.dataset && el.dataset.dl) { const F = docLogF(); F[el.dataset.dl] = el.value; F.rows = null; renderView(); return; }
+  if (el.dataset && el.dataset.dl) { const F = docLogF(); F[el.dataset.dl] = el.value; if (el.dataset.dl === 'to') F.toAuto = !el.value || el.value === today(); F.rows = null; F.busy = false; renderView(); return; }
   if (el.id === 'docComp') { S.docComp = el.value; S.docMark = {}; renderView(); return; }
   if (el.hasAttribute && el.hasAttribute('data-markall')) { const L = (S.docList || {})[S.docComp]; S.docMark = {}; if (el.checked && L) L.files.forEach(f => { S.docMark[f.fid] = true; }); renderView(); return; }
   if (el.dataset.mark) { S.docMark = S.docMark || {}; S.docMark[el.dataset.mark] = el.checked; renderView(); return; }
