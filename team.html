@@ -533,6 +533,7 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></symbol>
+  <symbol id="i-docs" viewBox="0 0 24 24"><path d="M15 3H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7z"/><path d="M15 3v4h4M10 11h6M10 14.5h4M3 8v12a2 2 0 0 0 2 2h9"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
   <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
   <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></symbol>
@@ -1723,7 +1724,7 @@ function showApp() {
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   S.view = lsGet('nx_view', 'tasks');
   S.rf.scope = isMgr() ? 'all' : 'mine';
-  if (S.view === 'stats' && !isMgr()) S.view = 'tasks';
+  if ((S.view === 'stats' || S.view === 'docs') && !isMgr()) S.view = 'tasks';
   handleNotifs(S.d.notifs, true);
   renderShell(); renderView(); updateNotifCta();
   startPolling();
@@ -1831,6 +1832,7 @@ function navDefs() {
     isMgr() ? { k: 'stats', i: 'chart', l: 'Վիճակագրություն', c: '' } : null,
     { k: 'sep1', sep: true },
     { k: 'companies', i: 'building', l: 'Կազմակերպություններ', c: S.d.companies.filter(c => c.active !== 'Ոչ').length },
+    isMgr() ? { k: 'docs', i: 'docs', l: 'Փաստաթղթեր', c: '' } : null,
     { k: 'team', i: 'users', l: 'Թիմ', c: S.d.employees.filter(e => e.active).length },
     { k: 'settings', i: 'gear', l: 'Կարգավորումներ', c: '', req: true },
     S.d.settings.srcUrl ? { k: 'src', i: 'gov', l: 'Մուտք ՊԵԿ', ext: 'src' } : null,
@@ -2061,12 +2063,12 @@ function colsModal(view) {
   m.querySelector('#colReset').onclick = () => { list = COLS[view]().map(d => Object.assign({}, d, { on: d.req || !d.hide })); m.querySelector('#colWrap').innerHTML = draw(); bind(); };
 }
 
-const TITLES = { chats: 'Չաթեր հաճախորդների հետ', clients: 'Հաճախորդների մուտքեր', requests: 'Գործընկերների հարցումներ', stats: 'Վիճակագրություն', tasks: 'Թասքեր', reports: 'Հաշվետվություններ', archive: 'Արխիվ', companies: 'Կազմակերպություններ', team: 'Թիմ', settings: 'Կարգավորումներ' };
+const TITLES = { chats: 'Չաթեր հաճախորդների հետ', clients: 'Հաճախորդների մուտքեր', requests: 'Գործընկերների հարցումներ', stats: 'Վիճակագրություն', tasks: 'Թասքեր', reports: 'Հաշվետվություններ', archive: 'Արխիվ', companies: 'Կազմակերպություններ', docs: 'Փաստաթղթեր', team: 'Թիմ', settings: 'Կարգավորումներ' };
 function renderView() {
   if (!S.d) return;
   $('#pageTitle').textContent = TITLES[S.view] || '';
   const v = $('#view');
-  const fn = { chats: viewChats, clients: viewClients, requests: viewRequests, stats: viewStats, tasks: viewTasks, reports: viewReports, archive: viewArchive, companies: viewCompanies, team: viewTeam, settings: viewSettings }[S.view] || viewTasks;
+  const fn = { chats: viewChats, clients: viewClients, requests: viewRequests, stats: viewStats, tasks: viewTasks, reports: viewReports, archive: viewArchive, companies: viewCompanies, docs: viewDocs, team: viewTeam, settings: viewSettings }[S.view] || viewTasks;
   applyTaskCols();
   // բաց չաթը չվերաբեռնել (որ չկորի գրածը/ձայնագրությունը)
   if (S.view === 'chats' && v.querySelector('.chats') && TEAMCHAT && TEAMCHAT.thread === S.ch.thread && S.ch.thread) { drawChatList(); return; }
@@ -2966,9 +2968,10 @@ async function editEmp(name) {
     <div class="full" style="font-weight:600;margin-top:4px">🪪 Անձնական տվյալներ <span class="muted" style="font-weight:400">(լրացվում են լիազորագրերում, երբ աշխատակիցը լիազորվող է)</span></div>
     <div class="full" id="authBox"><div class="fgrid" style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px">
       ${fIn('a_fullName', 'Անուն Ազգանուն (ինչպես փաստաթղթում)', A.fullName || e.name || '', { full: true })}
-      ${fIn('a_birth', 'Ծննդյան ամսաթիվ', isoD(A.birth), { type: 'date' })}${fSel('a_docType', 'Փաստաթուղթ', A.docType, ['Անձնագիր', 'Նույնականացման քարտ'])}
-      ${fIn('a_docNo', 'Անձնագրի համար', A.docNo)}${fIn('a_docDate', 'Տրման ամսաթիվ', isoD(A.docDate), { type: 'date' })}
-      ${fIn('a_docBy', 'Ում կողմից', A.docBy, { ph: 'օր. 048' })}${fIn('a_idCard', 'Նույնականացման քարտի համար', A.idCard)}
+      ${fIn('a_birth', 'Ծննդյան ամսաթիվ', isoD(A.birth), { type: 'date' })}${fSel('a_docType', 'Փաստաթղթերում օգտագործել', A.docType, ['Անձնագիր', 'Նույնականացման քարտ'])}
+      ${fIn('a_docNo', 'Անձնագրի համար', A.docNo)}${fIn('a_idCard', 'Նույնականացման քարտի համար', A.idCard)}
+      ${fIn('a_docDate', 'Տրման ամսաթիվ (ընտրված փաստաթղթի)', isoD(A.docDate), { type: 'date' })}${fIn('a_docBy', 'Ում կողմից (ընտրված փաստաթղթի)', A.docBy, { ph: 'օր. 048' })}
+      <div class="full hint">Եթե ընտրված է «Նույնականացման քարտ», լիազորագրերում կգրվի «նույնականացման քարտ՝ …» և քարտի համարը, հակառակ դեպքում՝ անձնագրինը։</div>
       ${fIn('a_ssn', 'ՀԾՀ (հանրային ծառայությունների համարանիշ)', A.ssn)}${fIn('a_phone', 'Հեռախոս', A.phone)}
       ${fIn('a_addr', 'Հաշվառման հասցե', A.addr, { full: true })}${fIn('a_email', 'Էլ. փոստ', A.email || 'info@numetrix.am', { full: true })}
       <div class="full hint">Այս տվյալները տեսանելի են միայն ղեկավարին։</div>
@@ -3001,18 +3004,56 @@ function bindAddrs(m) {
 }
 
 /** «📄 Ստեղծել փաստաթղթեր»՝ տվյալները խմբագրվում են կազմակերպության պատուհանում */
-async function docsOpen(companyId) {
+async function docsOpen(companyId, sel) {
   let D;
   try { D = await call('docGet', { id: companyId }); } catch (e) { return toast(esc(e.message), 'err'); }
-  docsPick(companyId, D, D.data.authEmp, D.data.addrs || []);
+  docsPick(companyId, D, D.data.authEmp, D.data.addrs || [], sel);
 }
-function docsPick(companyId, D, authEmp, addrs) {
+/* «Փաստաթղթեր» բաժին՝ ցանկացած կազմակերպության համար ցանկացած փաստաթուղթ */
+const DOC_ICO = { 1: '🏛️', 2: '📝', 3: '🛃', 4: '📊', 5: '🤝', 6: '📍' };
+const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար առանձին' };
+function viewDocs() {
+  S.docSel = S.docSel || [1, 2, 3, 4, 5, 6];
+  const comps = S.d.companies.filter(c => c.active !== 'Ոչ').slice().sort(compCmp);
+  const cid = S.docComp && comps.some(c => c.id === S.docComp) ? S.docComp : '';
+  return `<div class="card" style="padding:18px;max-width:980px">
+    <h3 style="margin:0 0 4px">📄 Ստեղծել փաստաթղթեր</h3>
+    <p class="muted" style="font-size:13px;margin:0 0 14px">Ընտրեք կազմակերպությունը և պետք եղած փաստաթղթերը։ Տվյալները վերցվում են կազմակերպության քարտից, ստեղծելուց առաջ կարող եք ստուգել և ուղղել։</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:16px">
+      <div style="flex:1;min-width:240px"><label class="f">Կազմակերպություն</label><select class="inp" id="docComp"><option value="">— ընտրեք —</option>${comps.map(c => `<option value="${esc(c.id)}" ${c.id === cid ? 'selected' : ''}>${esc(c.name)}${c.tin ? ' · ' + esc(c.tin) : ''}</option>`).join('')}</select></div>
+      <button class="btn" data-act="docCompEdit" ${cid ? '' : 'disabled'}>✏️ Կազմակերպության տվյալները</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:14px">Փաստաթղթեր</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="docSelAll">${S.docSel.length === 6 ? 'Հանել բոլորը' : 'Նշել բոլորը'}</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
+      ${[1, 2, 3, 4, 5, 6].map(n => { const on = S.docSel.includes(n); return `<div class="click" data-act="docTog" data-n="${n}" style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;cursor:pointer;border:1.5px solid ${on ? 'var(--accent,#4f46e5)' : 'var(--line)'};background:${on ? 'var(--panel2)' : 'transparent'}">
+        <span style="font-size:24px">${DOC_ICO[n]}</span><span style="flex:1;min-width:0"><b style="font-size:14px">${n}. ${esc(DOC_LBL[n].replace(/ \(.*\)$/, ''))}</b><br><span class="muted" style="font-size:12px">${esc(DOC_SUB[n])}</span></span>
+        <input type="checkbox" ${on ? 'checked' : ''} style="pointer-events:none;width:18px;height:18px"></div>`; }).join('')}
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn primary" data-act="docGoView" ${cid && S.docSel.length ? '' : 'disabled'}>Շարունակել →</button></div>
+  </div>
+  ${cid ? docsMadeCard(cid) : ''}`;
+}
+/** Արդեն ստեղծված փաստաթղթերը (ընտրել և ուղարկել) */
+function docsMadeCard(cid) {
+  S.docList = S.docList || {}; S.docMark = S.docMark || {};
+  const L = S.docList[cid];
+  if (!L) { if (!S.docLoading) { S.docLoading = cid; call('docList', { id: cid }, { silent: true }).then(r => { S.docList[cid] = r; }).catch(e => toast(esc(e.message), 'err')).finally(() => { S.docLoading = ''; if (S.view === 'docs') renderView(); }); } return `<div class="card" style="padding:18px;max-width:980px;margin-top:14px"><span class="muted">⏳ Բեռնվում են ստեղծված փաստաթղթերը…</span></div>`; }
+  const mk = L.files.filter(f => S.docMark[f.fid]);
+  return `<div class="card" style="padding:18px;max-width:980px;margin-top:14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">📁 Ստեղծված փաստաթղթեր</h3><span class="muted" style="font-size:12.5px">${L.files.length}</span><span style="flex:1"></span>
+      <button class="btn sm" data-act="docListRe">${ico('refresh')} Թարմացնել</button><button class="btn primary sm" data-act="docSendSel" ${mk.length ? '' : 'disabled'}>📤 Ուղարկել${mk.length ? ' (' + mk.length + ')' : ''}</button><button class="btn sm" data-act="docDlSel" data-f="pdf" ${mk.length ? '' : 'disabled'}>📥 PDF</button><button class="btn sm" data-act="docDlSel" data-f="docx" ${mk.length ? '' : 'disabled'}>📥 Word</button></div>
+    ${L.files.length ? `<label class="chk" style="margin:0 0 8px 2px;font-size:13px"><input type="checkbox" data-markall ${mk.length && mk.length === L.files.length ? 'checked' : ''}> Նշել բոլորը <span class="muted">· նշեք, թե որոնք եք ուզում ուղարկել կամ ներբեռնել</span></label>` : ''}
+    ${L.files.length ? `<div style="display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto">${L.files.map(f => `<label style="display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" data-mark="${esc(f.fid)}" ${S.docMark[f.fid] ? 'checked' : ''}><span style="flex:1;min-width:0;font-size:13px">${esc(f.name)}<br><span class="muted" style="font-size:11.5px">${esc(f.at)}</span></span><a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">PDF</a></label>`).join('')}</div>`
+      : '<div class="muted" style="font-size:13px">Այս կազմակերպության համար դեռ փաստաթղթեր չեն ստեղծվել։</div>'}
+  </div>`;
+}
+function docsPick(companyId, D, authEmp, addrs, sel) {
   const today0 = today();
   const au = D.auth.map(a => [a.emp, a.emp + (a.has ? '' : ' ⚠')]);
   authEmp = authEmp || D.company.responsible || (D.auth[0] || {}).emp || '';
   const m = openModal('📄 Ստեղծել փաստաթղթեր — ' + D.company.name, `<div class="fgrid">
     <div class="full">${missBox(dirMissList(D.data))}${!D.data.regNo || !D.data.hvsv ? '<div class="hint" style="color:#b45309">Լրացված չէ՝ ' + esc([!D.data.regNo && 'գրանցման համար', !D.data.hvsv && 'ՀՎՍՎ'].filter(Boolean).join(', ')) + '</div>' : ''}</div>
-    <div class="full"><label class="f">Որ փաստաթղթերը</label><div class="cbox" style="max-height:none">${D.types.map(t => `<label><input type="checkbox" name="doc" value="${t.n}" checked> ${t.n}. ${esc(DOC_LBL[t.n] || t.name)}</label>`).join('')}</div>
+    <div class="full"><label class="f">Որ փաստաթղթերը</label><div class="cbox" style="max-height:none">${D.types.map(t => `<label><input type="checkbox" name="doc" value="${t.n}" ${!sel || !sel.length || sel.includes(t.n) ? 'checked' : ''}> ${t.n}. ${esc(DOC_LBL[t.n] || t.name)}</label>`).join('')}</div>
       ${addrs.length ? '' : '<div class="hint" style="color:#b45309">Գործունեության հասցե նշված չէ. տեղեկատվական թերթիկը կստեղծվի առանց հասցեի։</div>'}</div>
     ${fSel('authEmp', 'Լիազորվող աշխատակից', authEmp, au)}
     <div class="full" id="authWarn"></div>
@@ -3046,13 +3087,107 @@ function docsReview(opts, P, addrs) {
     toast('⏳ Ստեղծվում են փաստաթղթերը… (մինչև 1 րոպե)', '', null, 60000);
     const r = await call('docGenerate', Object.assign({}, opts, { tags, addrs }));
     document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են/.test(t.textContent)) t.remove(); });
-    setTimeout(() => docsDone(r), 0);
+    if (S.docList) delete S.docList[opts.id];
+    setTimeout(() => { docsDone(r, opts.id); if (S.view === 'docs') renderView(); }, 0);
   }, { wide: true, submit: '📄 Ստեղծել' });
 }
-function docsDone(r) {
-  openModal('✔ Փաստաթղթերը պատրաստ են', `<div style="display:flex;flex-direction:column;gap:8px">${r.files.map(f => `<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap"><div style="flex:1;min-width:200px;font-size:13.5px"><b>${esc(f.name)}</b></div>
+function docsDone(r, companyId) {
+  const m = openModal('✔ Փաստաթղթերը պատրաստ են', `<div style="display:flex;flex-direction:column;gap:8px">
+    ${companyId ? `<div class="hint" style="margin:0">Նշեք փաստաթղթերը և ընտրեք՝ <b>📤 Ուղարկել</b> կամ <b>📥 Ներբեռնել</b> մեզ մոտ (PDF կամ Word)։</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;border-radius:10px;background:var(--panel2)"><label class="chk" style="margin-right:auto"><input type="checkbox" id="ddAll" checked> Բոլորը</label>
+      <button type="button" class="btn primary sm" id="docSendNow">📤 Ուղարկել</button><button type="button" class="btn sm" data-dl="pdf">📥 PDF</button><button type="button" class="btn sm" data-dl="docx">📥 Word</button></div>` : ''}
+    ${r.files.map(f => `<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap">${companyId && f.fid ? `<input type="checkbox" data-dd="${esc(f.fid)}" checked style="width:18px;height:18px">` : ''}<div style="flex:1;min-width:200px;font-size:13.5px"><b>${esc(f.name)}</b></div>
     <a class="btn sm" href="${esc(f.doc)}" target="_blank" rel="noopener">📝 Բացել</a><a class="btn sm" href="${esc(f.pdf)}" target="_blank" rel="noopener">PDF</a><a class="btn sm" href="${esc(f.docx)}" target="_blank" rel="noopener">Word</a></div>`).join('')}
     <a class="btn" href="${esc(r.folder)}" target="_blank" rel="noopener" style="align-self:flex-start;margin-top:6px">📁 Բացել «Փաստաթղթեր» թղթապանակը</a></div>`, null, { okOnly: true, wide: true });
+  if (!companyId) return;
+  const sel = () => [...m.querySelectorAll('[data-dd]:checked')].map(x => x.dataset.dd);
+  m.querySelector('#ddAll').onchange = e => m.querySelectorAll('[data-dd]').forEach(c => { c.checked = e.target.checked; });
+  m.querySelector('#docSendNow').onclick = () => { const ids = sel(); docsSend(companyId, r.files.filter(f => ids.includes(f.fid)).map(f => ({ fid: f.fid, name: f.name }))); };
+  m.querySelectorAll('[data-dl]').forEach(b => { b.onclick = () => docsDownload(companyId, sel(), b.dataset.dl); });
+}
+/* ---------- Ուղարկել՝ ներքին չաթ, էլ. փոստ, WhatsApp, Telegram ---------- */
+const b64Bytes = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const WEB = 'https:' + '/' + '/';
+const saveFileAs = (file, i) => setTimeout(() => { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }, (i || 0) * 450);
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+/** Ներբեռնել մեզ մոտ (համակարգչում)՝ PDF կամ Word */
+async function docsDownload(companyId, fids, fmt) {
+  if (!fids.length) return toast('Նշեք փաստաթղթերը', 'err');
+  toast('⏳ Պատրաստվում է ներբեռնումը…', '', null, 30000);
+  try {
+    const r = await call('docFiles', { id: companyId, fids, fmt });
+    r.forEach((x, i) => saveFileAs(new File([b64Bytes(x.data)], x.name, { type: fmt === 'docx' ? DOCX_MIME : 'application/pdf' }), i));
+    toast('📥 Ներբեռնվեց ' + r.length + ' ֆայլ (' + (fmt === 'docx' ? 'Word' : 'PDF') + ')', 'ok');
+  } catch (e) { toast(esc(e.message), 'err'); }
+  finally { document.querySelectorAll('.toast').forEach(t => { if (/Պատրաստվում է ներբեռնումը/.test(t.textContent)) t.remove(); }); }
+}
+const phoneIntl = v => { let d = String(v || '').replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); if (d.length === 9 && d[0] === '0') d = '374' + d.slice(1); else if (d.length === 8) d = '374' + d; return d; };
+const SEND_VIA = [['chat', '💬 Ներքին չաթ'], ['email', '✉️ Էլ. փոստ'], ['wa', '🟢 WhatsApp'], ['tg', '✈️ Telegram']];
+async function docsSend(companyId, files) {
+  if (!files || !files.length) return toast('Ընտրեք փաստաթղթերը', 'err');
+  let L; try { L = S.docList && S.docList[companyId] || await call('docList', { id: companyId }); } catch (e) { return toast(esc(e.message), 'err'); }
+  const ext = L.ext || [];
+  const emails = (String(L.contact || '').match(/[^\s,;]+@[^\s,;]+\.[^\s,;]+/g) || []);
+  let via = 'chat', blobs = null, blobsKey = '';
+  const defText = 'Բարև Ձեզ։ Կից ուղարկում ենք «' + L.name + '»-ի փաստաթղթերը։';
+  const m = openModal('📤 Ուղարկել փաստաթղթերը — ' + L.name, `<div class="fgrid">
+    <div class="full"><label class="f">Փաստաթղթեր</label><div class="cbox" style="max-height:170px">${files.map(f => `<label><input type="checkbox" name="sf" value="${esc(f.fid)}" checked> ${esc(f.name)}</label>`).join('')}</div></div>
+    <div class="full"><label class="f">Ինչով ուղարկել</label><div id="viaBox" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">${SEND_VIA.map(([k, l]) => `<button type="button" class="btn" data-via="${k}">${l}</button>`).join('')}</div></div>
+    <div class="full"><label class="f">Ստացող (կազմակերպության արտաքին օգտագործող)</label><select class="inp" name="extId"><option value="">${ext.length ? '— ընտրեք —' : '— արտաքին օգտագործող չկա —'}</option>${ext.map(u => `<option value="${esc(u.id)}">${esc(u.name)}${u.position ? ' · ' + esc(u.position) : ''}</option>`).join('')}</select>
+      <div class="hint" id="extHint"></div></div>
+    <div class="full" data-for="email"><label class="f">Էլ. փոստ</label><input class="inp" name="to" placeholder="name@example.com (մի քանիսը՝ ստորակետով)" value="${esc(emails[0] || '')}"></div>
+    <div class="full" data-for="email"><label class="f">Թեմա</label><input class="inp" name="subject" value="${esc(L.name + ' — փաստաթղթեր')}"></div>
+    <div class="full" data-for="wa tg"><label class="f">Հեռախոս</label><input class="inp" name="phone" placeholder="օր. 077 123456" inputmode="tel"></div>
+    <div class="full"><label class="f">Տեքստ</label><textarea class="inp" name="text" rows="3">${esc(defText)}</textarea></div>
+    <div class="full hint" id="viaHint"></div>
+  </div>`, async f => {
+    const fids = [...m.querySelectorAll('[name=sf]:checked')].map(x => x.value);
+    if (!fids.length) throw new Error('Նշեք առնվազն մեկ փաստաթուղթ');
+    if (via === 'chat') {
+      if (!f.extId) throw new Error('Ընտրեք ստացողին');
+      const r = await call('docSend', { id: companyId, fids, via: 'chat', extId: f.extId, text: f.text });
+      toast('✔ Ուղարկվեց չաթով՝ ' + esc(r.to), 'ok'); return;
+    }
+    if (via === 'email') {
+      const r = await call('docSend', { id: companyId, fids, via: 'email', to: f.to, subject: f.subject, text: f.text });
+      toast('✔ Ուղարկվեց՝ ' + esc(r.to), 'ok'); return;
+    }
+    // WhatsApp / Telegram՝ ֆայլերը սարքից
+    if (!blobs || blobsKey !== fids.join()) throw new Error('⏳ Ֆայլերը դեռ բեռնվում են, մի քանի վայրկյանից նորից սեղմեք');
+    const fl = blobs.map(x => new File([b64Bytes(x.data)], x.name, { type: 'application/pdf' }));
+    if (navigator.canShare && navigator.canShare({ files: fl })) {
+      try { await navigator.share({ files: fl, text: f.text }); } catch (e) { if (e && e.name === 'AbortError') throw new Error('Չեղարկվեց'); throw e; }
+      return;
+    }
+    const ph = phoneIntl(f.phone);
+    const url = via === 'wa' ? WEB + 'wa.me/' + ph + '?text=' + encodeURIComponent(f.text) : (ph ? WEB + 't.me/+' + ph : WEB + 'web.telegram.org/');
+    window.open(url, '_blank', 'noopener');
+    fl.forEach(saveFileAs);
+    if (via === 'tg') { try { await navigator.clipboard.writeText(f.text); } catch (e) {} }
+    toast('📥 Ֆայլերը ներբեռնվեցին։ Բացված ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ի չաթում կցեք դրանք (📎)' + (via === 'tg' ? '. տեքստը պատճենված է' : '') + '։', 'ok', null, 9000);
+  }, { wide: true, submit: '📤 Ուղարկել' });
+  const prefetch = async () => {
+    const fids = [...m.querySelectorAll('[name=sf]:checked')].map(x => x.value), key = fids.join();
+    if (!fids.length || key === blobsKey) return;
+    blobsKey = key; blobs = null; draw();
+    try { const r = await call('docFiles', { id: companyId, fids }, { silent: true }); if (blobsKey === key) { blobs = r; draw(); } } catch (e) { blobsKey = ''; toast(esc(e.message), 'err'); }
+  };
+  const draw = () => {
+    m.querySelectorAll('[data-via]').forEach(b => b.classList.toggle('primary', b.dataset.via === via));
+    m.querySelectorAll('[data-for]').forEach(el => { el.style.display = el.dataset.for.split(' ').includes(via) ? '' : 'none'; });
+    const u = ext.find(x => x.id === m.querySelector('[name=extId]').value);
+    m.querySelector('#extHint').textContent = via === 'chat' ? 'Կուղարկվի այս օգտագործողի անձնական չաթին (մյուսները չեն տեսնի)։' : (u ? '' : 'Ընտրելու դեպքում նրա էլ. փոստը / հեռախոսը կլրացվի ավտոմատ։');
+    const share = !!(navigator.canShare && window.File && (() => { try { return navigator.canShare({ files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] }); } catch (e) { return false; } })());
+    const ready = blobs && blobsKey === [...m.querySelectorAll('[name=sf]:checked')].map(x => x.value).join();
+    m.querySelector('#viaHint').innerHTML = via === 'email' ? 'Նամակը կուղարկվի ձեր Google հաշվից՝ PDF ֆայլերը կցված։'
+      : via === 'chat' ? 'Ֆայլերը կհայտնվեն հաճախորդի հավելվածի չաթում։'
+      : (ready ? '✔ Ֆայլերը պատրաստ են։ ' : '⏳ Ֆայլերը բեռնվում են… ') + (share ? 'Սեղմեք «Ուղարկել» և ընտրեք ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը։' : 'Սեղմելիս ֆայլերը կներբեռնվեն և կբացվի ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը. կցեք ֆայլերը չաթում (📎)։');
+  };
+  m.querySelector('#viaBox').onclick = e => { const b = e.target.closest('[data-via]'); if (!b) return; via = b.dataset.via; draw(); if (via === 'wa' || via === 'tg') prefetch(); };
+  m.querySelector('[name=extId]').onchange = e => { const u = ext.find(x => x.id === e.target.value); if (u) { if (u.email) m.querySelector('[name=to]').value = u.email; if (u.phone) m.querySelector('[name=phone]').value = u.phone; } draw(); };
+  m.querySelectorAll('[name=sf]').forEach(c => c.onchange = () => { draw(); if (via === 'wa' || via === 'tg') prefetch(); });
+  if (ext.length === 1) { m.querySelector('[name=extId]').value = ext[0].id; m.querySelector('[name=extId]').onchange({ target: m.querySelector('[name=extId]') }); }
+  draw();
 }
 /* Numetrix-ի տվյալները (պայմանագրի «Կատարող») */
 async function firmOpen() {
@@ -3444,12 +3579,19 @@ function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTM
 
 /* ====================== EVENTS ====================== */
 const ACT = {
-  go: el => { closeMs(); S.view = el.dataset.v; if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
+  go: el => { closeMs(); S.view = el.dataset.v; if ((S.view === 'stats' || S.view === 'docs') && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => $('#side').classList.toggle('on'),
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
   srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id); },
   portalLink: (el, e) => { e.stopPropagation(); portalLinkModal(el.dataset.id); },
   docsOpen: (el, e) => { if (e) e.stopPropagation(); docsOpen(el.dataset.id); },
+  docTog: el => { const n = +el.dataset.n; S.docSel = S.docSel.includes(n) ? S.docSel.filter(x => x !== n) : S.docSel.concat(n).sort(); renderView(); },
+  docSelAll: () => { S.docSel = S.docSel.length === 6 ? [] : [1, 2, 3, 4, 5, 6]; renderView(); },
+  docCompEdit: () => { if (S.docComp) editCompany(S.docComp); },
+  docListRe: () => { if (S.docList) delete S.docList[S.docComp]; renderView(); },
+  docDlSel: el => { const L = (S.docList || {})[S.docComp]; if (L) docsDownload(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => f.fid), el.dataset.f); },
+  docSendSel: () => { const L = (S.docList || {})[S.docComp]; if (L) docsSend(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => ({ fid: f.fid, name: f.name }))); },
+  docGoView: () => { if (S.docComp && S.docSel.length) docsOpen(S.docComp, S.docSel.slice()); },
   firmOpen: () => firmOpen(),
   hvsvOpen: () => hvsvOpen(),
   reqTask: el => reqTask(el.dataset.id),
@@ -3600,6 +3742,9 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.id === 'docComp') { S.docComp = el.value; S.docMark = {}; renderView(); return; }
+  if (el.hasAttribute && el.hasAttribute('data-markall')) { const L = (S.docList || {})[S.docComp]; S.docMark = {}; if (el.checked && L) L.files.forEach(f => { S.docMark[f.fid] = true; }); renderView(); return; }
+  if (el.dataset.mark) { S.docMark = S.docMark || {}; S.docMark[el.dataset.mark] = el.checked; renderView(); return; }
   if (el.dataset.chg) {
     const k = el.dataset.chg, v = el.type === 'checkbox' ? el.checked : el.value;
     if (k === 'sound') { lsSet('nx_sound', v ? '1' : '0'); return; }
