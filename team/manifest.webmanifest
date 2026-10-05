@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Numetrix Team",
+  "short_name": "Numetrix Team",
+  "description": "Numetrix — թիմի թասքեր, հաշվետվություններ, չաթեր և փաստաթղթեր",
+  "lang": "hy",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f6fb",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
