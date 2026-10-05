@@ -489,6 +489,8 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 }
 /* ---------- հեռախոսի հավելված ---------- */
 .bnav{display:none}
+.tblwrap{overflow-x:auto;max-width:100%;border-radius:14px}
+.tblwrap>.tbl{margin:0}
 @media (max-width:860px){
   html,body{overscroll-behavior-y:none}
   .top{padding-top:calc(12px + env(safe-area-inset-top))}
@@ -521,16 +523,16 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
   .btn.sm{min-height:34px}
   .chats{height:calc(100dvh - 215px - env(safe-area-inset-bottom))}
   /* աղյուսակներ → քարտեր */
-  .tbl.cards{display:block;overflow:visible;border:0;background:transparent;box-shadow:none}
-  .tbl.cards thead{display:none}
-  .tbl.cards tbody{display:block}
-  .tbl.cards tr{display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
-  .tbl.cards td{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:6px 0;border:0;text-align:right;min-height:0;white-space:normal}
-  .tbl.cards td::before{content:attr(data-l);color:var(--muted);font-size:12px;text-align:left;flex:none;max-width:42%}
-  .tbl.cards td[data-l=""]::before{display:none}
-  .tbl.cards td[data-l=""]{justify-content:flex-start}
-  .tbl.cards td:empty{display:none}
-  .tbl.cards td:first-child{font-size:15px}
+  .tbl.mcards{display:block;overflow:visible;border:0;background:transparent;box-shadow:none}
+  .tbl.mcards thead{display:none}
+  .tbl.mcards tbody{display:block}
+  .tbl.mcards tr{display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .tbl.mcards td{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:6px 0;border:0;text-align:right;min-height:0;white-space:normal}
+  .tbl.mcards td::before{content:attr(data-l);color:var(--muted);font-size:12px;text-align:left;flex:none;max-width:42%}
+  .tbl.mcards td[data-l=""]::before{display:none}
+  .tbl.mcards td[data-l=""]{justify-content:flex-start}
+  .tbl.mcards td:empty{display:none}
+  .tbl.mcards td:first-child{font-size:15px}
 }
 .instbtn{display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:10px 12px;font-weight:600;font-size:13px;text-align:left}
 .iosbox{position:fixed;inset:0;z-index:99;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center}
@@ -1594,7 +1596,9 @@ function mobTables(root) {
   (root || document).querySelectorAll('#view table.tbl, #modal table.tbl').forEach(t => {
     const th = [...t.querySelectorAll('thead th')].map(h => h.textContent.trim());
     if (!th.length) return;
-    t.classList.add('cards');
+    t.classList.add('mcards');
+    // համակարգչում լայն աղյուսակը ոլորվում է հորիզոնական (չի դուրս գալիս էկրանից)
+    if (!t.parentElement.classList.contains('tblwrap')) { const w = document.createElement('div'); w.className = 'tblwrap'; t.parentNode.insertBefore(w, t); w.appendChild(t); }
     t.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => { if (!td.hasAttribute('data-l')) td.setAttribute('data-l', th[i] || ''); }));
   });
 }
@@ -2634,7 +2638,7 @@ function viewCompanies() {
       contact: () => `<td>${esc(c.contact || '—')}</td>`,
       open: () => `<td>${open ? `<button class="btn sm" data-act="companyTasks" data-id="${esc(c.id)}">${open} →</button>` : '<span class="muted">0</span>'}</td>`,
       src: () => `<td><button class="btn sm srcbtn" data-act="srcGo" data-id="${esc(c.id)}" title="Բացել ՊԵԿ-ի կայքը և պատճենել ՀՎՀՀ-ն">${ico('gov')}ՊԵԿ</button></td>`,
-      docs: () => `<td><button class="btn sm" data-act="docsOpen" data-id="${esc(c.id)}" title="Լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ">📄 Փաստաթղթեր</button></td>`,
+      docs: () => `<td><button class="btn sm" data-act="docsOpen" data-id="${esc(c.id)}" title="Ստեղծել փաստաթղթեր (լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ)">📄</button></td>`,
       portal: () => `<td><button class="btn sm srcbtn" data-act="portalLink" data-id="${esc(c.id)}" title="Գործընկերոջ հղում՝ հարցումներ ուղարկելու համար">${ico('link')}Հղում</button></td>`
     };
     return `<tr class="click" data-act="${isMgr() ? 'editCompany' : 'companyTasks'}" data-id="${esc(c.id)}" style="${c.active === 'Ոչ' ? 'opacity:.5' : ''}">${cols.map(x => cell[x.k]()).join('')}</tr>`;
@@ -2650,7 +2654,7 @@ function compDocFields(D) {
     ${fSel('d_hvsv', 'Սպասարկող ՀՎՍՎ', d.hvsv, hv)}
     ${fIn('d_legalAddr', 'Իրավաբանական հասցե', d.legalAddr, { full: true })}
     ${fIn('d_bank', 'Բանկ', d.bank)}${fIn('d_account', 'Հաշվեհամար', d.account)}
-    ${fIn('d_fee', 'Ամսական վճար (դրամ)', d.fee, { ph: 'օր. 50000' })}
+    ${fIn('d_fee', 'Ամսական վճար (դրամ)', d.fee, { ph: 'օր. 50000' })}${fIn('d_contractDate', 'Պայմանագրի կնքման ամսաթիվ', isoD(d.contractDate), { type: 'date' })}
     ${fSel('d_authEmp', 'Լիազորվող աշխատակից', d.authEmp, au)}
     <div class="full hint">Լիազորագրերում կգրվի ընտրված աշխատակիցը (դատարկ՝ կազմակերպության պատասխանատու հաշվապահը)։ Նրա անձնագրային տվյալները լրացվում են «Թիմ» բաժնում՝ աշխատակցի քարտում։</div>
     ${fH('👤 Տնօրեն')}
@@ -3265,20 +3269,24 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
       ${addrs.length ? '' : '<div class="hint" style="color:#b45309">Գործունեության հասցե նշված չէ. տեղեկատվական թերթիկը կստեղծվի առանց հասցեի։</div>'}</div>
     ${fSel('authEmp', 'Լիազորվող աշխատակից', authEmp, au)}
     <div class="full" id="authWarn"></div>
-    ${fIn('date', 'Ամսաթիվ', today0, { type: 'date' })}
+    <div class="full" id="cdBox"><label class="f">📅 Պայմանագրի կնքման ամսաթիվ</label><input class="inp" type="date" name="contractDate" value="${esc(isoD(D.data.contractDate) || (company(companyId) || {}).startDate || today0)}" style="max-width:240px"><div class="hint">Գրվում է պայմանագրում («… թ.»)։ Կպահվի կազմակերպության տվյալներում։</div></div>
+    ${fIn('date', 'Լիազորագրերի / դիմումի ամսաթիվ', today0, { type: 'date' })}
     ${fSel('years', 'Լիազորագրի ժամկետ', '3', [['1', '1 տարի'], ['2', '2 տարի'], ['3', '3 տարի']])}
     ${fIn('until', 'Գործում է մինչև (դատարկ՝ ավտոմատ)', '', { type: 'date' })}
     ${fIn('place', 'Տրման վայր', 'ք. Երևան')}
   </div>`, async f => {
     const docs = [...m.querySelectorAll('[name=doc]:checked')].map(x => +x.value);
     if (!docs.length) throw new Error('Նշեք առնվազն մեկ փաստաթուղթ');
-    const opts = { id: companyId, docs, authEmp: f.authEmp, date: f.date, years: f.years, until: f.until, place: f.place };
+    if (docs.includes(5) && !f.contractDate) throw new Error('Նշեք պայմանագրի կնքման ամսաթիվը');
+    const opts = { id: companyId, docs, authEmp: f.authEmp, date: f.date, contractDate: docs.includes(5) ? f.contractDate : '', years: f.years, until: f.until, place: f.place };
     const P = await call('docPreview', opts);
     setTimeout(() => docsReview(opts, P, addrs), 0);
   }, { wide: true, submit: 'Շարունակել →', extra: isMgr() ? `<button type="button" class="btn" id="docEdit" style="margin-right:auto">✏️ Խմբագրել տվյալները</button>` : '' });
   if (m.querySelector('#docEdit')) m.querySelector('#docEdit').onclick = () => { closeModal(); editCompany(companyId); };
   const aw = () => { const v = m.querySelector('[name=authEmp]').value, a = D.auth.find(x => x.emp === v); m.querySelector('#authWarn').innerHTML = a && !a.has ? `<div class="hint" style="color:#b45309">⚠ ${esc(v)}-ի անձնագրային տվյալները լրացված չեն։ Լրացրեք «Թիմ» բաժնում՝ աշխատակցի քարտում, կամ ուղղեք հաջորդ քայլում։</div>` : ''; };
   m.querySelector('[name=authEmp]').onchange = aw; aw();
+  const cdT = () => { const on = !!m.querySelector('[name=doc][value="5"]:checked'); m.querySelector('#cdBox').style.display = on ? '' : 'none'; };
+  m.querySelectorAll('[name=doc]').forEach(c => c.addEventListener('change', cdT)); cdT();
 }
 /** Ստուգում. ցույց է տալիս բոլոր լրացվող տվյալները (կարելի է ուղղել), դատարկները՝ կարմիր */
 function docsReview(opts, P, addrs) {
