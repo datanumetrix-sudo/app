@@ -3632,7 +3632,7 @@ function taskPortalBtn(t) {
 const MON_HY = ['Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս', 'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'];
 function musSlotLabel(sl) { if (!sl || sl === '*') return 'Ընդհանուր'; if (sl[0] === 'm') return 'Ամբողջ ' + MON_HY[+sl.slice(1) - 1]; const [m, d] = sl.split('-'); return (+d) + ' ' + MON_HY[+m - 1]; }
 function musicCard() {
-  if (!S.mus) { S.mus = { rows: null }; call('musicList', {}, { silent: true }).then(r => { S.mus.rows = r; }).catch(e => { S.mus.rows = []; S.mus.err = e.message; }).finally(() => { if (S.view === 'settings') renderView(); }); }
+  if (!S.mus) { const Mu = S.mus = { rows: null }; call('musicList', {}, { silent: true }).then(r => { Mu.rows = r; }).catch(e => { Mu.rows = []; Mu.err = e.message; }).finally(() => { if (S.view === 'settings') renderView(); }); }
   const R = S.mus.rows || [];
   const days = new Set(R.filter(r => /^\d\d-\d\d$/.test(r.slot)).map(r => r.slot)).size;
   const f = S.mus.filter || '';
@@ -3717,7 +3717,7 @@ function viewMail() {
   return tab === 'in' ? viewInbox(tabs) : viewSent(tabs);
 }
 function viewSent(tabs) {
-  if (!S.mail) { S.mail = { rows: null }; call('mailLog', {}, { silent: true }).then(r => { S.mail.rows = r; }).catch(e => { S.mail.rows = []; toast(esc(e.message), 'err'); }).finally(() => { if (S.view === 'mail') renderView(); }); }
+  if (!S.mail) { const Ml = S.mail = { rows: null }; call('mailLog', {}, { silent: true }).then(r => { Ml.rows = r; }).catch(e => { Ml.rows = []; toast(esc(e.message), 'err'); }).finally(() => { if (S.view === 'mail') renderView(); }); }
   const R = S.mail.rows;
   return `<div class="toolbar">${tabs}<span class="muted">${isMgr() ? 'Ընկերության Gmail-ից ուղարկված բոլոր նամակները' : 'Ձեր ուղարկած նամակները'}</span><span class="sp"></span><button class="btn" data-act="mailRefresh" title="Թարմացնել">↻</button><button class="btn primary" data-act="mailNew">${ico('mail')} Նոր նամակ</button></div>
   ${R == null ? '<div class="card muted" style="padding:18px">⏳ Բեռնվում է…</div>' : R.length ? `<div class="tblwrap"><table class="tbl mcards"><thead><tr><th>Ամսաթիվ</th><th>Ում</th><th>Թեմա</th><th>Կազմակերպություն</th><th>Ուղարկող</th><th>Ֆայլեր</th></tr></thead><tbody>
