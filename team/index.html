@@ -1858,9 +1858,12 @@ const NxChat = (function () {
     });
   }
   async function playIdx(i) {
-    if (!M.on || !M.list || !M.list.length) return;
-    M.idx = ((i % M.list.length) + M.list.length) % M.list.length;
-    const t = M.list[M.idx]; M.busy = true; paintBtn();
+    if (!M.on) return;
+    if (M.stale || !M.list) { await loadList(); if (!M.on) return; }
+    const L = M.list || [];
+    if (!L.length) { M.on = false; M.busy = false; paintBtn(); render(); return; }
+    M.idx = ((i % L.length) + L.length) % L.length;
+    const t = L[M.idx]; M.busy = true; paintBtn();
     try {
       const cached = await cacheGet(t.id);
       if (!(cached && cached.blob) && t.f && (!t.size || t.size <= STREAM_MAX) && LS.get('nx_nostream', '') !== '1' && M.noStream !== t.id) {
@@ -1873,19 +1876,23 @@ const NxChat = (function () {
       M.url = URL.createObjectURL(blob); M.cur = t;
       M.audio.src = M.url; M.audio.volume = vol();
       await M.audio.play();
-    } catch (e) { if (M.on && M.list.length > 1 && !/NotAllowed/.test(e && e.name || '')) setTimeout(() => playIdx(M.idx + 1), 1500); }
+    } catch (e) { if (M.on && L.length > 1 && !/NotAllowed/.test(e && e.name || '')) setTimeout(() => playIdx(M.idx + 1), 1500); }
     M.busy = false; paintBtn(); render();
+  }
+  /* օրվա երգացանկը. ցանկը փոխվելիս (վերբեռնում, ջնջում) նշվում է «հնացած» և թարմանում է հաջորդ երգից */
+  async function loadList() {
+    const key = ymdOf(new Date());
+    try { const r = await CALL('musicToday', { date: key }); const cur = M.cur && M.cur.id; M.list = (r && r.list) || []; M.date = key; M.stale = false; const k = cur ? M.list.findIndex(x => x.id === cur) : -1; M.idx = k >= 0 ? k : 0; }
+    catch (e) { M.list = M.list || []; }
   }
   async function musicStart(quiet) {
     if (M.on || CUR.quiet || !CALL) return;
     M.on = true; paintBtn();
     if (!M.audio) { M.audio = new Audio(); M.audio.preload = 'auto'; M.audio.addEventListener('ended', () => playIdx(M.idx + 1)); M.audio.addEventListener('error', () => { if (M.on && M.mode === 'stream' && !M.busy && M.cur) { M.noStream = M.cur.id; playIdx(M.idx); } }); }
     const key = ymdOf(new Date());
-    if (!M.list || M.date !== key) {
-      try { const r = await CALL('musicToday', { date: key }); M.list = r.list || []; M.date = key; M.idx = 0; } catch (e) { M.list = []; }
-    }
+    if (!M.list || M.stale || M.date !== key) await loadList();
     if (!M.on) return;
-    if (!M.list.length) { M.on = false; paintBtn(); if (TOAST && !M.told && !quiet) { M.told = 1; TOAST('🎵 Երգեր դեռ ավելացված չեն. ղեկավարը կարող է վերբեռնել դրանք Կարգավորումներ → «Երաժշտություն» բաժնում'); } return; }
+    if (!(M.list && M.list.length)) { M.on = false; paintBtn(); if (TOAST && !M.told && !quiet) { M.told = 1; TOAST('🎵 Երգեր դեռ ավելացված չեն. ղեկավարը կարող է վերբեռնել դրանք Կարգավորումներ → «Երաժշտություն» բաժնում'); } return; }
     if (M.audio.src && M.cur) { M.audio.volume = vol(); M.audio.play().catch(() => {}); paintBtn(); render(); return; }
     playIdx(M.idx);
   }
@@ -1949,7 +1956,7 @@ const NxChat = (function () {
       addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
     }
     // կեսգիշերից հետո՝ նոր օր
-    clearInterval(M.dayT); M.dayT = setInterval(() => { const n = new Date(); if (ymdOf(n) !== ymdOf(CUR.d)) { CUR = compute(n); M.list = null; render(); } }, 60000);
+    clearInterval(M.dayT); M.dayT = setInterval(() => { const n = new Date(); if (ymdOf(n) !== ymdOf(CUR.d)) { CUR = compute(n); M.stale = true; render(); } }, 60000);
   }
   function setDesign(on) {
     LS.set('nx_season', on ? '1' : '0'); LS.set('nx_fx', on ? '1' : '0');
@@ -1961,7 +1968,7 @@ const NxChat = (function () {
   function toggleMusic() { if (M.on) { LS.set('nx_music', '0'); musicStop(); } else { LS.set('nx_music', '1'); musicStart(); } return M.on; }
   function setVol(v) { LS.set('nx_mvol', String(v)); if (M.audio) M.audio.volume = vol(); }
   function setOpt(k, on) { LS.set(k, on ? '1' : '0'); if (k === 'nx_season') render(); if (k === 'nx_music') { on ? musicStart() : musicStop(); } }
-  window.NxSeason = { init, setDesign, designOn: () => LS.get('nx_season', '1') === '1', toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, mode: () => M.mode, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.list = null; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
+  window.NxSeason = { init, setDesign, designOn: () => LS.get('nx_season', '1') === '1', toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, mode: () => M.mode, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.stale = true; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
 })();
 
 /* NXSEASON:END */
