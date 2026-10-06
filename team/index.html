@@ -84,6 +84,16 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .srcr:hover{background:#f3f6fc}
 .srcr .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srcr .cp{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:2px}
+.ptgrid{display:flex;flex-direction:column;gap:8px}
+.ptbtn{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:var(--text)}
+.ptbtn:hover{border-color:var(--brand);background:#f3f6fc}
+.ptbtn .pi{font-size:24px;line-height:1}
+.ptbtn b{display:block}.ptbtn .muted{display:block;font-size:12.5px}
+.ptlist{display:flex;flex-direction:column;gap:8px}
+.ptrow{display:grid;grid-template-columns:52px minmax(0,.8fr) minmax(0,1.4fr) minmax(0,1.8fr) auto auto;gap:6px;align-items:center}
+.ptrow .pic{text-align:center;font-size:18px;padding:6px 4px}
+.ptrow .pta{display:flex;gap:4px}
+@media (max-width:900px){.ptrow{grid-template-columns:52px minmax(0,1fr);padding:10px;border:1px solid var(--line);border-radius:10px}.ptrow>*:nth-child(n+3){grid-column:1 / -1}}
 .cpb{border:0;background:none;padding:0;color:var(--muted);font:inherit;display:inline-flex;gap:4px;align-items:center;cursor:pointer}
 .cpb:hover{color:var(--brand)}
 .cpb svg{width:13px;height:13px}
@@ -1949,7 +1959,7 @@ function navDefs() {
     { k: 'docs', i: 'docs', l: 'Փաստաթղթեր', c: '' },
     { k: 'team', i: 'users', l: 'Թիմ', c: S.d.employees.filter(e => e.active).length },
     { k: 'settings', i: 'gear', l: 'Կարգավորումներ', c: '', req: true },
-    S.d.settings.srcUrl ? { k: 'src', i: 'gov', l: 'Մուտք ՊԵԿ', ext: 'src' } : null,
+    livePortals().length ? { k: 'src', i: 'gov', l: 'Ուղարկել հաշվետվություն', ext: 'src' } : null,
     S.d.settings.hrUrl ? { k: 'hr', i: 'hr', l: S.d.settings.hrLabel || 'Գնալ Numetrix HR', ext: 'hr' } : null
   ];
   return d.filter(Boolean);
@@ -1972,7 +1982,7 @@ function navItems() {
 }
 function navItemHtml(it) {
   if (it.sep) return '<div class="sep"></div>';
-  if (it.ext === 'src') return `<button class="ext src" data-act="srcPick" title="Ընտրել կազմակերպությունը և բացել ՊԵԿ-ի կայքը">${ico('gov')}<span>Մուտք ՊԵԿ</span><span class="arr">${ico('ext')}</span></button>`;
+  if (it.ext === 'src') return `<button class="ext src" data-act="srcPick" title="ՊԵԿ, ԱՎԾ, ԱԱԱՄՊ և այլ կայքեր՝ ընտրել կազմակերպությունը և բացել կայքը">${ico('gov')}<span>Ուղարկել հաշվետվություն</span><span class="arr">${ico('ext')}</span></button>`;
   if (it.ext === 'hr') return `<a class="ext" href="${esc(S.d.settings.hrUrl)}" target="_blank" rel="noopener" title="Բացել նոր թաբում">${ico('hr')}<span>${esc(it.l)}</span><span class="arr">${ico('ext')}</span></a>`;
   return `<button class="${S.view === it.k ? 'on' : ''}" data-act="go" data-v="${it.k}">${ico(it.i)}<span>${it.l}</span>${it.c !== '' ? `<span class="cnt">${it.c}</span>` : ''}</button>`;
 }
@@ -2112,7 +2122,7 @@ const COLS = {
     { k: 'reports', l: 'Հաշվետվություններ' },
     { k: 'contact', l: 'Կոնտակտ', hide: true },
     { k: 'open', l: 'Բաց թասքեր' },
-    S.d.settings.srcUrl ? { k: 'src', l: 'ՊԵԿ կոճակ', th: '' } : null,
+    livePortals().length ? { k: 'src', l: 'Ուղարկել հաշվետվություն', th: '' } : null,
     isMgr() ? { k: 'portal', l: 'Գործընկերոջ հղում', th: '' } : null,
     { k: 'docs', l: 'Փաստաթղթեր', th: '' }
   ].filter(Boolean),
@@ -2639,7 +2649,7 @@ function viewCompanies() {
       reports: () => `<td>${rts.map(x => `<span class="tag">${esc(x)}</span>`).join('') || '<span class="muted">—</span>'}</td>`,
       contact: () => `<td>${esc(c.contact || '—')}</td>`,
       open: () => `<td>${open ? `<button class="btn sm" data-act="companyTasks" data-id="${esc(c.id)}">${open} →</button>` : '<span class="muted">0</span>'}</td>`,
-      src: () => `<td><button class="btn sm srcbtn" data-act="srcGo" data-id="${esc(c.id)}" title="Բացել ՊԵԿ-ի կայքը և պատճենել ՀՎՀՀ-ն">${ico('gov')}ՊԵԿ</button></td>`,
+      src: () => `<td><button class="btn sm srcbtn" data-act="srcFor" data-id="${esc(c.id)}" title="Ուղարկել հաշվետվություն՝ ${esc(livePortals().map(x => x.name).join(', '))}">📤</button></td>`,
       docs: () => `<td><button class="btn sm" data-act="docsOpen" data-id="${esc(c.id)}" title="Ստեղծել փաստաթղթեր (լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ)">📄</button></td>`,
       portal: () => `<td><button class="btn sm srcbtn" data-act="portalLink" data-id="${esc(c.id)}" title="Գործընկերոջ հղում՝ հարցումներ ուղարկելու համար">${ico('link')}Հղում</button></td>`
     };
@@ -2680,7 +2690,7 @@ function companyForm(c, D) {
   return `<div class="fgrid">
     <div class="full"><label class="f">Անվանում *</label><input class="inp" name="name" value="${esc(c.name || '')}" required></div>
     <div><label class="f">ՀՎՀՀ</label><div style="display:flex;gap:6px"><input class="inp" name="tin" value="${esc(c.tin || '')}" style="flex:1"><button type="button" class="btn sm" id="tinLook" title="Բեռնել տվյալները մյուս պլատֆորմից ըստ ՀՎՀՀ">🔄 Բեռնել</button></div><div class="hint" id="tinHint"></div></div>
-    <div><label class="f">ՊԵԿ մուտքանուն</label><input class="inp" name="srcLogin" value="${esc(c.srcLogin || '')}" placeholder="file-online մուտքանունը" autocomplete="off"><div class="hint">Գաղտնաբառը այստեղ չի պահվում</div></div>
+    ${loginPortals().map(pt => `<div><label class="f">${esc(pt.icon)} ${esc(pt.name)} մուտքանուն</label><input class="inp" name="pl_${esc(pt.id)}" value="${esc(portalLogin(c, pt.id))}" placeholder="${esc(pt.full || pt.name)}" autocomplete="off"><div class="hint">Գաղտնաբառը այստեղ չի պահվում</div></div>`).join('')}
     <div><label class="f">Հարկման ռեժիմ (տեղեկատվական)</label><select class="inp" name="regime">${S.d.settings.regimes.map(r => `<option ${c.regime === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></div>
     <div><label class="f">Պատասխանատու հաշվապահ</label><select class="inp" name="responsible"><option value="">—</option>${emps.map(e => `<option ${c.responsible === e.name ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
     <div><label class="f">Սկսած (սպասարկման սկիզբ)</label><input class="inp" type="date" name="startDate" value="${esc(c.startDate || '')}"><div class="hint">Դատարկ՝ ընդհանուր սկիզբը (${esc(fmtD(S.d.settings.defaultStart))} ${esc(S.d.settings.defaultStart.slice(0, 4))})</div></div>
@@ -2704,7 +2714,9 @@ async function editCompany(id) {
     const reports = [].concat(f.reports || []);
     const reportAssignees = {};
     Object.keys(f).forEach(k => { if (k.startsWith('ra_') && f[k]) reportAssignees[k.slice(3)] = f[k]; });
-    const payload = { id: c ? c.id : '', name: f.name, tin: f.tin, srcLogin: f.srcLogin, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
+    const portalLogins = {};
+    loginPortals().forEach(pt => { portalLogins[pt.id] = f['pl_' + pt.id] || ''; });
+    const payload = { id: c ? c.id : '', name: f.name, tin: f.tin, portalLogins, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
     if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); payload.docs = docs; }
     const r = await call('saveCompany', payload);
     await refresh();
@@ -3041,32 +3053,94 @@ function copyText(t) {
   if (!ok && navigator.clipboard) { try { navigator.clipboard.writeText(t); ok = true; } catch (e) {} }
   return ok;
 }
-/** Բացում է ՊԵԿ-ի կայքը նոր ներդիրում և պատճենում ՀՎՀՀ-ն */
-function srcGo(id) {
-  const c = company(id); if (!c) return;
-  const url = S.d.settings.srcUrl; if (!url) return;
-  const copied = c.tin ? copyText(c.tin) : false;   // պատճենում ենք մինչ նոր ներդիրը կբացվի
-  window.open(url, '_blank', 'noopener');
-  toast(`🏛 <b>${esc(c.name)}</b><br>${c.srcLogin ? `Մուտքանուն՝ <b>${esc(c.srcLogin)}</b><br>` : ''}${c.tin ? (copied ? `ՀՎՀՀ <b>${esc(c.tin)}</b> պատճենված է՝ տեղադրեք Ctrl+V` : `ՀՎՀՀ՝ <b>${esc(c.tin)}</b>`) : '<span style="color:#b45309">ՀՎՀՀ նշված չէ քարտում</span>'}`, 'nt', null, 15000);
+/* ====================== ՈՒՂԱՐԿԵԼ ՀԱՇՎԵՏՎՈՒԹՅՈՒՆ ======================
+   Կայքերի ցանկը (ՊԵԿ, ԱՎԾ, ԱԱԱՄՊ, …) ղեկավարը խմբագրում է Կարգավորումներում */
+const allPortals = () => (S.d && S.d.settings && S.d.settings.portals) || [];
+const livePortals = () => allPortals().filter(x => x.url);
+const loginPortals = () => allPortals().filter(x => x.login);
+const portal = pid => allPortals().find(x => x.id === pid);
+function portalLogin(c, pid) {
+  if (!c) return '';
+  if (pid === 'src') return c.srcLogin || '';
+  let m = c._pl;
+  if (!m) { try { m = JSON.parse(c.portalLogins || '{}') || {}; } catch (e) { m = {}; } try { Object.defineProperty(c, '_pl', { value: m, enumerable: false, configurable: true }); } catch (e) {} }
+  return m[pid] || '';
 }
-function srcPick() {
+/** Բացում է կայքը նոր ներդիրում և պատճենում ՀՎՀՀ-ն */
+function srcGo(id, pid) {
+  const c = company(id); if (!c) return;
+  const pt = portal(pid || 'src') || livePortals()[0]; if (!pt || !pt.url) return;
+  const lg = portalLogin(c, pt.id);
+  const copied = c.tin ? copyText(c.tin) : false;   // պատճենում ենք մինչ նոր ներդիրը կբացվի
+  window.open(pt.url, '_blank', 'noopener');
+  toast(`${esc(pt.icon)} <b>${esc(pt.name)}</b> · <b>${esc(c.name)}</b><br>${lg ? `Մուտքանուն՝ <b>${esc(lg)}</b><br>` : ''}${c.tin ? (copied ? `ՀՎՀՀ <b>${esc(c.tin)}</b> պատճենված է՝ տեղադրեք Ctrl+V` : `ՀՎՀՀ՝ <b>${esc(c.tin)}</b>`) : '<span style="color:#b45309">ՀՎՀՀ նշված չէ քարտում</span>'}`, 'nt', null, 15000);
+}
+/** Կոնկրետ կազմակերպության համար. մեկ կայք՝ ուղիղ, մի քանիսը՝ ընտրություն */
+function srcFor(id) {
+  const lp = livePortals();
+  if (lp.length === 1) return srcGo(id, lp[0].id);
+  const c = company(id); if (!c) return;
+  const m = openModal('📤 Ուղարկել հաշվետվություն', `<div style="font-weight:600;margin-bottom:10px">${esc(c.name)}${c.tin ? ` <span class="muted" style="font-weight:400">· ՀՎՀՀ ${esc(c.tin)}</span>` : ''}</div>
+    <div class="ptgrid">${lp.map(pt => { const lg = portalLogin(c, pt.id); return `<button type="button" class="ptbtn" data-act="srcGo" data-id="${esc(c.id)}" data-p="${esc(pt.id)}"><span class="pi">${esc(pt.icon)}</span><span style="min-width:0"><b>${esc(pt.name)}</b><span class="muted">${esc(pt.full || '')}</span>${pt.login ? `<span class="muted">${lg ? 'Մուտքանուն՝ ' + esc(lg) : '<span style="color:#b45309">մուտքանուն նշված չէ</span>'}</span>` : ''}</span></button>`; }).join('')}</div>
+    <div class="hint" style="margin-top:10px">Կայքը կբացվի նոր ներդիրում, ՀՎՀՀ-ն կպատճենվի։ Գաղտնաբառը կլրացնի բրաուզերը։</div>`, null, { okOnly: true });
+  m.addEventListener('click', e => { if (e.target.closest('[data-act=srcGo]')) setTimeout(() => { const cl = m.querySelector('[data-act=closeModal]'); if (cl) cl.click(); }, 50); });
+}
+function srcPick(pid) {
   const comps = S.d.companies.filter(c => c.active !== 'Ոչ');
-  const m = openModal('Մուտք ՊԵԿ', `<div class="ms-search" style="padding:0">${ico('search')}<input id="srcQ" placeholder="Որոնել կազմակերպություն, ՀՎՀՀ կամ մուտքանուն…" autocomplete="off" style="padding-left:32px"></div>
+  const lp = livePortals(); if (!lp.length) return;
+  if (pid) S.srcTab = pid;
+  if (!lp.find(x => x.id === S.srcTab)) S.srcTab = lp[0].id;
+  const m = openModal('📤 Ուղարկել հաշվետվություն', `<div class="seg ptabs" id="srcTabs" style="margin-bottom:10px;max-width:100%;overflow-x:auto"></div>
+    <div class="muted" id="srcFull" style="font-size:12.5px;margin:-2px 0 8px"></div>
+    <div class="ms-search" style="padding:0">${ico('search')}<input id="srcQ" placeholder="Որոնել կազմակերպություն, ՀՎՀՀ կամ մուտքանուն…" autocomplete="off" style="padding-left:32px"></div>
     <div class="srcl" id="srcList"></div>
-    <div class="hint" style="margin-top:10px">Սեղմեք «Մուտք»՝ ՊԵԿ-ի էջը կբացվի նոր ներդիրում, իսկ ՀՎՀՀ-ն կպատճենվի։ Մուտքանունն ու գաղտնաբառը կլրացնի բրաուզերը (տես՝ ուղեցույց)։</div>`, null, { okOnly: true, wide: true });
+    <div class="hint" style="margin-top:10px">Սեղմեք «Մուտք»՝ կայքը կբացվի նոր ներդիրում, իսկ ՀՎՀՀ-ն կպատճենվի։ Մուտքանունն ու գաղտնաբառը կլրացնի բրաուզերը (տես՝ ուղեցույց)։${isMgr() ? ' Նոր կայք ավելացնելու համար՝ Կարգավորումներ → «Հաշվետվությունների կայքեր»։' : ''}</div>`, null, { okOnly: true, wide: true });
   m.querySelector('.ms-search svg').style.left = '11px';
   const draw = () => {
+    const pt = portal(S.srcTab) || lp[0];
+    $('#srcTabs').innerHTML = lp.map(x => `<button type="button" class="${x.id === pt.id ? 'on' : ''}" data-act="srcTab" data-k="${esc(x.id)}">${esc(x.icon)} ${esc(x.name)}</button>`).join('');
+    $('#srcTabs').style.display = lp.length > 1 ? '' : 'none';
+    $('#srcFull').textContent = pt.full || '';
     const q = ($('#srcQ').value || '').trim().toLowerCase();
-    const list = comps.filter(c => !q || (c.name + ' ' + (c.tin || '') + ' ' + (c.srcLogin || '')).toLowerCase().includes(q));
-    $('#srcList').innerHTML = list.map(c => `<div class="srcr"><div style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="cp">
+    const list = comps.filter(c => !q || (c.name + ' ' + (c.tin || '') + ' ' + portalLogin(c, pt.id)).toLowerCase().includes(q));
+    $('#srcList').innerHTML = list.map(c => { const lg = pt.login ? portalLogin(c, pt.id) : ''; return `<div class="srcr"><div style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="cp">
         ${c.tin ? `<button type="button" class="cpb" data-cp="${esc(c.tin)}" title="Պատճենել">ՀՎՀՀ՝ ${esc(c.tin)} ${ico('copy')}</button>` : '<span style="color:#b45309">ՀՎՀՀ չկա</span>'}
-        ${c.srcLogin ? `<button type="button" class="cpb" data-cp="${esc(c.srcLogin)}" title="Պատճենել">Մուտքանուն՝ ${esc(c.srcLogin)} ${ico('copy')}</button>` : ''}</div></div>
-      <button type="button" class="btn primary sm srcbtn" data-act="srcGo" data-id="${esc(c.id)}">${ico('gov')}Մուտք</button></div>`).join('') || '<div class="muted" style="padding:14px">Ոչինչ չի գտնվել</div>';
+        ${lg ? `<button type="button" class="cpb" data-cp="${esc(lg)}" title="Պատճենել">Մուտքանուն՝ ${esc(lg)} ${ico('copy')}</button>` : ''}</div></div>
+      <button type="button" class="btn primary sm srcbtn" data-act="srcGo" data-id="${esc(c.id)}" data-p="${esc(pt.id)}">${esc(pt.icon)} Մուտք</button></div>`; }).join('') || '<div class="muted" style="padding:14px">Ոչինչ չի գտնվել</div>';
   };
+  S.srcDraw = () => { if (document.body.contains(m)) draw(); };
   $('#srcQ').oninput = draw;
   $('#srcQ').onkeydown = e => { if (e.key === 'Enter') { const b = $('#srcList [data-act=srcGo]'); if (b) b.click(); } };
   m.addEventListener('click', e => { const b = e.target.closest('[data-cp]'); if (b) { e.preventDefault(); toast(copyText(b.dataset.cp) ? '📋 Պատճենված է՝ ' + esc(b.dataset.cp) : 'Չհաջողվեց պատճենել', copyText ? 'ok' : 'err'); } });
   draw(); setTimeout(() => $('#srcQ').focus(), 30);
+}
+/* ---- Կարգավորումներ՝ կայքերի խմբագրիչ ---- */
+const ptRows = () => (S.ptRows = S.ptRows || allPortals().map(x => Object.assign({}, x)));
+function ptRead() {
+  document.querySelectorAll('#ptList .ptrow').forEach(r => {
+    const x = ptRows()[+r.dataset.i]; if (!x) return;
+    r.querySelectorAll('[data-f]').forEach(i => { x[i.dataset.f] = i.type === 'checkbox' ? i.checked : i.value.trim(); });
+  });
+}
+function ptRowHtml(x, i, n) {
+  return `<div class="ptrow" data-i="${i}">
+    <input class="inp pic" data-f="icon" value="${esc(x.icon || '')}" maxlength="4" title="Պատկերակ (էմոջի)">
+    <input class="inp" data-f="name" value="${esc(x.name || '')}" placeholder="Կարճ անվանում (օր.՝ ԱՎԾ)">
+    <input class="inp" data-f="full" value="${esc(x.full || '')}" placeholder="Ամբողջական անվանում / նկարագրություն">
+    <input class="inp purl" data-f="url" value="${esc(x.url || '')}" placeholder="Մուտքի էջի հղում՝ https:\/\/…" inputmode="url">
+    <label class="chk" title="Ամեն կազմակերպություն ունի իր մուտքանունը այս կայքում"><input type="checkbox" data-f="login" ${x.login ? 'checked' : ''}> Մուտքանուն</label>
+    <span class="pta"><button type="button" class="btn sm" data-act="ptMove" data-i="${i}" data-d="-1" ${i ? '' : 'disabled'} title="Վեր">↑</button><button type="button" class="btn sm" data-act="ptMove" data-i="${i}" data-d="1" ${i < n - 1 ? '' : 'disabled'} title="Վար">↓</button><button type="button" class="btn sm danger" data-act="ptDel" data-i="${i}" title="Հեռացնել">✕</button></span>
+  </div>`;
+}
+function ptDraw() { const el = $('#ptList'); if (!el) return; const r = ptRows(); el.innerHTML = r.map((x, i) => ptRowHtml(x, i, r.length)).join('') || '<div class="muted">Կայքեր չկան</div>'; }
+function portalsCard() {
+  S.ptRows = null;
+  const r = ptRows();
+  return `<div class="card" style="grid-column:1 / -1"><h3>📤 Հաշվետվությունների կայքեր</h3>
+    <p class="muted" style="font-size:13px;margin:8px 0 12px">Այս կայքերը երևում են «Ուղարկել հաշվետվություն» բաժնում՝ որպես առանձին ներդիրներ։ Նոր կայք ավելացնելու համար սեղմեք «Ավելացնել կայք», լրացրեք անվանումը և մուտքի էջի հղումը, ապա «Պահպանել»։ Առանց հղման կայքը չի ցուցադրվում։ «Մուտքանուն» նշված լինելու դեպքում կազմակերպության քարտում կհայտնվի այդ կայքի մուտքանվան դաշտ։</p>
+    <div id="ptList" class="ptlist">${r.map((x, i) => ptRowHtml(x, i, r.length)).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn" data-act="ptAdd">${ico('plus')} Ավելացնել կայք</button><button type="button" class="btn primary" data-act="ptSave">Պահպանել</button></div>
+    <div class="hint" style="margin-top:8px">Գաղտնաբառեր չեն պահվում՝ դրանք լրացնում է բրաուզերը։</div></div>`;
 }
 
 /* ====================== TEAM VIEW ====================== */
@@ -3448,6 +3522,7 @@ function viewSettings() {
     </div>
     ${mg ? `<div class="card"><h3>📄 Փաստաթղթեր</h3><p class="muted" style="font-size:13px;margin:8px 0 12px">Լիազորագրերի, դիմումների, պայմանագրի և թերթիկների համար։ Ձևանմուշները՝ Drive-ի «Ձևանմուշներ» թղթապանակում։</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="firmOpen">🏢 Numetrix-ի տվյալներ</button><button class="btn" data-act="hvsvOpen">🏛 ՀՎՍՎ-ների ցանկ</button></div></div>` : ''}
+    ${mg ? portalsCard() : ''}
     ${mg ? `    <div class="card"><h3>⚙️ Ընդհանուր</h3>
       <form id="setForm" class="fgrid" style="margin-top:12px">
         <div class="full"><label class="f">Ընկերության անվանում</label><input class="inp" name="companyName" value="${esc(s.companyName)}" ${dis}></div>
@@ -3456,7 +3531,6 @@ function viewSettings() {
         <div><label class="f">Կադրային պլատֆորմի կոճակ</label><input class="inp" name="hrLabel" value="${esc(s.hrLabel || '')}" ${dis}></div>
         <div><label class="f">Կադրային պլատֆորմի հղում</label><input class="inp" name="hrUrl" value="${esc(s.hrUrl || '')}" placeholder="https:\/\/…" ${dis}></div>
         <div class="full"><label class="f">Հաճախորդների հավելվածի հասցե</label><input class="inp" name="clientAppUrl" value="${esc(s.clientAppUrl || '')}" placeholder="https:\/\/….github.io/app/" ${dis}><div class="hint">Հրավերներում ուղարկվող հասցեն (GitHub Pages)։ Դատարկ՝ Google-ի հասցեն։</div></div>
-        <div class="full"><label class="f">ՊԵԿ մուտքի էջի հղում</label><input class="inp" name="srcUrl" value="${esc(s.srcUrl || '')}" placeholder="https:\/\/…" ${dis}><div class="hint">«Մուտք ՊԵԿ» կոճակը բացում է այս էջը։ Դատարկ՝ կոճակը թաքցվում է։</div></div>
         <div class="full"><label class="f">Կցված ֆայլերի թղթապանակ (Google Drive)</label><button type="button" class="btn sm" data-act="openFilesFolder">📁 Բացել թղթապանակը</button><div class="hint">Բոլոր կցված ֆայլերը պահվում են այս թղթապանակում՝ ենթաթղթապանակով ամեն կազմակերպության համար։</div></div>
         <div class="full"><label class="f">Հաշվետվությունների սկիզբ (լռելյայն)</label><input class="inp" type="date" name="defaultStart" value="${esc(s.defaultStart || '')}" ${dis}><div class="hint">Այն կազմակերպությունների համար, որոնց «Սկսած» դաշտը դատարկ է</div></div>
         <div class="full"><label class="f">Ժամկետն անցած հաշվետվություններ ստեղծել՝ մինչև (օր)</label><input class="inp" type="number" min="0" max="365" name="overdueGrace" value="${esc(s.overdueGrace || 0)}" ${dis}><div class="hint">0՝ ստեղծվում են միայն այն հաշվետվությունները, որոնց ժամկետը դեռ չի անցել։ Հին ամսաթվով կազմակերպություն գրանցելիս անցյալի հաշվետվությունները համարվում են ուղարկված։</div></div>
@@ -3621,7 +3695,7 @@ function renderDrawer() {
     <div class="ttl">
       <div class="sub"><span class="kt" style="margin:0">${esc(t.kind)}</span><span>${esc(t.id)}</span>${t.archived ? '<span class="tag">🗄 Արխիվում է</span>' : ''}<span class="pill" style="--c:${stColor(t.status)}">${esc(t.status)}</span></div>
       ${own && !isRep ? `<input class="inp${dirty('title')}" id="dTitle" value="${esc(t.title)}">` : `<h2>${esc(t.title)}</h2>`}
-      <div class="muted" style="margin-top:4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">${t.companyName ? '🏢 ' + esc(t.companyName) : 'Ներքին թասք'}${isRep ? ' · ' + esc(periodLabel(t)) : ''}${t.companyId && S.d.settings.srcUrl ? `<button class="btn sm srcbtn" data-act="srcGo" data-id="${esc(t.companyId)}">${ico('gov')}Մուտք ՊԵԿ</button>` : ''}</div>
+      <div class="muted" style="margin-top:4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">${t.companyName ? '🏢 ' + esc(t.companyName) : 'Ներքին թասք'}${isRep ? ' · ' + esc(periodLabel(t)) : ''}${t.companyId && livePortals().length ? `<button class="btn sm srcbtn" data-act="srcFor" data-id="${esc(t.companyId)}">📤 Ուղարկել հաշվետվություն</button>` : ''}</div>
     </div>
     <button class="iconbtn" data-act="closeDrawer">${ico('x')}</button>
   </div>
@@ -3805,7 +3879,17 @@ const ACT = {
   toggleSide: () => { const on = $('#side').classList.toggle('on'); if (on && innerWidth <= 860) histPush({ nxs: 1, nxv: S.view }); },
   installApp: () => { $('#side').classList.remove('on'); installApp(); },
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
-  srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id); },
+  srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id, el.dataset.p); },
+  srcFor: (el, e) => { e.stopPropagation(); srcFor(el.dataset.id); },
+  srcTab: el => { S.srcTab = el.dataset.k; if (S.srcDraw) S.srcDraw(); },
+  ptAdd: () => { ptRead(); ptRows().push({ id: '', name: '', full: '', icon: '🌐', url: '', login: true }); ptDraw(); setTimeout(() => { const i = [...document.querySelectorAll('#ptList [data-f=name]')].pop(); if (i) i.focus(); }, 30); },
+  ptDel: el => { ptRead(); const r = ptRows(); const x = r[+el.dataset.i]; if (!x) return; if (x.name && !confirm('Հեռացնե՞լ «' + x.name + '» կայքը ցանկից')) return; r.splice(+el.dataset.i, 1); ptDraw(); },
+  ptMove: el => { ptRead(); const r = ptRows(), i = +el.dataset.i, j = i + (+el.dataset.d); if (j < 0 || j >= r.length) return; [r[i], r[j]] = [r[j], r[i]]; ptDraw(); },
+  ptSave: async () => {
+    ptRead();
+    try { const list = await call('savePortals', { portals: S.ptRows }); S.ptRows = null; toast('Կայքերի ցանկը պահպանված է', 'ok'); await refresh(); return list; }
+    catch (e) { toast(esc(e.message), 'err'); }
+  },
   portalLink: (el, e) => { e.stopPropagation(); portalLinkModal(el.dataset.id); },
   reqTake: el => reqTake(el.dataset.id),
   dmOpen: el => { const k = (S.ch.list || []).find(x => x.kind === 'I' && x.who === el.dataset.n); if (k) openChat(k.thread); else { call('chatList', {}, { silent: true }).then(r => { S.ch.list = r.rows || []; const x = S.ch.list.find(y => y.kind === 'I' && y.who === el.dataset.n); if (x) openChat(x.thread); }); } },
@@ -3957,7 +4041,7 @@ const ACT = {
   genReports: async () => { const r = await call('generateReportsNow', {}); toast(r.generated ? `Ստեղծվեց ${r.generated} հաշվետվություն` : 'Բոլոր հաշվետվություններն արդեն ստեղծված են', 'ok'); await refresh(); },
   saveSettings: async () => {
     const f = formData($('#setForm'));
-    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, srcUrl: f.srcUrl, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
+    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
     catch (e) { toast(esc(e.message), 'err'); }
   }
 };
