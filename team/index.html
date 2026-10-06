@@ -1830,16 +1830,23 @@ const NxChat = (function () {
   }
   async function loadTrack(t) {
     const c = await cacheGet(t.id); if (c && c.blob) return c.blob;
-    const r = await CALL('musicGet', { id: t.id });
-    const bin = atob(r.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    const blob = new Blob([u8], { type: r.mime || 'audio/mpeg' }); cachePut(t.id, blob); return blob;
+    const parts = []; let start = 0, mime = 'audio/mpeg', total = 0;
+    do {   // մեծ ֆայլերը՝ 8 ՄԲ մասերով
+      const r = await CALL('musicGet', { id: t.id, start });
+      const bin = atob(r.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      parts.push(u8); mime = r.mime || mime; total = r.total || 0; start = r.next || 0;
+      M.prog = total ? Math.round(parts.reduce((a, x) => a + x.length, 0) / total * 100) : 0; paintBtn();
+      if (!M.on) return null;
+    } while (start);
+    M.prog = 0;
+    const blob = new Blob(parts, { type: mime }); cachePut(t.id, blob); return blob;
   }
   async function playIdx(i) {
     if (!M.on || !M.list || !M.list.length) return;
     M.idx = ((i % M.list.length) + M.list.length) % M.list.length;
     const t = M.list[M.idx]; M.busy = true; paintBtn();
     try {
-      const blob = await loadTrack(t); if (!M.on) return;
+      const blob = await loadTrack(t); if (!M.on || !blob) return;
       if (M.url) URL.revokeObjectURL(M.url);
       M.url = URL.createObjectURL(blob); M.cur = t;
       M.audio.src = M.url; M.audio.volume = vol();
@@ -1863,7 +1870,7 @@ const NxChat = (function () {
   function musicStop() { M.on = false; if (M.audio) M.audio.pause(); paintBtn(); render(); }
   function musicNext() { if (M.on) playIdx(M.idx + 1); }
   function musicWanted() { return LS.get('nx_music', '1') === '1' && !CUR.quiet; }
-  function paintBtn() { const b = document.getElementById('musBtn'); if (!b) return; b.classList.toggle('on', M.on); b.title = M.on ? (M.cur ? '🎵 ' + M.cur.name + ' · սեղմեք՝ անջատելու' : 'Երաժշտություն՝ միացված') : 'Երաժշտություն՝ անջատված (սեղմեք՝ միացնելու)'; b.textContent = M.on ? (M.busy ? '⏳' : '🎵') : '🔇'; }
+  function paintBtn() { const b = document.getElementById('musBtn'); if (!b) return; b.classList.toggle('on', M.on); b.title = M.on ? (M.cur ? '🎵 ' + M.cur.name + ' · սեղմեք՝ անջատելու' : 'Երաժշտություն՝ միացված') : 'Երաժշտություն՝ անջատված (սեղմեք՝ միացնելու)'; b.textContent = M.on ? (M.busy ? (M.prog ? M.prog + '%' : '⏳') : '🎵') : '🔇'; if (M.busy && M.prog) b.title = '🎵 Երգը բեռնվում է՝ ' + M.prog + '% (մեկ անգամ, հետո՝ արագ)'; }
 
   /* ---------------- ԻՆՏԵՐՖԵՅՍ ---------------- */
   let CUR = {}, NAME = '', ROOT = null;
@@ -3638,10 +3645,12 @@ function musicCard() {
   const f = S.mus.filter || '';
   const list = R.filter(r => !f || (f === 'day' ? /^\d\d-\d\d$/.test(r.slot) : f === 'm' ? /^m/.test(r.slot) : (r.slot || '*') === '*')).sort((a, b) => String(a.slot).localeCompare(String(b.slot)));
   return `<div class="card" style="grid-column:1 / -1"><h3>🎵 Երաժշտություն (օրվա երգեր)</h3>
-    <p class="muted" style="font-size:13px;margin:8px 0 10px">Վերբեռնեք երգերը (MP3, M4A, OGG, մինչև 20 ՄԲ)։ Ամեն օր նախ հնչում է <b>այդ օրվա</b> երգը, հետո՝ <b>ամսվա</b>, հետո՝ <b>ընդհանուր</b> երգերը։ Եթե ֆայլի անունը սկսվում է ամսաթվով՝ օր.՝ <code>10-06 Աշուն.mp3</code> (ամիս-օր), երգը ավտոմատ կկապվի այդ օրվան, այլապես՝ կդառնա ընդհանուր, որը կարող եք փոխել ցանկում։ Մեկ անգամ կարող եք ընտրել բազմաթիվ ֆայլեր։</p>
+    <p class="muted" style="font-size:13px;margin:8px 0 10px">Վերբեռնեք երգերը (MP3, M4A, OGG)՝ ծրագրից մինչև 30 ՄԲ։ <b>Ավելի մեծ ֆայլերը (օր.՝ 1 ժամանոց միքսեր, մինչև 200 ՄԲ)</b> դրեք անմիջապես Google Drive-ի երաժշտության թղթապանակը և սեղմեք «🔄 Ավելացնել Drive-ից»։ Ամեն օր նախ հնչում է <b>այդ օրվա</b> երգը, հետո՝ <b>ամսվա</b>, հետո՝ <b>ընդհանուր</b> երգերը։ Եթե ֆայլի անունը սկսվում է ամսաթվով՝ օր.՝ <code>10-06 Աշուն.mp3</code> (ամիս-օր), երգը ավտոմատ կկապվի այդ օրվան, այլապես՝ կդառնա ընդհանուր, որը կարող եք փոխել ցանկում։ Մեկ անգամ կարող եք ընտրել բազմաթիվ ֆայլեր։</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label class="btn primary" style="cursor:pointer">⬆️ Վերբեռնել երգեր<input type="file" id="musUp" accept=".mp3,.m4a,.aac,.ogg,.wav,audio/mpeg,audio/mp4,audio/ogg,audio/wav" multiple hidden></label>
       <select class="inp" id="musSlotNew" style="max-width:220px" title="Ում կապել ֆայլերը, եթե անունում ամսաթիվ չկա"><option value="">Ըստ ֆայլի անվան / ընդհանուր</option>${MON_HY.map((m, i) => `<option value="m${String(i + 1).padStart(2, '0')}">Ամբողջ ${m}</option>`).join('')}</select>
+      <button type="button" class="btn" data-act="musFolder">📁 Բացել Drive թղթապանակը</button>
+      <button type="button" class="btn" data-act="musSync">🔄 Ավելացնել Drive-ից</button>
       <span id="musSt" class="hint"></span>
     </div>
     <div class="hint" style="margin:10px 0">${S.mus.rows == null ? '⏳ Բեռնվում է…' : `Ընդամենը՝ <b>${R.length}</b> երգ · ծածկված օրեր՝ <b>${days}/365</b>`}${S.mus.err ? ' · ⚠️ ' + esc(S.mus.err) : ''}</div>
@@ -3649,7 +3658,7 @@ function musicCard() {
     <div class="tblwrap" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th>Երբ</th><th>Անվանում</th><th>Չափ</th><th></th></tr></thead><tbody>
     ${list.map(r => `<tr><td style="white-space:nowrap"><select class="inp" data-musslot="${esc(r.id)}" style="max-width:180px"><option value="*" ${(r.slot || '*') === '*' ? 'selected' : ''}>Ընդհանուր</option>${MON_HY.map((m, i) => { const v = 'm' + String(i + 1).padStart(2, '0'); return `<option value="${v}" ${r.slot === v ? 'selected' : ''}>Ամբողջ ${m}</option>`; }).join('')}<option value="day" ${/^\d\d-\d\d$/.test(r.slot) ? 'selected' : ''}>Կոնկրետ օր…</option></select>
         ${/^\d\d-\d\d$/.test(r.slot) ? `<input class="inp" data-musday="${esc(r.id)}" value="${esc(r.slot)}" placeholder="ԱԱ-ՕՕ" style="width:76px" title="ամիս-օր, օր.՝ 10-06"> <span class="muted" style="font-size:12px">${esc(musSlotLabel(r.slot))}</span>` : ''}</td>
-      <td>${esc(r.name)}</td><td class="muted">${esc(fmtSize(r.size))}</td>
+      <td>${esc(r.name)}</td><td class="muted" style="white-space:nowrap">${esc(fmtSize(r.size))}${+r.size > 200 * 1048576 ? ' <span style="color:#b91c1c" title="Մեծ է 200 ՄԲ-ից՝ չի նվագարկվի։ Փոխեք MP3 128 kbps">⚠️</span>' : +r.size > 60 * 1048576 ? ' <span title="Մեծ ֆայլ՝ առաջին անգամ կբեռնվի մի քանի վայրկյանում">⏳</span>' : ''}</td>
       <td style="white-space:nowrap"><button type="button" class="btn sm" data-act="musPlay" data-id="${esc(r.id)}" title="Լսել">▶</button> <button type="button" class="btn sm danger" data-act="musDel" data-id="${esc(r.id)}" title="Ջնջել">✕</button></td></tr>`).join('')}
     </tbody></table></div>` : ''}
     <div class="hint" style="margin-top:8px">⚖️ Երգերի օգտագործման իրավունքի համար պատասխանատու է վերբեռնողը։</div></div>`;
@@ -3658,7 +3667,7 @@ async function musUpload(files) {
   const st = $('#musSt'), slot = ($('#musSlotNew') || {}).value || ''; let ok = 0;
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
-    if (f.size > 20 * 1048576) { toast(`«${esc(f.name)}» ֆայլը մեծ է 20 ՄԲ-ից`, 'err'); continue; }
+    if (f.size > 30 * 1048576) { toast(`«${esc(f.name)}» ֆայլը մեծ է 30 ՄԲ-ից. դրեք այն Drive-ի երաժշտության թղթապանակը և սեղմեք «🔄 Ավելացնել Drive-ից»`, 'err', null, 12000); continue; }
     if (st) st.textContent = `Վերբեռնվում է ${i + 1}/${files.length}՝ ${f.name}…`;
     try { const r = await call('musicUpload', { file: { name: f.name, mime: f.type, data: await readB64(f) }, slot: /^\d\d-\d\d$/.test(f.name.slice(0, 5)) ? '' : slot }, { silent: true }); (S.mus.rows = S.mus.rows || []).push(r); ok++; }
     catch (e) { toast(esc(e.message), 'err'); }
@@ -4732,14 +4741,16 @@ const ACT = {
   music: () => { const on = NxSeason.toggleMusic(); if (!on) toast('🔇 Երաժշտությունն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   ssnBurst: () => NxSeason.burst(),
   ssnToggle: () => { const on = !NxSeason.designOn(); NxSeason.setDesign(on); toast(on ? '🍂 Սեզոնային ձևավորումը միացված է' : 'Սեզոնային ձևավորումն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
+  musFolder: async () => { try { const r = await call('musicFolder', {}); window.open(r.url, '_blank', 'noopener'); } catch (e) { toast(esc(e.message), 'err'); } },
+  musSync: async el => { el.disabled = true; el.textContent = '⏳ Ստուգվում է…'; try { const r = await call('musicSync', {}); toast(`🔄 Ավելացվեց ${r.added} երգ${r.removed ? `, հանվեց ${r.removed}` : ''}${r.big ? ` · ⚠️ ${r.big} ֆայլ մեծ է 200 ՄԲ-ից` : ''}`, 'ok', null, 6000); S.mus = null; NxSeason.reload(); renderView(); } catch (e) { toast(esc(e.message), 'err'); el.disabled = false; el.textContent = '🔄 Ավելացնել Drive-ից'; } },
   musF: el => { S.mus.filter = el.dataset.k; renderView(); },
   musDel: async el => { const r = S.mus.rows.find(x => x.id === el.dataset.id); if (!r || !(await NxDlg.confirm('Ջնջե՞լ «' + r.name + '» երգը', { ok: 'Ջնջել' }))) return; try { await call('musicDelete', { id: r.id }); S.mus.rows = S.mus.rows.filter(x => x !== r); NxSeason.reload(); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
   musPlay: async el => {
     if (MUS_PREV && MUS_PREV.id === el.dataset.id && !MUS_PREV.a.paused) { MUS_PREV.a.pause(); el.textContent = '▶'; return; }
     if (MUS_PREV) MUS_PREV.a.pause();
     el.textContent = '⏳';
-    try { const r = await call('musicGet', { id: el.dataset.id }, { silent: true }); const bin = atob(r.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-      const a = new Audio(URL.createObjectURL(new Blob([u8], { type: r.mime }))); a.volume = NxSeason.vol(); a.play(); MUS_PREV = { id: el.dataset.id, a }; el.textContent = '⏸'; a.onended = () => { el.textContent = '▶'; }; }
+    try { const parts = []; let st = 0, mime = 'audio/mpeg'; do { const r = await call('musicGet', { id: el.dataset.id, start: st }, { silent: true }); const bin = atob(r.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); parts.push(u8); mime = r.mime || mime; st = r.next || 0; if (r.total) el.textContent = Math.round(parts.reduce((x, y) => x + y.length, 0) / r.total * 100) + '%'; } while (st);
+      const a = new Audio(URL.createObjectURL(new Blob(parts, { type: mime }))); a.volume = NxSeason.vol(); a.play(); MUS_PREV = { id: el.dataset.id, a }; el.textContent = '⏸'; a.onended = () => { el.textContent = '▶'; }; }
     catch (e) { toast(esc(e.message), 'err'); el.textContent = '▶'; }
   },
   coMail: el => { closeModal(); S.mailTab = 'in'; S.inbox = Object.assign(S.inbox || { rows: null, q: '', f: '', sel: new Set(), cq: '' }, { cid: el.dataset.id, f: '' }); ACT.go({ dataset: { v: 'mail' } }); },
