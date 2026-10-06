@@ -107,6 +107,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 @keyframes ssnG{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 .ssn-open{background:rgba(255,255,255,.75);border-radius:12px;padding:8px 12px;font-size:13px;animation:ssnO .5s ease-out}
 @keyframes ssnO{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
+.ssn-np{font-size:12.5px;margin-top:4px;display:flex;gap:6px;align-items:center}.ssn-np button{border:0;background:rgba(255,255,255,.6);border-radius:8px;cursor:pointer;padding:1px 6px;font-size:12px}
 .ssn-x{border:0;background:transparent;color:inherit;font-size:16px;cursor:pointer;opacity:.6;z-index:1;align-self:flex-start}
 #season.ssn.mini{padding:6px 12px}#season.ssn.mini .ssn-sc{font-size:16px;padding:2px 6px}#season.ssn.mini .ssn-h{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #season.ssn.quiet .ssn-sc span{animation:none}
@@ -1624,109 +1625,64 @@ const NxChat = (function () {
     FX.raf = requestAnimationFrame(loop);
   }
 
-  /* ---------------- ԵՐԱԺՇՏՈՒԹՅՈՒՆ (WebAudio, ստեղծվում է ծրագրում) ---------------- */
-  const SCALES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10], mixo: [0, 2, 4, 5, 7, 9, 10] };
-  const STYLE = {
-    winter: { root: 62, sc: 'major', bpm: 80, prog: [0, 5, 3, 4], lead: 'bell', pad: 0.5, rhy: [[1, 1, 2], [2, 2], [1, 1, 1, 1], [3, 1]] },
-    spring: { root: 65, sc: 'major', bpm: 96, prog: [0, 3, 5, 4], lead: 'pluck', pad: 0.35, birds: 1, rhy: [[1, 1, 1, 1], [0.5, 0.5, 1, 2], [2, 1, 1]] },
-    summer: { root: 67, sc: 'mixo', bpm: 108, prog: [0, 6, 3, 0], lead: 'marimba', pad: 0.3, shaker: 1, rhy: [[0.5, 0.5, 0.5, 0.5, 1, 1], [1, 0.5, 0.5, 2], [1, 1, 1, 1]] },
-    autumn: { root: 57, sc: 'dorian', bpm: 70, prog: [0, 5, 3, 6], lead: 'piano', pad: 0.55, rhy: [[1, 1, 2], [2, 1, 1], [1.5, 0.5, 2], [4]] }
-  };
-  /* հանրային սեփականություն (XIX դար) */
-  const JINGLE = { bpm: 116, beats: 4, mel: [[64, 1], [64, 1], [64, 2], [64, 1], [64, 1], [64, 2], [64, 1], [67, 1], [60, 1.5], [62, 0.5], [64, 4], [65, 1], [65, 1], [65, 1.5], [65, 0.5], [65, 1], [64, 1], [64, 1], [64, 0.5], [64, 0.5], [64, 1], [62, 1], [62, 1], [64, 1], [62, 2], [67, 2],
-    [64, 1], [64, 1], [64, 2], [64, 1], [64, 1], [64, 2], [64, 1], [67, 1], [60, 1.5], [62, 0.5], [64, 4], [65, 1], [65, 1], [65, 1.5], [65, 0.5], [65, 1], [64, 1], [64, 1], [64, 0.5], [64, 0.5], [67, 1], [67, 1], [65, 1], [62, 1], [60, 4]],
-    ch: [[48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [53, 57, 60], [48, 52, 55], [50, 55, 59], [43, 50, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [53, 57, 60], [48, 52, 55], [43, 50, 55], [48, 52, 55]] };
-  const SILENT = { bpm: 66, beats: 3, mel: [[67, 1.5], [69, 0.5], [67, 1], [64, 3], [67, 1.5], [69, 0.5], [67, 1], [64, 3], [74, 2], [74, 1], [71, 3], [72, 2], [72, 1], [67, 3], [69, 2], [69, 1], [72, 1.5], [71, 0.5], [69, 1], [67, 1.5], [69, 0.5], [67, 1], [64, 3]],
-    ch: [[48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [43, 50, 55], [43, 50, 55], [48, 52, 55], [48, 52, 55], [53, 57, 60], [53, 57, 60], [48, 52, 55], [48, 52, 55]] };
-  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
-  const M = { ctx: null, on: false, master: null, timer: null, next: 0, bar: 0, tune: null, ti: 0, tb: 0, style: null, seed: 1, prev: 0 };
+  /* ---------------- ԵՐԱԺՇՏՈՒԹՅՈՒՆ՝ օրվա երգերը (վերբեռնում է ղեկավարը Կարգավորումներում) ---------------- */
+  const M = { on: false, audio: null, list: null, idx: 0, date: '', url: '', cur: null, busy: false };
+  let CALL = null, TOAST = null;
   function vol() { return Math.max(0, Math.min(1, +LS.get('nx_mvol', '0.5'))); }
-  function ensureCtx() {
-    if (M.ctx) return M.ctx;
-    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-    M.ctx = new AC();
-    const comp = M.ctx.createDynamicsCompressor(); comp.connect(M.ctx.destination);
-    M.lp = M.ctx.createBiquadFilter(); M.lp.type = 'lowpass'; M.lp.frequency.value = 5200; M.lp.connect(comp);
-    M.master = M.ctx.createGain(); M.master.gain.value = 0; M.master.connect(M.lp);
-    return M.ctx;
+  /* IndexedDB քեշ՝ երգը մեկ անգամ է բեռնվում այս սարքում */
+  function idb() { return new Promise((res, rej) => { try { const r = indexedDB.open('nxmusic', 1); r.onupgradeneeded = () => r.result.createObjectStore('s'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); }
+  async function cacheGet(id) { try { const db = await idb(); return await new Promise(res => { const q = db.transaction('s').objectStore('s').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } }
+  async function cachePut(id, blob) {
+    try { const db = await idb(); const st = db.transaction('s', 'readwrite').objectStore('s'); st.put({ blob, t: Date.now() }, id);
+      const keys = await new Promise(res => { const q = db.transaction('s').objectStore('s').getAllKeys(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); });
+      if (keys.length > 40) { const all = await new Promise(res => { const q = db.transaction('s').objectStore('s').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); });
+        const order = keys.map((k, i) => [k, (all[i] || {}).t || 0]).sort((a, b) => a[1] - b[1]).slice(0, keys.length - 40);
+        const w = db.transaction('s', 'readwrite').objectStore('s'); order.forEach(x => w.delete(x[0])); }
+    } catch (e) {}
   }
-  function env(g, t, a, peak, dur, rel) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * 0.6), t + a + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dur + rel); }
-  function osc(type, f, t, end, gainNode, det) { const o = M.ctx.createOscillator(); o.type = type; o.frequency.value = f; if (det) o.detune.value = det; o.connect(gainNode); o.start(t); o.stop(end); return o; }
-  function voice(kind, midi, t, dur, v) {
-    const c = M.ctx, g = c.createGain(); g.connect(M.master); const f = mf(midi);
-    if (kind === 'bell') { env(g, t, 0.005, 0.22 * v, 0.2, 1.6); osc('sine', f, t, t + 2.2, g); const g2 = c.createGain(); g2.connect(M.master); env(g2, t, 0.003, 0.07 * v, 0.05, 0.7); osc('sine', f * 2.76, t, t + 1, g2); const g3 = c.createGain(); g3.connect(M.master); env(g3, t, 0.002, 0.03 * v, 0.02, 0.4); osc('sine', f * 5.4, t, t + 0.6, g3); }
-    else if (kind === 'pluck') { env(g, t, 0.004, 0.2 * v, 0.08, 0.5); osc('triangle', f, t, t + 0.8, g); }
-    else if (kind === 'marimba') { env(g, t, 0.003, 0.24 * v, 0.05, 0.35); osc('sine', f, t, t + 0.5, g); const g2 = c.createGain(); g2.connect(M.master); env(g2, t, 0.002, 0.05 * v, 0.02, 0.1); osc('sine', f * 4, t, t + 0.2, g2); }
-    else if (kind === 'piano') { env(g, t, 0.006, 0.2 * v, Math.min(dur, 0.6), 0.9); osc('triangle', f, t, t + dur + 1.2, g); const g2 = c.createGain(); g2.connect(M.master); env(g2, t, 0.004, 0.05 * v, 0.1, 0.5); osc('sine', f * 2, t, t + 0.8, g2); }
-    else if (kind === 'pad') { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; g.disconnect(); g.connect(lp); lp.connect(M.master);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06 * v, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.6);
-      osc('sawtooth', f, t, t + dur + 0.7, g, -6); osc('sawtooth', f, t, t + dur + 0.7, g, 7); }
+  async function loadTrack(t) {
+    const c = await cacheGet(t.id); if (c && c.blob) return c.blob;
+    const r = await CALL('musicGet', { id: t.id });
+    const bin = atob(r.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const blob = new Blob([u8], { type: r.mime || 'audio/mpeg' }); cachePut(t.id, blob); return blob;
   }
-  function noiseHit(t, len, v, hp) { const c = M.ctx, b = c.createBuffer(1, Math.floor(c.sampleRate * len), c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-    const s = c.createBufferSource(); s.buffer = b; const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = c.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(M.master); s.start(t); }
-  function bird(t) { const c = M.ctx, g = c.createGain(); g.connect(M.master); const o = c.createOscillator(); o.type = 'sine'; const f0 = 2400 + Math.random() * 1200;
-    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * 1.5, t + 0.06); o.frequency.exponentialRampToValueAtTime(f0 * 0.9, t + 0.12);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.03, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14); o.connect(g); o.start(t); o.stop(t + 0.16); }
-  function scheduleBar() {
-    const st = M.style, r = rng(M.seed + M.bar * 7919);
-    // պարբերաբար՝ հայտնի ամանորյա մեղեդի (ձմռանը)
-    if (M.tune) return scheduleTune();
-    if (st.tunes && M.bar > 0 && M.bar % 24 === 0 && r() < 0.8) { M.tune = pick(st.tunes, r); M.ti = 0; M.tb = 0; return scheduleTune(); }
-    const spb = 60 / st.bpm, t0 = M.next, beats = 4;
-    if (M.bar % 16 === 15) { M.next += beats * spb; M.bar++; return; }   // շնչառություն
-    const sc = SCALES[st.sc], deg = st.prog[Math.floor(M.bar / 2) % st.prog.length];
-    const note = (d, oct) => st.root + 12 * (oct || 0) + sc[((d % 7) + 7) % 7] + 12 * Math.floor(d / 7);
-    if (M.bar % 2 === 0) [0, 2, 4].forEach(k => voice('pad', note(deg + k, -1), t0, beats * spb * 2 - 0.1, st.pad));
-    let t = t0; const pat = pick(st.rhy, r);
-    pat.forEach(b => {
-      if (r() < 0.82) { let d = M.prev + Math.round((r() - 0.5) * 4); if (r() < 0.4) d = deg + pick([0, 2, 4, 7], r); d = Math.max(deg - 2, Math.min(deg + 9, d)); M.prev = d; voice(st.lead, note(d, 1), t, b * spb, 0.9); }
-      t += b * spb;
-    });
-    if (st.shaker) for (let i = 0; i < 8; i++) noiseHit(t0 + i * spb / 2, 0.05, i % 2 ? 0.012 : 0.02, 6000);
-    if (st.birds && r() < 0.35) { const bt = t0 + r() * beats * spb; bird(bt); bird(bt + 0.18); }
-    M.next += beats * spb; M.bar++;
+  async function playIdx(i) {
+    if (!M.on || !M.list || !M.list.length) return;
+    M.idx = ((i % M.list.length) + M.list.length) % M.list.length;
+    const t = M.list[M.idx]; M.busy = true; paintBtn();
+    try {
+      const blob = await loadTrack(t); if (!M.on) return;
+      if (M.url) URL.revokeObjectURL(M.url);
+      M.url = URL.createObjectURL(blob); M.cur = t;
+      M.audio.src = M.url; M.audio.volume = vol();
+      await M.audio.play();
+    } catch (e) { if (M.on && M.list.length > 1 && !/NotAllowed/.test(e && e.name || '')) setTimeout(() => playIdx(M.idx + 1), 1500); }
+    M.busy = false; paintBtn(); render();
   }
-  function scheduleTune() {
-    const T = M.tune, spb = 60 / T.bpm, t0 = M.next, bl = T.beats;
-    const bars = Math.ceil(T.mel.reduce((a, x) => a + x[1], 0) / bl);
-    if (M.tb >= bars) { M.tune = null; M.next += bl * spb; M.bar++; return; }
-    const ch = T.ch[M.tb % T.ch.length]; ch.forEach(n => voice('pad', n, t0, bl * spb - 0.05, 0.6));
-    voice('bell', ch[0] - 12, t0, spb, 0.5);
-    let acc = 0, start = M.tb * bl;
-    for (let i = 0; i < T.mel.length; i++) { const [m, b] = T.mel[i]; if (acc >= start && acc < start + bl) voice('bell', m + 12, t0 + (acc - start) * spb, b * spb, 0.8); acc += b; }
-    M.tb++; M.next += bl * spb; M.bar++;
+  async function musicStart() {
+    if (M.on || CUR.quiet || !CALL) return;
+    M.on = true; paintBtn();
+    if (!M.audio) { M.audio = new Audio(); M.audio.preload = 'auto'; M.audio.addEventListener('ended', () => playIdx(M.idx + 1)); }
+    const key = ymdOf(new Date());
+    if (!M.list || M.date !== key) {
+      try { const r = await CALL('musicToday', { date: key }); M.list = r.list || []; M.date = key; M.idx = 0; } catch (e) { M.list = []; }
+    }
+    if (!M.on) return;
+    if (!M.list.length) { M.on = false; paintBtn(); if (TOAST && !M.told) { M.told = 1; TOAST('🎵 Երգեր դեռ ավելացված չեն. ղեկավարը կարող է վերբեռնել դրանք Կարգավորումներ → «Երաժշտություն» բաժնում'); } return; }
+    if (M.audio.src && M.cur) { M.audio.volume = vol(); M.audio.play().catch(() => {}); paintBtn(); render(); return; }
+    playIdx(M.idx);
   }
-  function musicStart() {
-    if (M.on || CUR.quiet) return;
-    if (!ensureCtx()) return;
-    M.on = true;
-    const go = () => {
-      if (!M.on) return;
-      if (M.ctx.state === 'suspended') M.ctx.resume();
-      M.master.gain.cancelScheduledValues(M.ctx.currentTime);
-      M.master.gain.setTargetAtTime(0.5 * vol(), M.ctx.currentTime, 1.2);
-      M.next = Math.max(M.next, M.ctx.currentTime + 0.1);
-      clearInterval(M.timer);
-      M.timer = setInterval(() => { if (!M.on) return; while (M.next < M.ctx.currentTime + 0.6) scheduleBar(); }, 120);
-    };
-    if (M.ctx.state === 'suspended') M.ctx.resume().then(go, go); else go();
-    paintBtn();
-  }
-  function musicStop() {
-    M.on = false; clearInterval(M.timer);
-    if (M.ctx && M.master) { M.master.gain.cancelScheduledValues(M.ctx.currentTime); M.master.gain.setTargetAtTime(0, M.ctx.currentTime, 0.25); M.next = 0; }
-    paintBtn();
-  }
+  function musicStop() { M.on = false; if (M.audio) M.audio.pause(); paintBtn(); render(); }
+  function musicNext() { if (M.on) playIdx(M.idx + 1); }
   function musicWanted() { return LS.get('nx_music', '1') === '1' && !CUR.quiet; }
-  function paintBtn() { const b = document.getElementById('musBtn'); if (!b) return; b.classList.toggle('on', M.on); b.title = M.on ? 'Սեզոնային երաժշտություն՝ միացված (սեղմեք՝ անջատելու)' : 'Սեզոնային երաժշտություն՝ անջատված (սեղմեք՝ միացնելու)'; b.textContent = M.on ? '🎵' : '🔇'; }
+  function paintBtn() { const b = document.getElementById('musBtn'); if (!b) return; b.classList.toggle('on', M.on); b.title = M.on ? (M.cur ? '🎵 ' + M.cur.name + ' · սեղմեք՝ անջատելու' : 'Երաժշտություն՝ միացված') : 'Երաժշտություն՝ անջատված (սեղմեք՝ միացնելու)'; b.textContent = M.on ? (M.busy ? '⏳' : '🎵') : '🔇'; }
 
   /* ---------------- ԻՆՏԵՐՖԵՅՍ ---------------- */
   let CUR = {}, NAME = '', ROOT = null;
   function compute(d) {
-    const mo = MONTHS[d.getMonth()], sp = special(d), st = Object.assign({}, STYLE[mo.s]);
-    if (mo.s === 'winter' && (d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 14))) st.tunes = [JINGLE, SILENT];
+    const mo = MONTHS[d.getMonth()], sp = special(d);
     const r = rng(hash(ymdOf(d)));
-    return { d, mo, sp, st, quiet: !!(sp && sp.quiet), fx: sp ? sp.fx : mo.fx, sc: sp ? sp.sc : mo.sc, fact: pick(mo.f, r), surprise: pick(SURPRISE, rng(hash(ymdOf(d) + 's'))) };
+    return { d, mo, sp, quiet: !!(sp && sp.quiet), fx: sp ? sp.fx : mo.fx, sc: sp ? sp.sc : mo.sc, fact: pick(mo.f, r), surprise: pick(SURPRISE, rng(hash(ymdOf(d) + 's'))) };
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
   function render() {
@@ -1744,7 +1700,8 @@ const NxChat = (function () {
     ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք 🙂">${c.sc.map((e, i) => `<span style="animation-delay:${i * 0.4}s">${e}</span>`).join('')}</button>
       <div class="ssn-txt"><div class="ssn-h">${head}</div>
         <div class="ssn-s">${esc(WEEKDAY[d.getDay()])}, ${d.getDate()} ${esc(MON_GEN[d.getMonth()])}${vibe ? ' · ' + esc(vibe) : ''}</div>
-        ${c.quiet ? '' : `<div class="ssn-f">🌿 ${esc(c.fact)}</div>`}</div>
+        ${c.quiet ? '' : `<div class="ssn-f">🌿 ${esc(c.fact)}</div>`}
+        ${M.on && M.cur ? `<div class="ssn-np">🎵 ${M.cur.day ? 'Այսօրվա երգը՝ ' : ''}<b>${esc(M.cur.name)}</b> <button data-ssn="next" title="Հաջորդը">⏭</button></div>` : ''}</div>
       <div class="ssn-gift">${c.quiet ? '' : opened ? `<div class="ssn-open">${esc(c.surprise)}</div>` : `<button data-ssn="gift" class="ssn-gb">🎁<span>Այսօրվա անակնկալը</span></button>`}</div>
       <button class="ssn-x" data-ssn="min" title="Փոքրացնել այսօրվա համար">⌃</button>`;
   }
@@ -1752,12 +1709,13 @@ const NxChat = (function () {
     const b = e.target.closest('[data-ssn]'); if (!b) return;
     const a = b.dataset.ssn, key = ymdOf(CUR.d);
     if (a === 'burst') fxRun(CUR.fx || 'sparkle', 6);
-    else if (a === 'gift') { LS.set('nx_gift', key); render(); fxRun(CUR.quiet ? '' : 'confetti', 5); if (M.ctx && M.on) { const t = M.ctx.currentTime + 0.05; [72, 76, 79, 84].forEach((m, i) => voice('bell', m, t + i * 0.12, 0.3, 0.9)); } }
+    else if (a === 'gift') { LS.set('nx_gift', key); render(); fxRun(CUR.quiet ? '' : 'confetti', 5); }
+    else if (a === 'next') musicNext();
     else if (a === 'min') { LS.set('nx_ssn_min', key); render(); }
     else if (a === 'max') { LS.set('nx_ssn_min', ''); render(); }
   }
   function init(opts) {
-    opts = opts || {}; NAME = opts.name || '';
+    opts = opts || {}; NAME = opts.name || ''; CALL = opts.call || CALL; TOAST = opts.toast || TOAST;
     ROOT = document.getElementById('season');
     CUR = compute(new Date());
     if (ROOT && !ROOT.dataset.on) { ROOT.dataset.on = '1'; ROOT.addEventListener('click', onClick); }
@@ -1765,20 +1723,19 @@ const NxChat = (function () {
     const key = ymdOf(CUR.d);
     if (LS.get('nx_fx_day', '') !== key) { LS.set('nx_fx_day', key); setTimeout(() => fxRun(CUR.fx, 14), 700); }
     else setTimeout(() => fxRun(CUR.fx, 5), 700);
-    M.style = CUR.st; M.seed = hash(key);
     paintBtn();
     // բրաուզերը թույլ է տալիս ձայն միայն օգտատիրոջ առաջին գործողությունից հետո
     if (musicWanted() && !M.on) {
-      const kick = () => { removeEventListener('pointerdown', kick, true); removeEventListener('keydown', kick, true); if (musicWanted()) musicStart(); };
+      const kick = ev => { if (ev && ev.target && ev.target.closest && ev.target.closest('#musBtn')) return; removeEventListener('pointerdown', kick, true); removeEventListener('keydown', kick, true); if (musicWanted()) musicStart(); };
       addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
     }
     // կեսգիշերից հետո՝ նոր օր
-    clearInterval(M.dayT); M.dayT = setInterval(() => { const n = new Date(); if (ymdOf(n) !== ymdOf(CUR.d)) { CUR = compute(n); M.style = CUR.st; M.seed = hash(ymdOf(n)); render(); } }, 60000);
+    clearInterval(M.dayT); M.dayT = setInterval(() => { const n = new Date(); if (ymdOf(n) !== ymdOf(CUR.d)) { CUR = compute(n); M.list = null; render(); } }, 60000);
   }
   function toggleMusic() { if (M.on) { LS.set('nx_music', '0'); musicStop(); } else { LS.set('nx_music', '1'); musicStart(); } return M.on; }
-  function setVol(v) { LS.set('nx_mvol', String(v)); if (M.on && M.ctx) M.master.gain.setTargetAtTime(0.5 * vol(), M.ctx.currentTime, 0.2); }
+  function setVol(v) { LS.set('nx_mvol', String(v)); if (M.audio) M.audio.volume = vol(); }
   function setOpt(k, on) { LS.set(k, on ? '1' : '0'); if (k === 'nx_season') render(); if (k === 'nx_music') { on ? musicStart() : musicStop(); } }
-  window.NxSeason = { init, toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, info: () => CUR, _special: special, _compute: compute };
+  window.NxSeason = { init, toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.list = null; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
 })();
 
 /* NXSEASON:END */
@@ -1788,7 +1745,7 @@ const NxChat = (function () {
  *  API_URL-ում տեղադրեք Apps Script-ի Web app հղումը (…/exec)։
  *  Apps Script-ի ներսում աշխատելիս թողեք դատարկ։
  ******************************************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbxyhILiybrXvxAo4G-yEYuFhWRXLeQEPge7yJHV-Bb0MTO_XhAZ_RLz_e9GIi293mk-/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxhnbJNu7f-mJ_fW8R4Kv4lPisT2db44diob8YvTT2F_Fbnv3f2mWRCrRwbkSDAT6lx/exec';
 
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 const PRIO_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#2563eb'];
@@ -2201,7 +2158,7 @@ function showApp() {
   if (S.view === 'stats' && !isMgr()) S.view = 'tasks';
   handleNotifs(S.d.notifs, true);
   renderShell(); renderView(); updateNotifCta();
-  try { NxSeason.init({ name: me() }); } catch (e) { console.warn('season', e); }
+  try { NxSeason.init({ name: me(), call: (a, p) => call(a, p, { silent: true }), toast: m => toast(esc(m), 'nt', null, 8000) }); } catch (e) { console.warn('season', e); }
   startPolling();
 }
 
@@ -3474,6 +3431,57 @@ function taskPortalBtn(t) {
   if (pt) return `<button class="btn sm primary srcbtn" data-act="srcGo" data-id="${esc(t.companyId)}" data-p="${esc(pt.id)}" title="${esc(pt.full || pt.name)} · բացել կայքը և պատճենել ՀՎՀՀ-ն">📤 Ուղարկել՝ ${esc(pt.icon)} ${esc(pt.name)}</button>`;
   return livePortals().length ? `<button class="btn sm srcbtn" data-act="srcFor" data-id="${esc(t.companyId)}">📤 Ուղարկել հաշվետվություն</button>` : '';
 }
+/* ---- Կարգավորումներ՝ երաժշտության գրադարան (օրվա երգեր) ---- */
+const MON_HY = ['Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս', 'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'];
+function musSlotLabel(sl) { if (!sl || sl === '*') return 'Ընդհանուր'; if (sl[0] === 'm') return 'Ամբողջ ' + MON_HY[+sl.slice(1) - 1]; const [m, d] = sl.split('-'); return (+d) + ' ' + MON_HY[+m - 1]; }
+function musicCard() {
+  if (!S.mus) { S.mus = { rows: null }; call('musicList', {}, { silent: true }).then(r => { S.mus.rows = r; }).catch(e => { S.mus.rows = []; S.mus.err = e.message; }).finally(() => { if (S.view === 'settings') renderView(); }); }
+  const R = S.mus.rows || [];
+  const days = new Set(R.filter(r => /^\d\d-\d\d$/.test(r.slot)).map(r => r.slot)).size;
+  const f = S.mus.filter || '';
+  const list = R.filter(r => !f || (f === 'day' ? /^\d\d-\d\d$/.test(r.slot) : f === 'm' ? /^m/.test(r.slot) : (r.slot || '*') === '*')).sort((a, b) => String(a.slot).localeCompare(String(b.slot)));
+  return `<div class="card" style="grid-column:1 / -1"><h3>🎵 Երաժշտություն (օրվա երգեր)</h3>
+    <p class="muted" style="font-size:13px;margin:8px 0 10px">Վերբեռնեք երգերը (MP3, M4A, OGG, մինչև 20 ՄԲ)։ Ամեն օր նախ հնչում է <b>այդ օրվա</b> երգը, հետո՝ <b>ամսվա</b>, հետո՝ <b>ընդհանուր</b> երգերը։ Եթե ֆայլի անունը սկսվում է ամսաթվով՝ օր.՝ <code>10-06 Աշուն.mp3</code> (ամիս-օր), երգը ավտոմատ կկապվի այդ օրվան, այլապես՝ կդառնա ընդհանուր, որը կարող եք փոխել ցանկում։ Մեկ անգամ կարող եք ընտրել բազմաթիվ ֆայլեր։</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label class="btn primary" style="cursor:pointer">⬆️ Վերբեռնել երգեր<input type="file" id="musUp" accept=".mp3,.m4a,.aac,.ogg,.wav,audio/mpeg,audio/mp4,audio/ogg,audio/wav" multiple hidden></label>
+      <select class="inp" id="musSlotNew" style="max-width:220px" title="Ում կապել ֆայլերը, եթե անունում ամսաթիվ չկա"><option value="">Ըստ ֆայլի անվան / ընդհանուր</option>${MON_HY.map((m, i) => `<option value="m${String(i + 1).padStart(2, '0')}">Ամբողջ ${m}</option>`).join('')}</select>
+      <span id="musSt" class="hint"></span>
+    </div>
+    <div class="hint" style="margin:10px 0">${S.mus.rows == null ? '⏳ Բեռնվում է…' : `Ընդամենը՝ <b>${R.length}</b> երգ · ծածկված օրեր՝ <b>${days}/365</b>`}${S.mus.err ? ' · ⚠️ ' + esc(S.mus.err) : ''}</div>
+    ${R.length ? `<div class="seg" style="margin-bottom:8px">${[['', 'Բոլորը'], ['day', 'Ըստ օրերի'], ['m', 'Ըստ ամիսների'], ['g', 'Ընդհանուր']].map(([k, l]) => `<button type="button" class="${f === k ? 'on' : ''}" data-act="musF" data-k="${k}">${l}</button>`).join('')}</div>
+    <div class="tblwrap" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th>Երբ</th><th>Անվանում</th><th>Չափ</th><th></th></tr></thead><tbody>
+    ${list.map(r => `<tr><td style="white-space:nowrap"><select class="inp" data-musslot="${esc(r.id)}" style="max-width:180px"><option value="*" ${(r.slot || '*') === '*' ? 'selected' : ''}>Ընդհանուր</option>${MON_HY.map((m, i) => { const v = 'm' + String(i + 1).padStart(2, '0'); return `<option value="${v}" ${r.slot === v ? 'selected' : ''}>Ամբողջ ${m}</option>`; }).join('')}<option value="day" ${/^\d\d-\d\d$/.test(r.slot) ? 'selected' : ''}>Կոնկրետ օր…</option></select>
+        ${/^\d\d-\d\d$/.test(r.slot) ? `<input class="inp" data-musday="${esc(r.id)}" value="${esc(r.slot)}" placeholder="ԱԱ-ՕՕ" style="width:76px" title="ամիս-օր, օր.՝ 10-06"> <span class="muted" style="font-size:12px">${esc(musSlotLabel(r.slot))}</span>` : ''}</td>
+      <td>${esc(r.name)}</td><td class="muted">${esc(fmtSize(r.size))}</td>
+      <td style="white-space:nowrap"><button type="button" class="btn sm" data-act="musPlay" data-id="${esc(r.id)}" title="Լսել">▶</button> <button type="button" class="btn sm danger" data-act="musDel" data-id="${esc(r.id)}" title="Ջնջել">✕</button></td></tr>`).join('')}
+    </tbody></table></div>` : ''}
+    <div class="hint" style="margin-top:8px">⚖️ Երգերի օգտագործման իրավունքի համար պատասխանատու է վերբեռնողը։</div></div>`;
+}
+async function musUpload(files) {
+  const st = $('#musSt'), slot = ($('#musSlotNew') || {}).value || ''; let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    if (f.size > 20 * 1048576) { toast(`«${esc(f.name)}» ֆայլը մեծ է 20 ՄԲ-ից`, 'err'); continue; }
+    if (st) st.textContent = `Վերբեռնվում է ${i + 1}/${files.length}՝ ${f.name}…`;
+    try { const r = await call('musicUpload', { file: { name: f.name, mime: f.type, data: await readB64(f) }, slot: /^\d\d-\d\d$/.test(f.name.slice(0, 5)) ? '' : slot }, { silent: true }); (S.mus.rows = S.mus.rows || []).push(r); ok++; }
+    catch (e) { toast(esc(e.message), 'err'); }
+  }
+  if (st) st.textContent = '';
+  if (ok) { toast(`🎵 Ավելացվեց ${ok} երգ`, 'ok'); NxSeason.reload(); }
+  renderView();
+}
+let MUS_PREV = null;
+document.addEventListener('change', async e => {
+  const t = e.target; if (!t || !t.dataset) return;
+  if (t.id === 'musUp') { const fs = [...t.files]; t.value = ''; musUpload(fs); return; }
+  const sid = t.dataset.musslot || t.dataset.musday; if (!sid) return;
+  let slot = t.dataset.musslot ? t.value : t.value.trim();
+  if (slot === 'day') { const r = S.mus.rows.find(x => x.id === sid); const d = new Date(); slot = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); if (r && /^\d\d-\d\d$/.test(r.slot)) slot = r.slot; }
+  const m = slot.match(/^(\d{1,2})[-.\/](\d{1,2})$/); if (m) slot = m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
+  try { await call('musicSlot', { id: sid, slot }, { silent: true }); const r = S.mus.rows.find(x => x.id === sid); if (r) r.slot = slot; NxSeason.reload(); toast('✔ ' + esc(musSlotLabel(slot)), 'ok', null, 1500); }
+  catch (err) { toast(esc(err.message), 'err'); }
+  renderView();
+});
 /* ---- Կարգավորումներ՝ կայքերի խմբագրիչ ---- */
 const ptRows = () => (S.ptRows = S.ptRows || allPortals().map(x => Object.assign({}, x)));
 function ptRead() {
@@ -3544,7 +3552,7 @@ function viewInbox(tabs) {
       <div class="ibm">${r.att ? '📎 ' : ''}${r.companyName ? `<span class="tag" style="background:#e0f2fe;color:#075985">🏢 ${esc(r.companyName)}</span>` : r.sugId ? `<button type="button" class="tag ibsug" data-act="ibQuick" data-id="${esc(r.id)}" data-cid="${esc(r.sugId)}" title="Կցել այս կազմակերպությանը">🔗 ${esc(r.sugName)}?</button>` : ''}<span class="muted" style="white-space:nowrap">${esc(fmtDT(r.date))}</span></div>
     </div>`).join('')}</div>${I.more ? `<div style="text-align:center;margin-top:10px"><button class="btn" data-act="inboxMore" ${I.busy ? 'disabled' : ''}>Ավելին…</button></div>` : ''}` : '<div class="card muted" style="padding:22px;text-align:center">Նամակներ չկան</div>'}`;
 }
-document.addEventListener('change', e => { const so = e.target && e.target.dataset && e.target.dataset.ssnopt; if (so) { NxSeason.setOpt(so, e.target.checked); if (so === 'nx_music') NxSeason.init({ name: me() }); } });
+document.addEventListener('change', e => { const so = e.target && e.target.dataset && e.target.dataset.ssnopt; if (so) { NxSeason.setOpt(so, e.target.checked);  } });
 document.addEventListener('input', e => { if (e.target && e.target.dataset && 'ssnvol' in e.target.dataset) NxSeason.setVol(+e.target.value); });
 document.addEventListener('change', e => { if (e.target && e.target.id === 'ibC') { S.inbox.cid = e.target.value; S.inbox.rows = null; renderView(); } });
 document.addEventListener('keydown', e => { if (e.target && e.target.id === 'ibQ' && e.key === 'Enter') { S.inbox.q = e.target.value.trim(); S.inbox.rows = null; renderView(); } });
@@ -3646,7 +3654,7 @@ async function mailCompose(o) {
   const subj = o.subject || (task ? task.title + (task.companyName ? ' — ' + task.companyName : '') : '');
   const ups = [];
   const m = openModal('✉️ Նոր էլ. նամակ', `<div class="fgrid">
-    <div class="full hint" id="mFrom" style="margin:0"></div>
+    <div class="full"><label class="f">Ումից</label><select class="inp" name="from" id="mFromSel"></select><div class="hint" id="mFrom"></div></div>
     <div class="full"><label class="f">Կազմակերպություն (ըստ ցանկության)</label><select class="inp" name="companyId" ${task ? 'disabled' : ''}><option value="">—</option>${comps.map(c => `<option value="${esc(c.id)}" ${c.id === o.companyId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
     <div class="full"><label class="f">Ում *</label><input class="inp" name="to" type="email" multiple value="${esc(o.to || '')}" placeholder="email@example.com (մի քանիսը՝ ստորակետով)" required autocomplete="email"><div id="mCts" class="mcts"></div></div>
     <div class="full"><label class="f">Պատճեն (Cc)</label><input class="inp" name="cc" value="${esc(o.cc || '')}" placeholder="ըստ ցանկության"></div>
@@ -3660,12 +3668,14 @@ async function mailCompose(o) {
     const uploads = [];
     for (const x of ups) uploads.push({ name: x.name, mime: x.type, data: await readB64(x) });
     const taskFiles = [...m.querySelectorAll('[name=tf]:checked')].map(x => x.value);
-    const r = await call('mailSend', { to, cc: f.cc, subject: f.subject, body: f.body, noSig: !f.sig, companyId: task ? (task.companyId || '') : (f.companyId || ''), taskId: o.taskId || '', taskFiles, uploads });
-    toast(`✉️ Նամակն ուղարկվեց՝ ${esc(to)}${r.quota != null ? ` · այսօր դեռ կարող եք ուղարկել ${r.quota}` : ''}`, 'ok');
+    const r = await call('mailSend', { from: f.from || '', to, cc: f.cc, subject: f.subject, body: f.body, noSig: !f.sig, companyId: task ? (task.companyId || '') : (f.companyId || ''), taskId: o.taskId || '', taskFiles, uploads });
+    toast(`✉️ Նամակն ուղարկվեց ${esc(r.from || '')}-ից՝ ${esc(to)}${r.quota != null ? ` · այսօր դեռ կարող եք ուղարկել ${r.quota}` : ''}`, 'ok');
     S.mail = null; if (S.view === 'mail') renderView();
   }, { submit: '✉️ Ուղարկել', wide: true });
   const draw = () => {
-    m.querySelector('#mFrom').innerHTML = info.from ? `Ուղարկող՝ <b>${esc(info.firm || '')}</b> &lt;${esc(info.from)}&gt;${info.quota != null ? ` · այսօր հասանելի՝ ${info.quota} նամակ` : ''}` : '';
+    const fs = m.querySelector('#mFromSel'), cur = fs.value;
+    fs.innerHTML = (info.senders && info.senders.length ? info.senders : [info.from]).filter(Boolean).map(a => `<option value="${esc(a)}" ${a === (cur || info.from) ? 'selected' : ''}>${esc(info.firm || '')} &lt;${esc(a)}&gt;</option>`).join('');
+    m.querySelector('#mFrom').innerHTML = (info.fromErr ? `<span style="color:#b45309">⚠️ ${esc(info.fromErr)}</span>` : '') + (info.quota != null ? `${info.fromErr ? '<br>' : ''}Այսօր հասանելի՝ ${info.quota} նամակ` : '');
     m.querySelector('#mFirm').textContent = info.firm || S.d.settings.companyName || '';
     m.querySelector('#mCts').innerHTML = info.contacts.length ? 'Կոնտակտներ՝ ' + info.contacts.map(c => `<button type="button" class="tag" data-em="${esc(c.email)}" title="${esc(c.name)}">+ ${esc(c.email)}</button>`).join(' ') : '';
     m.querySelector('#mTF').innerHTML = info.files.length ? `<label class="f">Թասքի ֆայլերից</label><div class="pick">${info.files.map(x => `<label><input type="checkbox" name="tf" value="${esc(x.id)}">${ico('clip')}<span>${esc(x.name)} <small class="muted">${esc(fmtSize(x.size))}</small></span></label>`).join('')}</div>` : '';
@@ -4065,10 +4075,10 @@ function viewSettings() {
   return `
   <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))">
     <div class="card"><h3>🍂 Սեզոնային ձևավորում (այս սարքում)</h3>
-      <p class="muted" style="font-size:13px">Ամեն ամիս՝ իր գույներով, տրամադրությամբ և երաժշտությամբ, իսկ ամեն օր՝ նոր անակնկալ։</p>
+      <p class="muted" style="font-size:13px">Ամեն ամիս՝ իր գույներով և տրամադրությամբ, ամեն օր՝ նոր անակնկալ և օրվա երգը։</p>
       <label class="chk"><input type="checkbox" data-ssnopt="nx_season" ${NxSeason.opt('nx_season') ? 'checked' : ''}> Ցույց տալ սեզոնային գոտին</label>
       <label class="chk"><input type="checkbox" data-ssnopt="nx_fx" ${NxSeason.opt('nx_fx') ? 'checked' : ''}> Անիմացիաներ (տերևներ, ձյուն, ծաղիկներ…)</label>
-      <label class="chk"><input type="checkbox" data-ssnopt="nx_music" ${NxSeason.opt('nx_music') ? 'checked' : ''}> 🎵 Ֆոնային երաժշտություն</label>
+      <label class="chk"><input type="checkbox" data-ssnopt="nx_music" ${NxSeason.opt('nx_music') ? 'checked' : ''}> 🎵 Օրվա երգերը (ֆոնային)</label>
       <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><span class="muted" style="font-size:13px">Ձայնի ուժգնություն</span><input type="range" min="0" max="1" step="0.05" value="${NxSeason.vol()}" data-ssnvol style="flex:1;max-width:220px"></div>
       <div style="margin-top:10px"><button class="btn sm" data-act="ssnBurst">✨ Փորձել անիմացիան</button></div>
     </div>
@@ -4083,6 +4093,7 @@ function viewSettings() {
     </div>
     ${mg ? `<div class="card"><h3>📄 Փաստաթղթեր</h3><p class="muted" style="font-size:13px;margin:8px 0 12px">Լիազորագրերի, դիմումների, պայմանագրի և թերթիկների համար։ Ձևանմուշները՝ Drive-ի «Ձևանմուշներ» թղթապանակում։</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="firmOpen">🏢 Numetrix-ի տվյալներ</button><button class="btn" data-act="hvsvOpen">🏛 ՀՎՍՎ-ների ցանկ</button></div></div>` : ''}
+    ${mg ? musicCard() : ''}
     ${mg ? portalsCard() : ''}
     ${mg ? `    <div class="card"><h3>⚙️ Ընդհանուր</h3>
       <form id="setForm" class="fgrid" style="margin-top:12px">
@@ -4096,6 +4107,9 @@ function viewSettings() {
         <div class="full"><label class="f">Հաշվետվությունների սկիզբ (լռելյայն)</label><input class="inp" type="date" name="defaultStart" value="${esc(s.defaultStart || '')}" ${dis}><div class="hint">Այն կազմակերպությունների համար, որոնց «Սկսած» դաշտը դատարկ է</div></div>
         <div class="full"><label class="f">Ժամկետն անցած հաշվետվություններ ստեղծել՝ մինչև (օր)</label><input class="inp" type="number" min="0" max="365" name="overdueGrace" value="${esc(s.overdueGrace || 0)}" ${dis}><div class="hint">0՝ ստեղծվում են միայն այն հաշվետվությունները, որոնց ժամկետը դեռ չի անցել։ Հին ամսաթվով կազմակերպություն գրանցելիս անցյալի հաշվետվությունները համարվում են ուղարկված։</div></div>
         <div class="full"><label class="f">Ոչ աշխատանքային (տոնական) օրեր</label><textarea class="inp" name="holidays" rows="2" ${dis}>${esc((s.holidays || []).join(', '))}</textarea><div class="hint">ԱԱ-ՕՕ՝ ամեն տարի կրկնվող, ՏՏՏՏ-ԱԱ-ՕՕ՝ կոնկրետ օր։ Շաբաթ/կիրակին հաշվվում են ավտոմատ։</div></div>
+        <div class="full"><label class="f">📥 Ցույց տալ միայն այս հասցեներին եկած նամակները</label><input class="inp" name="mailTo" value="${esc(s.mailTo || '')}" placeholder="info@numetrix.am, ceo@numetrix.am" ${dis}><div class="hint">Ստորակետով։ Դատարկ՝ Gmail-ի ամբողջ Inbox-ը</div></div>
+        <div><label class="f">📤 Նամակներն ուղարկել այս հասցեից</label><input class="inp" name="mailFrom" value="${esc(s.mailFrom || '')}" placeholder="info@numetrix.am" ${dis}><div class="hint">Պետք է ավելացված լինի Gmail-ում՝ «Send mail as»</div></div>
+        <div><label class="f">Ուղարկողի անուն</label><input class="inp" name="mailFromName" value="${esc(s.mailFromName || '')}" placeholder="NUMETRIX Accounting center" ${dis}></div>
         <div class="full"><label class="f">📥 Ստացված էլ. նամակները (Gmail) տեսնում են</label><select class="inp" name="mailInbox" ${dis}>${['Բոլորը', 'Ղեկավարները', 'Անջատված'].map(v => `<option ${(s.mailInbox || 'Բոլորը') === v ? 'selected' : ''}>${v}</option>`).join('')}</select><div class="hint">«Էլ. նամակներ» բաժնում՝ ընկերության փոստարկղի ստացված նամակները և նոր նամակի ծանուցումը</div></div>
         <label class="chk full"><input type="checkbox" name="autoPriority" ${s.autoPriority ? 'checked' : ''} ${dis}> Հաշվետվության կարևորությունը ավտոմատ բարձրացնել ժամկետը մոտենալիս</label>
         ${mg ? '<div class="full"><button class="btn primary" type="button" data-act="saveSettings">Պահպանել</button></div>' : ''}
@@ -4466,8 +4480,18 @@ const ACT = {
   mailNew: (el, e) => { if (e) e.stopPropagation(); mailCompose({ companyId: el.dataset.cid || '', taskId: el.dataset.task || '' }); },
   mailRefresh: () => { S.mail = null; renderView(); },
   mailTab: el => { S.mailTab = el.dataset.k; renderView(); },
-  music: () => { const on = NxSeason.toggleMusic(); toast(on ? '🎵 Սեզոնային երաժշտությունը միացված է' : '🔇 Երաժշտությունն անջատված է', 'ok', null, 2500); if (S.view === 'settings') renderView(); },
+  music: () => { const on = NxSeason.toggleMusic(); if (!on) toast('🔇 Երաժշտությունն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   ssnBurst: () => NxSeason.burst(),
+  musF: el => { S.mus.filter = el.dataset.k; renderView(); },
+  musDel: async el => { const r = S.mus.rows.find(x => x.id === el.dataset.id); if (!r || !(await NxDlg.confirm('Ջնջե՞լ «' + r.name + '» երգը', { ok: 'Ջնջել' }))) return; try { await call('musicDelete', { id: r.id }); S.mus.rows = S.mus.rows.filter(x => x !== r); NxSeason.reload(); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
+  musPlay: async el => {
+    if (MUS_PREV && MUS_PREV.id === el.dataset.id && !MUS_PREV.a.paused) { MUS_PREV.a.pause(); el.textContent = '▶'; return; }
+    if (MUS_PREV) MUS_PREV.a.pause();
+    el.textContent = '⏳';
+    try { const r = await call('musicGet', { id: el.dataset.id }, { silent: true }); const bin = atob(r.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const a = new Audio(URL.createObjectURL(new Blob([u8], { type: r.mime }))); a.volume = NxSeason.vol(); a.play(); MUS_PREV = { id: el.dataset.id, a }; el.textContent = '⏸'; a.onended = () => { el.textContent = '▶'; }; }
+    catch (e) { toast(esc(e.message), 'err'); el.textContent = '▶'; }
+  },
   mailBan: () => { S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null; ACT.go({ dataset: { v: 'mail' } }); },
   inboxRefresh: () => { if (S.inbox) S.inbox.rows = null; renderView(); },
   inboxMore: () => inboxLoad(true),
@@ -4637,7 +4661,7 @@ const ACT = {
   genReports: async () => { const r = await call('generateReportsNow', {}); toast(r.generated ? `Ստեղծվեց ${r.generated} հաշվետվություն` : 'Բոլոր հաշվետվություններն արդեն ստեղծված են', 'ok'); await refresh(); },
   saveSettings: async () => {
     const f = formData($('#setForm'));
-    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, mailInbox: f.mailInbox, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
+    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, mailInbox: f.mailInbox, mailTo: f.mailTo, mailFrom: f.mailFrom, mailFromName: f.mailFromName, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
     catch (e) { toast(esc(e.message), 'err'); }
   }
 };
