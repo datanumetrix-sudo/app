@@ -124,6 +124,10 @@ body.inchat{overflow:hidden;position:fixed;inset:0;width:100%}
 @media (pointer:coarse){:root{--dropd:none}}
 @media (max-width:600px){.grid{grid-template-columns:1fr}.wrap{padding-top:18px}.inp{font-size:16px}.card{padding:16px}
   .reply{position:sticky;bottom:0;background:#fff;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}}
+
+.langs{display:inline-flex;gap:2px;background:#eef1f7;border-radius:9px;padding:2px}
+.langs button{border:0;background:transparent;padding:4px 8px;border-radius:7px;font:600 12px system-ui,sans-serif;color:#64748b;cursor:pointer}
+.langs button.on{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.1)}
 </style>
 </head>
 <body>
@@ -133,6 +137,8 @@ body.inchat{overflow:hidden;position:fixed;inset:0;width:100%}
 <script type="application/json" id="tokj">""</script>
 <script>
 /* NXCHAT:BEGIN — ավտոմատ տեղադրված src/chat.js-ից */
+/* Թարգմանություն. հաճախորդի հավելվածը սահմանում է window.NX_T (en/ru), թիմի հավելվածում՝ միշտ հայերեն */
+const _t = (s, ...a) => { let r = (typeof window !== 'undefined' && window.NX_T) ? window.NX_T(s) : s; a.forEach((v, i) => { r = r.split('{' + i + '}').join(v); }); return r; };
 /* ============== NxDlg — ծրագրի ոճով պատուհաններ (բրաուզերի confirm/alert-ի փոխարեն) ==============
    await NxDlg.confirm('Տեքստ', { title, ok, cancel, danger })  → true/false
    await NxDlg.alert('Տեքստ', { title }) */
@@ -168,7 +174,7 @@ const NxDlg = (function () {
     return new Promise(res => {
       const bg = document.createElement('div'); bg.className = 'nxd-bg';
       bg.innerHTML = `<div class="nxd ${danger ? 'danger' : ''}" role="dialog" aria-modal="true"><div class="nxd-h"><div class="nxd-ic">${danger ? '!' : isConfirm ? '?' : 'i'}</div><div style="min-width:0"><div class="nxd-t">${esc(title)}</div>${body ? `<div class="nxd-m">${esc(body)}</div>` : ''}</div></div>
-        <div class="nxd-b">${isConfirm ? `<button class="c" data-v="0">${esc(o.cancel || 'Չեղարկել')}</button>` : ''}<button class="o" data-v="1">${esc(o.ok || (isConfirm ? (danger ? 'Այո, շարունակել' : 'Այո') : 'Լավ'))}</button></div></div>`;
+        <div class="nxd-b">${isConfirm ? `<button class="c" data-v="0">${esc(o.cancel || _t('Չեղարկել'))}</button>` : ''}<button class="o" data-v="1">${esc(o.ok || (isConfirm ? (danger ? _t('Այո, շարունակել') : _t('Այո')) : _t('Լավ')))}</button></div></div>`;
       const done = v => { document.removeEventListener('keydown', key, true); bg.remove(); res(v); };
       const key = e => { if (e.key === 'Escape') { e.preventDefault(); done(false); } if (e.key === 'Enter') { e.preventDefault(); done(true); } };
       bg.addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) done(b.dataset.v === '1'); else if (e.target === bg) done(false); });
@@ -279,7 +285,7 @@ const NxFb = (function () {
   }
   async function getFile(pth, id, n) {
     const F = st.F, parts = await Promise.all(Array.from({ length: n }, (_, i) => F.getDoc(F.doc(st.db, ...pth, 'f', id + '-' + i))));
-    return parts.map(p => { if (!p.exists()) throw new Error('Ֆայլը չի գտնվել'); return p.data().d; }).join('');
+    return parts.map(p => { if (!p.exists()) throw new Error(_t('Ֆայլը չի գտնվել')); return p.data().d; }).join('');
   }
   function typing(pth) {
     const F = st.F;
@@ -408,18 +414,18 @@ const NxChat = (function () {
     if (q) { const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'); h = h.replace(/(^|>)([^<]+)/g, (m, a, t) => a + t.replace(re, '<mark>$1</mark>')); }
     return h;
   };
-  const size = n => { n = +n || 0; return n > 1048576 ? (n / 1048576).toFixed(1) + ' ՄԲ' : Math.max(1, Math.round(n / 1024)) + ' ԿԲ'; };
+  const size = n => { n = +n || 0; return n > 1048576 ? (n / 1048576).toFixed(1) + ' ' + _t('ՄԲ') : Math.max(1, Math.round(n / 1024)) + ' ' + _t('ԿԲ'); };
   const hm = s => String(s || '').slice(11, 16);
   const pad = n => String(n).padStart(2, '0');
   const todayS = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
   const dayLabel = d => {
     const t = todayS(), y = new Date(Date.now() - 864e5), ys = y.getFullYear() + '-' + pad(y.getMonth() + 1) + '-' + pad(y.getDate());
-    if (d === t) return 'Այսօր'; if (d === ys) return 'Երեկ';
+    if (d === t) return _t('Այսօր'); if (d === ys) return _t('Երեկ');
     const p = d.split('-'); return p[2] + '.' + p[1] + '.' + p[0];
   };
   const kindIcon = k => ({ image: '🖼️', video: '🎥', audio: '🎤', file: '📄' }[k] || '📄');
   const fileKindLocal = f => /^image[/]/.test(f.type) ? 'image' : /^video[/]/.test(f.type) ? 'video' : /^audio[/]/.test(f.type) ? 'audio' : 'file';
-  function readB64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Չհաջողվեց կարդալ ' + f.name)); r.readAsDataURL(f); }); }
+  function readB64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error(_t('Չհաջողվեց կարդալ') + ' ' + f.name)); r.readAsDataURL(f); }); }
   async function shrinkImage(f) {
     if (!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size < 1.2 * 1048576 || !window.createImageBitmap) return f;
     try {
@@ -451,7 +457,7 @@ const NxChat = (function () {
   }
   const fmtT = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + pad(t % 60); };
   function voiceHtml(id, sizeTxt, label) {
-    return `<div class="nxc-voice" data-voice="${esc(id)}"><button type="button" class="pp" data-vp title="Լսել">▶</button><div class="mid"><div class="bar" data-vbar><div class="fill"></div><div class="knob"></div></div><div class="row"><span class="tm">${esc(label || '🎤 Ձայնային')}</span><span class="dur">${esc(sizeTxt || '')}</span></div></div><button type="button" class="sp" data-vsp>1×</button></div>`;
+    return `<div class="nxc-voice" data-voice="${esc(id)}"><button type="button" class="pp" data-vp title="${_t('Լսել')}">▶</button><div class="mid"><div class="bar" data-vbar><div class="fill"></div><div class="knob"></div></div><div class="row"><span class="tm">${esc(label || '🎤 ' + _t('Ձայնային'))}</span><span class="dur">${esc(sizeTxt || '')}</span></div></div><button type="button" class="sp" data-vsp>1×</button></div>`;
   }
   let CUR = null;                    // { el, audio }
   function voiceUi(el, a) {
@@ -500,8 +506,8 @@ const NxChat = (function () {
       gas: [], fs: new Map(), pend: new Map(), gasTy: [], fsTy: {}, fbUnsub: null, fbPath: null, readT: null };
     const call = o.call;
     root.innerHTML = `<div class="nxc">
-      <div class="nxc-top"><div class="t" data-r="ttl"></div><input data-r="q" placeholder="Որոնել զրույցում…" style="display:none"><button data-r="sbtn" title="Որոնում">🔍</button><button data-r="fbtn" title="Բոլոր ֆայլերը">📁 Ֆայլեր</button></div>
-      <div class="nxc-list" data-r="list"><div class="nxc-empty">Բեռնվում է…</div></div>
+      <div class="nxc-top"><div class="t" data-r="ttl"></div><input data-r="q" placeholder="${_t('Որոնել զրույցում…')}" style="display:none"><button data-r="sbtn" title="${_t('Որոնում')}">🔍</button><button data-r="fbtn" title="${_t('Բոլոր ֆայլերը')}">📁 ${_t('Ֆայլեր')}</button></div>
+      <div class="nxc-list" data-r="list"><div class="nxc-empty">${_t('Բեռնվում է…')}</div></div>
       <div class="nxc-files" data-r="files" style="display:none"></div>
       <div class="nxc-typ" data-r="typ"></div>
       <div class="nxc-cmp" data-r="cmp"></div>
@@ -522,14 +528,14 @@ const NxChat = (function () {
         if (!/^(image|video|audio)[/]/.test(m.mime)) return save();
         const v = document.createElement('div'); v.className = 'nxc-view';
         v.innerHTML = (/^image/.test(m.mime) ? `<img src="${m.url}">` : /^video/.test(m.mime) ? `<video src="${m.url}" controls autoplay playsinline></video>` : `<div style="font-size:54px">🎤</div><audio src="${m.url}" controls autoplay></audio>`)
-          + `<div class="nm">${esc(f.name)}</div><div class="vb"><button data-a="s" style="background:#fff">⬇ Պահպանել</button><button data-a="c" style="background:#334155;color:#fff">✕ Փակել</button></div>`;
+          + `<div class="nm">${esc(f.name)}</div><div class="vb"><button data-a="s" style="background:#fff">⬇ ${_t('Պահպանել')}</button><button data-a="c" style="background:#334155;color:#fff">✕ ${_t('Փակել')}</button></div>`;
         document.body.appendChild(v);
         v.onclick = e => { const a = e.target.dataset.a; if (a === 's') save(); if (a === 'c' || e.target === v) v.remove(); };
       }).catch(e => NxDlg.alert(e.message));
     }
     function fileHtml(f) {
       if (f.kind === 'image') return `<img class="nxc-img" data-fid="${esc(f.id)}" data-view="${esc(f.id)}" alt="">`;
-      if (f.kind === 'audio') return voiceHtml(f.id, size(f.size), /^Ձայնային/.test(f.name) ? '🎤 Ձայնային' : f.name);
+      if (f.kind === 'audio') return voiceHtml(f.id, size(f.size), /^Ձայնային/.test(f.name) ? '🎤 ' + _t('Ձայնային') : f.name);
       if (f.kind === 'video') return `<button class="nxc-vid" data-play="${esc(f.id)}"><span class="ic">▶</span><span>${esc(f.name)}</span><small>${size(f.size)}</small></button>`;
       return `<button class="nxc-doc" data-view="${esc(f.id)}"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} ⬇</small></button>`;
     }
@@ -538,17 +544,17 @@ const NxChat = (function () {
     /* ---------- հաղորդագրությունների ցուցակ (փոփոխվում են միայն փոխված տողերը) ---------- */
     function msgKey(m) { return JSON.stringify([m.text, m.edited, m.deleted, m.reactions, m.read, m.pending, m.files.length, S.q && m.text.toLowerCase().includes(S.q) ? S.q : '']); }
     function msgHtml(m) {
-      if (m.side === 'sys') return `<div class="nxc-sys">${linkify(m.text)} <span style="opacity:.6;font-size:11px">${hm(m.at)}</span></div>`;
+      if (m.side === 'sys') return `<div class="nxc-sys">${linkify((typeof window !== 'undefined' && window.NX_SYS) ? window.NX_SYS(m.text) : m.text)} <span style="opacity:.6;font-size:11px">${hm(m.at)}</span></div>`;
       const by = S.msgs.find(x => x.id === m.replyTo);
       const showAuthor = !m.mine && (o.side === 'team' || m.side === 'team');
       const rx = Object.entries(m.reactions || {});
       const me = o.meName || '';
       return `<div class="nxc-m ${m.mine ? 'nxc-me' : ''}" data-id="${esc(m.id)}">
-        <div class="nxc-b">${showAuthor ? `<div class="nxc-a" style="${m.side === 'client' ? 'color:#0f766e' : ''}">${esc(m.author)}${m.side === 'client' && o.side === 'team' ? ' · հաճախորդ' : ''}</div>` : ''}
-          ${by ? `<div class="nxc-q" data-jump="${esc(by.id)}"><b>${esc(by.mine ? 'Դուք' : by.author)}</b><span>${esc(by.deleted ? 'ջնջված հաղորդագրություն' : (by.text || (by.files[0] ? kindIcon(by.files[0].kind) + ' ' + by.files[0].name : '')))}</span></div>` : ''}
-          ${m.deleted ? '<div class="nxc-tx nxc-del">🚫 Հաղորդագրությունը ջնջված է</div>' : m.files.map(fileHtml).join('') + (m.text ? `<div class="nxc-tx">${linkify(m.text, S.q)}</div>` : '')}
-          <div class="nxc-ft">${m.edited ? 'խմբագրված · ' : ''}${hm(m.at)}${m.pending ? '<span class="nxc-ck" title="Ուղարկվում է">🕓</span>' : m.mine && !m.deleted ? `<span class="nxc-ck ${m.read ? 'r' : ''}" title="${m.read ? 'Կարդացված է' : 'Ուղարկված է'}">${m.read ? '✓✓' : '✓'}</span>` : ''}</div>
-          ${m.deleted || m.pending ? '' : `<button class="nxc-more" data-menu="${esc(m.id)}" title="Գործողություններ">⋯</button>`}
+        <div class="nxc-b">${showAuthor ? `<div class="nxc-a" style="${m.side === 'client' ? 'color:#0f766e' : ''}">${esc(m.author)}${m.side === 'client' && o.side === 'team' ? ' · ' + _t('հաճախորդ') : ''}</div>` : ''}
+          ${by ? `<div class="nxc-q" data-jump="${esc(by.id)}"><b>${esc(by.mine ? _t('Դուք') : by.author)}</b><span>${esc(by.deleted ? _t('ջնջված հաղորդագրություն') : (by.text || (by.files[0] ? kindIcon(by.files[0].kind) + ' ' + by.files[0].name : '')))}</span></div>` : ''}
+          ${m.deleted ? '<div class="nxc-tx nxc-del">🚫 ' + _t('Հաղորդագրությունը ջնջված է') + '</div>' : m.files.map(fileHtml).join('') + (m.text ? `<div class="nxc-tx">${linkify(m.text, S.q)}</div>` : '')}
+          <div class="nxc-ft">${m.edited ? _t('խմբագրված') + ' · ' : ''}${hm(m.at)}${m.pending ? '<span class="nxc-ck" title="' + _t('Ուղարկվում է') + '">🕓</span>' : m.mine && !m.deleted ? `<span class="nxc-ck ${m.read ? 'r' : ''}" title="${m.read ? _t('Կարդացված է') : _t('Ուղարկված է')}">${m.read ? '✓✓' : '✓'}</span>` : ''}</div>
+          ${m.deleted || m.pending ? '' : `<button class="nxc-more" data-menu="${esc(m.id)}" title="${_t('Գործողություններ')}">⋯</button>`}
         </div>
         ${rx.length ? `<div class="nxc-rx">${rx.map(([e, w]) => `<button data-react="${esc(m.id)}" data-e="${e}" class="${w.includes(me) ? 'on' : ''}" title="${esc(w.join(', '))}">${e}${w.length > 1 ? ' ' + w.length : ''}</button>`).join('')}</div>` : ''}
       </div>`;
@@ -563,7 +569,7 @@ const NxChat = (function () {
         if (d !== day) { day = d; items.push({ id: 'd-' + d, key: d, html: `<div class="nxc-day">${dayLabel(d)}</div>` }); }
         items.push({ id: m.id, key: msgKey(m), html: msgHtml(m) });
       });
-      if (!items.length) { list.innerHTML = `<div class="nxc-empty">${q ? 'Ոչինչ չի գտնվել' : (o.emptyText || 'Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը 👋')}</div>`; return; }
+      if (!items.length) { list.innerHTML = `<div class="nxc-empty">${q ? _t('Ոչինչ չի գտնվել') : (o.emptyText || _t('Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը 👋'))}</div>`; return; }
       if (list.querySelector('.nxc-empty')) list.innerHTML = '';
       const have = {}; [...list.children].forEach(el => { if (el.dataset.k !== undefined) have[el.dataset.i] = el; });
       const keep = new Set();
@@ -583,10 +589,10 @@ const NxChat = (function () {
     function drawFiles() {
       const box = $r('files'), fs = Object.values(allFiles()).sort((a, b) => String(b.at).localeCompare(String(a.at)));
       const med = fs.filter(f => f.kind === 'image' || f.kind === 'video'), aud = fs.filter(f => f.kind === 'audio'), doc = fs.filter(f => f.kind === 'file');
-      box.innerHTML = !fs.length ? '<div class="nxc-empty">Ֆայլեր դեռ չկան</div>' :
-        (med.length ? `<div class="nxc-h">Նկարներ և տեսանյութեր (${med.length})</div><div class="nxc-grid">${med.map(f => `<button class="g" data-view="${esc(f.id)}">${f.kind === 'image' ? `<img data-fid="${esc(f.id)}" alt="">` : '🎥'}<small>${size(f.size)}</small></button>`).join('')}</div>` : '')
-        + (aud.length ? `<div class="nxc-h">Ձայնային (${aud.length})</div>${aud.map(f => `<div style="font-size:11.5px;color:#64748b;margin:6px 0 2px">${esc(f.at.slice(0, 16))} · ${esc(f.by)}</div>` + voiceHtml(f.id, size(f.size))).join('')}` : '')
-        + (doc.length ? `<div class="nxc-h" style="margin-top:12px">Փաստաթղթեր (${doc.length})</div>${doc.map(f => `<button class="nxc-doc" data-view="${esc(f.id)}" style="max-width:none;margin-bottom:6px"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} · ${esc(f.at.slice(0, 10))}</small></button>`).join('')}` : '');
+      box.innerHTML = !fs.length ? '<div class="nxc-empty">' + _t('Ֆայլեր դեռ չկան') + '</div>' :
+        (med.length ? `<div class="nxc-h">${_t('Նկարներ և տեսանյութեր')} (${med.length})</div><div class="nxc-grid">${med.map(f => `<button class="g" data-view="${esc(f.id)}">${f.kind === 'image' ? `<img data-fid="${esc(f.id)}" alt="">` : '🎥'}<small>${size(f.size)}</small></button>`).join('')}</div>` : '')
+        + (aud.length ? `<div class="nxc-h">${_t('Ձայնային')} (${aud.length})</div>${aud.map(f => `<div style="font-size:11.5px;color:#64748b;margin:6px 0 2px">${esc(f.at.slice(0, 16))} · ${esc(f.by)}</div>` + voiceHtml(f.id, size(f.size))).join('')}` : '')
+        + (doc.length ? `<div class="nxc-h" style="margin-top:12px">${_t('Փաստաթղթեր')} (${doc.length})</div>${doc.map(f => `<button class="nxc-doc" data-view="${esc(f.id)}" style="max-width:none;margin-bottom:6px"><span class="ic">📄</span><span>${esc(f.name)}</span><small>${size(f.size)} · ${esc(f.at.slice(0, 10))}</small></button>`).join('')}` : '');
       box.querySelectorAll('img[data-fid]').forEach(img => media(img.dataset.fid).then(m => { img.src = m.url; }).catch(() => {}));
     }
     function drawTop() {
@@ -606,17 +612,17 @@ const NxChat = (function () {
     function drawComposer() {
       const c = $r('cmp');
       if (S.rec) {
-        c.innerHTML = `<div class="nxc-rec"><span class="dot"></span><span data-r="rt">00:00</span><span class="sp"></span><button class="nxc-ib" data-a="rx" title="Չեղարկել">🗑</button><button class="nxc-ib nxc-send" data-a="rs" title="Ուղարկել">➤</button></div>`;
+        c.innerHTML = `<div class="nxc-rec"><span class="dot"></span><span data-r="rt">00:00</span><span class="sp"></span><button class="nxc-ib" data-a="rx" title="${_t('Չեղարկել')}">🗑</button><button class="nxc-ib nxc-send" data-a="rs" title="${_t('Ուղարկել')}">➤</button></div>`;
         return;
       }
-      const ctx = S.edit ? `<div class="nxc-ctx">✏️<span>Խմբագրում՝ ${esc(S.edit.text)}</span><button data-a="cx">✕</button></div>`
-        : S.reply ? `<div class="nxc-ctx">↩️<span><b>${esc(S.reply.mine ? 'Դուք' : S.reply.author)}</b>՝ ${esc(S.reply.text || (S.reply.files[0] ? S.reply.files[0].name : ''))}</span><button data-a="cx">✕</button></div>` : '';
+      const ctx = S.edit ? `<div class="nxc-ctx">✏️<span>${_t('Խմբագրում')}՝ ${esc(S.edit.text)}</span><button data-a="cx">✕</button></div>`
+        : S.reply ? `<div class="nxc-ctx">↩️<span><b>${esc(S.reply.mine ? _t('Դուք') : S.reply.author)}</b>՝ ${esc(S.reply.text || (S.reply.files[0] ? S.reply.files[0].name : ''))}</span><button data-a="cx">✕</button></div>` : '';
       const draft = c.querySelector('textarea') ? c.querySelector('textarea').value : (S.edit ? S.edit.text : '');
       c.innerHTML = ctx + (S.files.length ? `<div class="nxc-st">${S.files.map((f, i) => `<div class="f">${fileKindLocal(f) === 'image' ? `<img src="${URL.createObjectURL(f)}">` : fileKindLocal(f) === 'video' ? `<video src="${URL.createObjectURL(f)}" muted playsinline></video>` : kindIcon(fileKindLocal(f))}<small>${esc(f.name)}</small><button data-rm="${i}">✕</button></div>`).join('')}</div>` : '')
         + `<div class="nxc-row">
-          ${S.edit ? '' : `<button class="nxc-ib" data-a="att" title="Կցել">📎</button>`}
-          <textarea rows="1" placeholder="${S.edit ? 'Խմբագրել…' : 'Հաղորդագրություն…'}" ${S.busy ? 'disabled' : ''}>${esc(draft)}</textarea>
-          <button class="nxc-ib ${draft.trim() || S.files.length || S.edit ? 'nxc-send' : ''}" data-a="${draft.trim() || S.files.length || S.edit ? 'send' : 'mic'}" title="${draft.trim() || S.files.length || S.edit ? 'Ուղարկել' : 'Ձայնային հաղորդագրություն'}">${S.busy ? '⏳' : (draft.trim() || S.files.length || S.edit ? '➤' : '🎤')}</button>
+          ${S.edit ? '' : `<button class="nxc-ib" data-a="att" title="${_t('Կցել')}">📎</button>`}
+          <textarea rows="1" placeholder="${S.edit ? _t('Խմբագրել…') : _t('Հաղորդագրություն…')}" ${S.busy ? 'disabled' : ''}>${esc(draft)}</textarea>
+          <button class="nxc-ib ${draft.trim() || S.files.length || S.edit ? 'nxc-send' : ''}" data-a="${draft.trim() || S.files.length || S.edit ? 'send' : 'mic'}" title="${draft.trim() || S.files.length || S.edit ? _t('Ուղարկել') : _t('Ձայնային հաղորդագրություն')}">${S.busy ? '⏳' : (draft.trim() || S.files.length || S.edit ? '➤' : '🎤')}</button>
         </div>
         <input type="file" data-f="cam" accept="image/${'*'}" capture="environment" hidden>
         <input type="file" data-f="vid" accept="video/${'*'}" capture="environment" hidden>
@@ -643,10 +649,10 @@ const NxChat = (function () {
       S.err = '';
       const max = (S.info && S.info.maxFileMb) || 25;
       for (let f of [...fl]) {
-        if (S.files.length >= 10) { S.err = 'Առավելագույնը 10 ֆայլ'; break; }
+        if (S.files.length >= 10) { S.err = _t('Առավելագույնը {0} ֆայլ', 10); break; }
         f = await shrinkImage(f);
-        if (f.size > max * 1048576) { S.err = `«${f.name}» ֆայլը մեծ է ${max} ՄԲ-ից${/^video/.test(f.type) ? '։ Նկարեք ավելի կարճ տեսանյութ։' : ''}`; continue; }
-        if (S.files.reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { S.err = 'Մեկ անգամում՝ մինչև 45 ՄԲ'; break; }
+        if (f.size > max * 1048576) { S.err = _t('«{0}» ֆայլը մեծ է {1} ՄԲ-ից', f.name, max) + (/^video/.test(f.type) ? ' ' + _t('Նկարեք ավելի կարճ տեսանյութ։') : ''); continue; }
+        if (S.files.reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { S.err = _t('Մեկ անգամում՝ մինչև 45 ՄԲ'); break; }
         S.files.push(f);
       }
       drawComposer();
@@ -654,7 +660,7 @@ const NxChat = (function () {
     function attachMenu() {
       const old = root.querySelector('.nxc-att'); if (old) { old.remove(); return; }
       const m = document.createElement('div'); m.className = 'nxc-att';
-      m.innerHTML = [['cam', '📷', 'Նկարել'], ['vid', '🎥', 'Տեսանյութ'], ['gal', '🖼️', 'Գալերեա'], ['any', '📄', 'Ֆայլ']].map(([k, i, l]) => `<button data-pick="${k}"><b>${i}</b>${l}</button>`).join('');
+      m.innerHTML = [['cam', '📷', 'Նկարել'], ['vid', '🎥', 'Տեսանյութ'], ['gal', '🖼️', 'Գալերեա'], ['any', '📄', 'Ֆայլ']].map(([k, i, l]) => `<button data-pick="${k}"><b>${i}</b>${_t(l)}</button>`).join('');
       root.querySelector('.nxc').appendChild(m);
       m.onclick = e => { const b = e.target.closest('[data-pick]'); if (!b) return; m.remove(); root.querySelector(`[data-f="${b.dataset.pick}"]`).click(); };
     }
@@ -692,7 +698,7 @@ const NxChat = (function () {
       }
       for (let i = 0; i < 4; i++) {
         try { await call('chatSend', Object.assign({}, payload, { lite: 1 })); return; }
-        catch (e) { if (/AUTH|հասանելի չէ|չի գտնվել|Սխալ/.test(e.message) || i === 3) { S.err = 'Հաղորդագրությունը չպահպանվեց աղյուսակում՝ ' + e.message; drawComposer(); return; } await new Promise(r => setTimeout(r, 2000 * (i + 1))); }
+        catch (e) { if (/AUTH|հասանելի չէ|չի գտնվել|Սխալ/.test(e.raw || e.message) || i === 3) { S.err = _t('Հաղորդագրությունը չպահպանվեց') + '՝ ' + e.message; drawComposer(); return; } await new Promise(r => setTimeout(r, 2000 * (i + 1))); }
       }
     }
     async function send() {
@@ -719,7 +725,7 @@ const NxChat = (function () {
         if (!navigator.mediaDevices || !window.MediaRecorder) throw new Error('nosupport');
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (e) {
-        if (e && e.name === 'NotAllowedError') { S.err = 'Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)'; drawComposer(); return; }
+        if (e && e.name === 'NotAllowedError') { S.err = _t('Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)'); drawComposer(); return; }
         root.querySelector('[data-f="aud"]').click(); return;
       }
       const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
@@ -746,11 +752,11 @@ const NxChat = (function () {
       const d = document.createElement('div'); d.className = 'nxc-menu';
       const conv = o.canConvert && o.canConvert(m, S.info);
       d.innerHTML = `<div class="rx">${(S.info.reactions || []).map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>
-        <button class="it" data-a="reply">↩️ Պատասխանել</button>
-        ${m.text ? '<button class="it" data-a="copy">📋 Պատճենել</button>' : ''}
-        ${m.mine && m.text ? '<button class="it" data-a="edit">✏️ Խմբագրել</button>' : ''}
+        <button class="it" data-a="reply">↩️ ${_t('Պատասխանել')}</button>
+        ${m.text ? '<button class="it" data-a="copy">📋 ' + _t('Պատճենել') + '</button>' : ''}
+        ${m.mine && m.text ? '<button class="it" data-a="edit">✏️ ' + _t('Խմբագրել') + '</button>' : ''}
         ${conv ? `<button class="it" data-a="conv">${o.convertLabel || '➕ Թասք'}</button>` : ''}
-        ${m.mine ? '<button class="it d" data-a="del">🗑 Ջնջել բոլորի մոտ</button>' : ''}`;
+        ${m.mine ? '<button class="it d" data-a="del">🗑 ' + _t('Ջնջել բոլորի մոտ') + '</button>' : ''}`;
       document.body.appendChild(d);
       const r = btn.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight;
       d.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left - w / 2)) + 'px';
@@ -764,7 +770,7 @@ const NxChat = (function () {
           if (a === 'reply') { S.reply = m; S.edit = null; drawComposer(); $r('cmp').querySelector('textarea').focus(); }
           if (a === 'copy') { try { await navigator.clipboard.writeText(m.text); } catch (x) { const t = document.createElement('textarea'); t.value = m.text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } }
           if (a === 'edit') { S.edit = m; S.reply = null; $r('cmp').innerHTML = ''; drawComposer(); const t = $r('cmp').querySelector('textarea'); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
-          if (a === 'del' && await NxDlg.confirm('Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։', { ok: 'Ջնջել' })) apply(await call('chatDelete', { id: m.id }));
+          if (a === 'del' && await NxDlg.confirm(_t('Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։'), { ok: _t('Ջնջել'), danger: true })) apply(await call('chatDelete', { id: m.id }));
           if (a === 'conv') o.onConvert(m, S.info);
         } catch (x) { NxDlg.alert(x.message); }
       };
@@ -843,12 +849,12 @@ const NxChat = (function () {
       drawTop(); drawList(); if (S.tab === 'files') drawFiles();
       const grew = S.msgs.length > prevN;
       if (S.firstLoad || own || (grew && wasBottom)) { requestAnimationFrame(() => scrollEnd(!S.firstLoad)); S.firstLoad = false; }
-      else if (grew && !root.querySelector('.nxc-new')) { const b = document.createElement('button'); b.className = 'nxc-new'; b.textContent = '↓ Նոր հաղորդագրություն'; root.querySelector('.nxc').appendChild(b); }
+      else if (grew && !root.querySelector('.nxc-new')) { const b = document.createElement('button'); b.className = 'nxc-new'; b.textContent = '↓ ' + _t('Նոր հաղորդագրություն'); root.querySelector('.nxc').appendChild(b); }
     }
     function drawTyping() {
       const me = NxFb.me(), t = NxFb.now(), names = (S.gasTy || []).slice();
       Object.values(S.fsTy || {}).forEach(x => { if (x && me && (INT ? x.n !== me.n : x.s !== me.s) && t - (+x.at || 0) < 7000 && !names.includes(x.n)) names.push(x.n); });
-      $r('typ').textContent = names.length ? names.join(', ') + (names.length > 1 ? '-ը գրում են…' : '-ը գրում է…') : '';
+      $r('typ').textContent = names.length ? (names.length > 1 ? _t('{0}-ը գրում են…', names.join(', ')) : _t('{0}-ը գրում է…', names.join(', '))) : '';
     }
     /** Մյուս կողմի նոր հաղորդագրությունները նշել կարդացված (Firebase-ում՝ անմիջապես, աղյուսակում՝ քիչ անց) */
     function checkRead() {
@@ -898,7 +904,7 @@ const NxChat = (function () {
     }
     async function tick() {
       if (!S.alive) return;
-      if (!document.hidden && !S.busy) { try { apply(await call('chatGet', { thread: o.thread, since: S.v })); } catch (e) { if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.message)) { S.alive = false; return; } } }
+      if (!document.hidden && !S.busy) { try { apply(await call('chatGet', { thread: o.thread, since: S.v })); } catch (e) { if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.raw || e.message)) { S.alive = false; return; } } }
       // Firebase-ի դեպքում հաղորդագրությունները գալիս են ակնթարթորեն, իսկ այս հարցումը միայն ապահովության համար է
       S.timer = setTimeout(tick, S.fbPath ? (document.hidden ? 60000 : 20000) : (document.hidden ? 15000 : 3000));
     }
@@ -909,13 +915,13 @@ const NxChat = (function () {
     const first = () => call('chatGet', { thread: o.thread }).then(r => { apply(r); S.timer = setTimeout(tick, 3000); })
       .catch(e => {
         if (!S.alive) return;
-        if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.message)) { try { localStorage.removeItem(CK); } catch (x) {} list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; return; }
+        if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.raw || e.message)) { try { localStorage.removeItem(CK); } catch (x) {} list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; return; }
         tries++;
         if (S.info) { S.timer = setTimeout(first, Math.min(15000, 2000 * tries)); return; }   // պահված տարբերակը ցույց է տրված
-        list.innerHTML = `<div class="nxc-empty">⚠ Կապի խնդիր (${esc(e.message)})<br><small>Կրկին փորձում ենք… (${tries})</small><br><button data-a="retry" style="margin-top:10px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">🔄 Կրկին փորձել</button></div>`;
+        list.innerHTML = `<div class="nxc-empty">⚠ ${_t('Կապի խնդիր')} (${esc(e.message)})<br><small>${_t('Կրկին փորձում ենք…')} (${tries})</small><br><button data-a="retry" style="margin-top:10px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">🔄 ${_t('Կրկին փորձել')}</button></div>`;
         S.timer = setTimeout(first, Math.min(15000, 2000 * tries));
       });
-    S.retry = () => { clearTimeout(S.timer); list.innerHTML = '<div class="nxc-empty">Բեռնվում է…</div>'; first(); };
+    S.retry = () => { clearTimeout(S.timer); list.innerHTML = '<div class="nxc-empty">' + _t('Բեռնվում է…') + '</div>'; first(); };
     first();
     const onVis = () => { if (!document.hidden && S.alive) { clearTimeout(S.timer); tick(); checkRead(); } };
     document.addEventListener('visibilitychange', onVis);
@@ -947,64 +953,92 @@ let INFO = null, FILES = [], SENT = false;
 function call(action, payload) {
   payload = Object.assign({ p: TOKEN }, payload || {});
   return new Promise((resolve, reject) => {
-    const done = r => r && r.ok ? resolve(r.data) : reject(new Error((r && r.error) || 'Կապի սխալ'));
-    const fail = e => reject(new Error('Կապի սխալ՝ ' + (e && e.message || e)));
+    const done = r => { if (r && r.ok) return resolve(r.data); const m = (r && r.error) || 'Կապի սխալ', er = new Error(trErr(m)); er.raw = m; reject(er); };
+    const fail = e => { const m = 'Կապի սխալ՝ ' + (e && e.message || e), er = new Error(trErr(m)); er.raw = m; reject(er); };
     if (IS_GAS) google.script.run.withSuccessHandler(done).withFailureHandler(fail).api(action, '', payload);
     else if (API_URL) fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: '', payload }) }).then(r => r.json()).then(done).catch(fail);
     else fail(new Error('API_URL'));
   });
 }
 function fmtDT(s) { if (!s) return ''; const d = s.slice(0, 10).split('-'); return `${d[2]}.${d[1]}.${d[0]}${s.length > 10 ? ' ' + s.slice(11, 16) : ''}`; }
-function fmtSize(n) { n = +n || 0; return n > 1048576 ? (n / 1048576).toFixed(1) + ' ՄԲ' : Math.max(1, Math.round(n / 1024)) + ' ԿԲ'; }
+function fmtSize(n) { n = +n || 0; return n > 1048576 ? (n / 1048576).toFixed(1) + ' ' + t('ՄԲ') : Math.max(1, Math.round(n / 1024)) + ' ' + t('ԿԲ'); }
 function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+/* ======================= ԼԵԶՈՒ (հայերեն / English / Русский) =======================
+   Թարգմանվում է միայն ինտերֆեյսը. գրված տեքստերը (հաղորդագրություններ, անելիքներ) մնում են ինչպես գրվել են */
+const I18N = { en: {"Չեղարկել": "Cancel", "Այո, շարունակել": "Yes, continue", "Այո": "Yes", "Լավ": "OK", "ՄԲ": "MB", "ԿԲ": "KB", "Այսօր": "Today", "Երեկ": "Yesterday", "Ֆայլը չի գտնվել": "File not found", "Չհաջողվեց կարդալ": "Could not read", "Լսել": "Play", "Ձայնային": "Voice", "Որոնել զրույցում…": "Search in chat…", "Որոնում": "Search", "Բոլոր ֆայլերը": "All files", "Ֆայլեր": "Files", "Բեռնվում է…": "Loading…", "Պահպանել": "Save", "Փակել": "Close", "հաճախորդ": "client", "Դուք": "You", "ջնջված հաղորդագրություն": "deleted message", "Հաղորդագրությունը ջնջված է": "Message deleted", "խմբագրված": "edited", "Ուղարկվում է": "Sending", "Կարդացված է": "Read", "Ուղարկված է": "Sent", "Գործողություններ": "Actions", "Ոչինչ չի գտնվել": "Nothing found", "Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը 👋": "No messages yet. Write the first one 👋", "Ֆայլեր դեռ չկան": "No files yet", "Նկարներ և տեսանյութեր": "Photos and videos", "Փաստաթղթեր": "Documents", "Ուղարկել": "Send", "Խմբագրում": "Editing", "Կցել": "Attach", "Խմբագրել…": "Edit…", "Հաղորդագրություն…": "Message…", "Ձայնային հաղորդագրություն": "Voice message", "Առավելագույնը {0} ֆայլ": "Maximum {0} files", "«{0}» ֆայլը մեծ է {1} ՄԲ-ից": "File «{0}» is larger than {1} MB", "Նկարեք ավելի կարճ տեսանյութ։": "Record a shorter video.", "Մեկ անգամում՝ մինչև 45 ՄԲ": "Up to 45 MB at once", "Նկարել": "Camera", "Տեսանյութ": "Video", "Գալերեա": "Gallery", "Ֆայլ": "File", "Ձայն": "Voice", "Հաղորդագրությունը չպահպանվեց": "Message was not saved", "Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)": "Microphone permission is not granted (enable it in browser/phone settings)", "Պատասխանել": "Reply", "Պատճենել": "Copy", "Խմբագրել": "Edit", "Ջնջել բոլորի մոտ": "Delete for everyone", "Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։": "Delete the message for everyone?", "Ջնջել": "Delete", "Նոր հաղորդագրություն": "New message", "{0}-ը գրում է…": "{0} is typing…", "{0}-ը գրում են…": "{0} are typing…", "Կապի խնդիր": "Connection problem", "Կրկին փորձում ենք…": "Retrying…", "Կրկին փորձել": "Try again", "Ստացված": "Received", "Դիտված": "Viewed", "Կատարման մեջ": "In progress", "Կատարված": "Done", "Մերժված": "Rejected", "Կապի սխալ": "Connection error", "սերվերը չի պատասխանում (60 վրկ)": "the server is not responding (60 s)", "սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)": "the server returned an invalid response", "Ֆայլը դատարկ է": "File is empty", "Հարցումներ Numetrix-ին": "Requests to Numetrix", "Նոր հարցում": "New request", "Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։": "Describe what needs to be done. The request will instantly appear for the Numetrix team.", "Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։": "The request has been sent. You will see its status below.", "Ձեր անունը": "Your name", "Ցանկալի ժամկետ": "Desired deadline", "Ի՞նչ է պետք անել": "What needs to be done?", "Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը": "E.g.: Process the October payroll", "Մանրամասներ": "Details", "Լրացուցիչ տեղեկություններ…": "Additional information…", "Հղում փաստաթղթին (եթե կա)": "Link to a document (if any)", "Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)": "Files (up to {0}, each up to {1} MB)", "Սեղմեք կամ քաշեք ֆայլերը այստեղ": "Click or drag files here", "Ուղարկել հարցումը": "Send request", "Ձեր հարցումները": "Your requests", "ժամկետ": "deadline", "Դեռ հարցումներ չկան": "No requests yet", "Հեռացնել": "Remove", "Լրացրեք Ձեր անունը և թե ինչ է պետք անել": "Fill in your name and what needs to be done", "Ֆայլերը բեռնվում են…": "Uploading files…", "Ուղարկվում է…": "Sending…", "Տեղադրել հեռախոսում": "Install on phone", "Միացնել ծանուցումները": "Enable notifications", "Տեղադրել iPhone-ում": "Install on iPhone", "Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)": "Tap the <b>Share</b> button at the bottom (□↑)", "Ընտրեք": "Choose", "Սեղմեք": "Tap", "Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։": "The Numetrix icon will appear on your home screen like a regular app.", "Կարգավիճակ": "Status", "Հավելվածը դեռ կարգավորված չէ": "The app is not configured yet", "Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները": "Connection problem — showing the last saved data", "Չհաջողվեց բեռնել": "Could not load", "Դուրս գալ և նորից մտնել": "Log out and log in again", "Հաճախորդի պատուհան": "Client portal", "Բարև, {0}": "Hello, {0}", "Մուտք": "Log in", "Մուտքագրեք Ձեր PIN-ը": "Enter your PIN", "Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։": "First login — create your PIN (4–8 digits). You will need it next time.", "Մուտքանունը տրամադրել է Numetrix-ը": "Your login was provided by Numetrix", "Նոր PIN": "New PIN", "Կրկնեք PIN-ը": "Repeat PIN", "Մուտքանուն": "Login", "Շարունակել": "Continue", "Այլ մուտքանուն": "Another login", "Գրեք մուտքանունը": "Enter your login", "PIN-երը չեն համընկնում": "PINs do not match", "Ելք": "Log out", "Որոնել հաղորդագրություններում և ֆայլերում…": "Search messages and files…", "Չաթ Numetrix-ի հետ": "Chat with Numetrix", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…": "Ask us anything, send a photo, a voice message…", "Անելիքներ": "Tasks", "Նոր անելիք": "New task", "Ընթացիկ": "Current", "Ավարտված": "Completed", "Բոլորը": "All", "Այստեղ դեռ ոչինչ չկա": "Nothing here yet", "Հետ": "Back", "Նոր անելիք Numetrix-ին": "New task for Numetrix", "Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։": "Describe what needs to be done (e.g. a payment, issuing an invoice). It will instantly appear for the specialist serving your company. For quick questions, use the chat.", "Կազմակերպություն": "Company", "ընտրեք": "select", "Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին": "E.g.: Transfer 500,000 AMD to «Beta» LLC", "Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…": "Recipient, account number, amount, purpose, goods/services…", "Հղում (եթե կա)": "Link (if any)", "Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)": "Photos, videos, voice, files (up to 10, each ≤ {0} MB)", "Կանգնեցնել": "Stop", "Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։": "Record a shorter video or send it in parts.", "Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։": "Up to 45 MB at once. Send in parts.", "Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։": "Microphone permission is not granted. Enable it in phone/browser settings, or record with your phone's recorder and attach it as a file.", "Ընտրեք կազմակերպությունը": "Select a company", "Գրեք, թե ինչ է պետք անել": "Describe what needs to be done", "Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։": "Sent. You can follow the status and replies here.", "Ուղարկվել է": "Sent", "Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։": "Here you can ask questions and send extra photos, documents or voice messages about this task.", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային 👋": "Ask us anything, send a photo, video or voice message 👋", "Դարձնել անելիք": "Make it a task", "Ստեղծե՞լ անելիք այս հաղորդագրությունից": "Create a task from this message?", "Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։": "It will appear under «Tasks», and you can follow its progress.", "Ստեղծվեց անելիք": "Task created", "Անհրաժեշտ է մուտք գործել": "Please log in", "Ձեր մուտքը անջատված է։ Դիմեք Numetrix-ին։": "Your access is disabled. Please contact Numetrix.", "Մուտքը ժամկետանց է։ Մուտք գործեք նորից։": "Session expired. Please log in again.", "PIN-ը պետք է լինի 4-8 թվանշան": "PIN must be 4–8 digits", "PIN-ը սխալ է": "Wrong PIN", "Հաղորդագրությունը չի գտնվել": "Message not found", "Հղումը պետք է սկսվի http:\/\/ կամ https:\/\/-ով": "The link must start with http:\/\/ or https:\/\/", "Մուտքանունը չի գտնվել կամ անջատված է": "Login not found or disabled", "Չափազանց շատ հարցումներ։ Փորձեք մի փոքր ուշ։": "Too many requests. Please try again a bit later.", "Չափից շատ սխալ փորձեր։ Փորձեք 15 րոպե հետո կամ դիմեք Numetrix-ին։": "Too many failed attempts. Try again in 15 minutes or contact Numetrix.", "Ֆայլը հասանելի չէ": "File is not available", "Զրույցը հասանելի չէ": "Chat is not available", "Զրույցը չի գտնվել": "Chat not found", "Հաղորդագրությունը դատարկ է": "Message is empty", "Կարող եք փոխել միայն Ձեր հաղորդագրությունները": "You can only change your own messages", "Տեքստը դատարկ է": "Text is empty", "📋 Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։": "📋 Task {0} «{1}» was created from your message. You can follow it under «Tasks».", "📋 Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»": "📋 Task {0} «{1}» was created from a message"},
+  ru: {"Չեղարկել": "Отмена", "Այո, շարունակել": "Да, продолжить", "Այո": "Да", "Լավ": "OK", "ՄԲ": "МБ", "ԿԲ": "КБ", "Այսօր": "Сегодня", "Երեկ": "Вчера", "Ֆայլը չի գտնվել": "Файл не найден", "Չհաջողվեց կարդալ": "Не удалось прочитать", "Լսել": "Слушать", "Ձայնային": "Голосовые", "Որոնել զրույցում…": "Поиск в чате…", "Որոնում": "Поиск", "Բոլոր ֆայլերը": "Все файлы", "Ֆայլեր": "Файлы", "Բեռնվում է…": "Загрузка…", "Պահպանել": "Сохранить", "Փակել": "Закрыть", "հաճախորդ": "клиент", "Դուք": "Вы", "ջնջված հաղորդագրություն": "удалённое сообщение", "Հաղորդագրությունը ջնջված է": "Сообщение удалено", "խմբագրված": "изменено", "Ուղարկվում է": "Отправляется", "Կարդացված է": "Прочитано", "Ուղարկված է": "Отправлено", "Գործողություններ": "Действия", "Ոչինչ չի գտնվել": "Ничего не найдено", "Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը 👋": "Сообщений пока нет. Напишите первым 👋", "Ֆայլեր դեռ չկան": "Файлов пока нет", "Նկարներ և տեսանյութեր": "Фото и видео", "Փաստաթղթեր": "Документы", "Ուղարկել": "Отправить", "Խմբագրում": "Редактирование", "Կցել": "Прикрепить", "Խմբագրել…": "Изменить…", "Հաղորդագրություն…": "Сообщение…", "Ձայնային հաղորդագրություն": "Голосовое сообщение", "Առավելագույնը {0} ֆայլ": "Максимум {0} файлов", "«{0}» ֆայլը մեծ է {1} ՄԲ-ից": "Файл «{0}» больше {1} МБ", "Նկարեք ավելի կարճ տեսանյութ։": "Снимите более короткое видео.", "Մեկ անգամում՝ մինչև 45 ՄԲ": "До 45 МБ за раз", "Նկարել": "Камера", "Տեսանյութ": "Видео", "Գալերեա": "Галерея", "Ֆայլ": "Файл", "Ձայն": "Голос", "Հաղորդագրությունը չպահպանվեց": "Сообщение не сохранено", "Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)": "Нет доступа к микрофону (включите в настройках браузера/телефона)", "Պատասխանել": "Ответить", "Պատճենել": "Копировать", "Խմբագրել": "Изменить", "Ջնջել բոլորի մոտ": "Удалить у всех", "Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։": "Удалить сообщение у всех?", "Ջնջել": "Удалить", "Նոր հաղորդագրություն": "Новое сообщение", "{0}-ը գրում է…": "{0} печатает…", "{0}-ը գրում են…": "{0} печатают…", "Կապի խնդիր": "Проблема со связью", "Կրկին փորձում ենք…": "Повторяем попытку…", "Կրկին փորձել": "Повторить", "Ստացված": "Получено", "Դիտված": "Просмотрено", "Կատարման մեջ": "В работе", "Կատարված": "Выполнено", "Մերժված": "Отклонено", "Կապի սխալ": "Ошибка связи", "սերվերը չի պատասխանում (60 վրկ)": "сервер не отвечает (60 с)", "սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)": "сервер вернул некорректный ответ", "Ֆայլը դատարկ է": "Файл пустой", "Հարցումներ Numetrix-ին": "Запросы в Numetrix", "Նոր հարցում": "Новый запрос", "Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։": "Опишите, что нужно сделать. Запрос сразу появится у команды Numetrix.", "Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։": "Запрос отправлен. Статус вы увидите ниже.", "Ձեր անունը": "Ваше имя", "Ցանկալի ժամկետ": "Желаемый срок", "Ի՞նչ է պետք անել": "Что нужно сделать?", "Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը": "Напр.: Оформить зарплату за октябрь", "Մանրամասներ": "Подробности", "Լրացուցիչ տեղեկություններ…": "Дополнительная информация…", "Հղում փաստաթղթին (եթե կա)": "Ссылка на документ (если есть)", "Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)": "Файлы (до {0} шт., каждый до {1} МБ)", "Սեղմեք կամ քաշեք ֆայլերը այստեղ": "Нажмите или перетащите файлы сюда", "Ուղարկել հարցումը": "Отправить запрос", "Ձեր հարցումները": "Ваши запросы", "ժամկետ": "срок", "Դեռ հարցումներ չկան": "Запросов пока нет", "Հեռացնել": "Удалить", "Լրացրեք Ձեր անունը և թե ինչ է պետք անել": "Укажите имя и что нужно сделать", "Ֆայլերը բեռնվում են…": "Загрузка файлов…", "Ուղարկվում է…": "Отправка…", "Տեղադրել հեռախոսում": "Установить на телефон", "Միացնել ծանուցումները": "Включить уведомления", "Տեղադրել iPhone-ում": "Установить на iPhone", "Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)": "Нажмите внизу кнопку <b>Поделиться</b> (□↑)", "Ընտրեք": "Выберите", "Սեղմեք": "Нажмите", "Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։": "Значок Numetrix появится на экране телефона, как обычное приложение.", "Կարգավիճակ": "Статус", "Հավելվածը դեռ կարգավորված չէ": "Приложение ещё не настроено", "Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները": "Проблема со связью — показаны последние сохранённые данные", "Չհաջողվեց բեռնել": "Не удалось загрузить", "Դուրս գալ և նորից մտնել": "Выйти и войти снова", "Հաճախորդի պատուհան": "Кабинет клиента", "Բարև, {0}": "Здравствуйте, {0}", "Մուտք": "Вход", "Մուտքագրեք Ձեր PIN-ը": "Введите ваш PIN", "Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։": "Первый вход — придумайте PIN (4–8 цифр). Он понадобится в следующий раз.", "Մուտքանունը տրամադրել է Numetrix-ը": "Логин предоставлен Numetrix", "Նոր PIN": "Новый PIN", "Կրկնեք PIN-ը": "Повторите PIN", "Մուտքանուն": "Логин", "Շարունակել": "Продолжить", "Այլ մուտքանուն": "Другой логин", "Գրեք մուտքանունը": "Введите логин", "PIN-երը չեն համընկնում": "PIN-коды не совпадают", "Ելք": "Выйти", "Որոնել հաղորդագրություններում և ֆայլերում…": "Поиск в сообщениях и файлах…", "Չաթ Numetrix-ի հետ": "Чат с Numetrix", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…": "Задайте любой вопрос, отправьте фото, голосовое…", "Անելիքներ": "Задачи", "Նոր անելիք": "Новая задача", "Ընթացիկ": "Текущие", "Ավարտված": "Завершённые", "Բոլորը": "Все", "Այստեղ դեռ ոչինչ չկա": "Здесь пока ничего нет", "Հետ": "Назад", "Նոր անելիք Numetrix-ին": "Новая задача для Numetrix", "Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։": "Опишите, что нужно сделать (напр., перевод, выписать счёт). Задача сразу появится у специалиста, обслуживающего вашу компанию. Для быстрых вопросов используйте чат.", "Կազմակերպություն": "Компания", "ընտրեք": "выберите", "Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին": "Напр.: Перевести 500 000 драм в ООО «Бета»", "Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…": "Получатель, счёт, сумма, назначение, товар/услуга…", "Հղում (եթե կա)": "Ссылка (если есть)", "Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)": "Фото, видео, голос, файлы (до 10, каждый ≤ {0} МБ)", "Կանգնեցնել": "Стоп", "Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։": "Снимите видео короче или отправьте частями.", "Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։": "До 45 МБ за раз. Отправьте частями.", "Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։": "Нет доступа к микрофону. Включите его в настройках телефона/браузера или запишите диктофоном и прикрепите как файл.", "Ընտրեք կազմակերպությունը": "Выберите компанию", "Գրեք, թե ինչ է պետք անել": "Опишите, что нужно сделать", "Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։": "Отправлено. Статус и ответы можно отслеживать здесь.", "Ուղարկվել է": "Отправлено", "Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։": "Здесь можно задать вопросы и отправить дополнительные фото, документы, голосовые по этой задаче.", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային 👋": "Задайте любой вопрос, отправьте фото, видео, голосовое 👋", "Դարձնել անելիք": "Сделать задачей", "Ստեղծե՞լ անելիք այս հաղորդագրությունից": "Создать задачу из этого сообщения?", "Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։": "Она появится в разделе «Задачи», и вы сможете следить за выполнением.", "Ստեղծվեց անելիք": "Создана задача", "Անհրաժեշտ է մուտք գործել": "Необходимо войти", "Ձեր մուտքը անջատված է։ Դիմեք Numetrix-ին։": "Ваш доступ отключён. Обратитесь в Numetrix.", "Մուտքը ժամկետանց է։ Մուտք գործեք նորից։": "Сессия истекла. Войдите снова.", "PIN-ը պետք է լինի 4-8 թվանշան": "PIN должен содержать 4–8 цифр", "PIN-ը սխալ է": "Неверный PIN", "Հաղորդագրությունը չի գտնվել": "Сообщение не найдено", "Հղումը պետք է սկսվի http:\/\/ կամ https:\/\/-ով": "Ссылка должна начинаться с http:\/\/ или https:\/\/", "Մուտքանունը չի գտնվել կամ անջատված է": "Логин не найден или отключён", "Չափազանց շատ հարցումներ։ Փորձեք մի փոքր ուշ։": "Слишком много запросов. Попробуйте чуть позже.", "Չափից շատ սխալ փորձեր։ Փորձեք 15 րոպե հետո կամ դիմեք Numetrix-ին։": "Слишком много неудачных попыток. Попробуйте через 15 минут или обратитесь в Numetrix.", "Ֆայլը հասանելի չէ": "Файл недоступен", "Զրույցը հասանելի չէ": "Чат недоступен", "Զրույցը չի գտնվել": "Чат не найден", "Հաղորդագրությունը դատարկ է": "Сообщение пустое", "Կարող եք փոխել միայն Ձեր հաղորդագրությունները": "Можно изменять только свои сообщения", "Տեքստը դատարկ է": "Текст пустой", "📋 Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։": "📋 Из вашего сообщения создана задача {0} «{1}». Следить за ней можно в разделе «Задачи».", "📋 Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»": "📋 Из сообщения создана задача {0} «{1}»"} };
+window.NX_SYS = m => {
+  if (LANG === 'hy') return m; let x;
+  if ((x = String(m).match(/^📋 Ձեր հաղորդագրությունից ստեղծվեց անելիք (\S+)՝ «([\s\S]*)»։/))) return t('📋 Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։', x[1], x[2]);
+  if ((x = String(m).match(/^📋 Հաղորդագրությունից ստեղծվեց անելիք (\S+)՝ «([\s\S]*)»$/))) return t('📋 Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»', x[1], x[2]);
+  return m;
+};
+var LANG = (function () { try { const v = localStorage.getItem('nx_lang'); if (v === 'en' || v === 'ru') return v; } catch (e) {} return 'hy'; })();
+try { document.documentElement.lang = LANG; if (LANG !== 'hy') document.title = 'Numetrix'; } catch (e) {}
+function t(s, ...a) { let r = (LANG !== 'hy' && I18N[LANG] && I18N[LANG][s]) || s; a.forEach((v, i) => { r = r.split('{' + i + '}').join(v); }); return r; }
+window.NX_T = s => (LANG !== 'hy' && I18N[LANG] && I18N[LANG][s]) || s;
+/** Սերվերի սխալները (հայերեն)՝ ընտրված լեզվով */
+function trErr(m) {
+  m = String(m || ''); if (LANG === 'hy') return m;
+  if (I18N[LANG][m]) return I18N[LANG][m];
+  let x;
+  if ((x = m.match(/^Կապի սխալ՝ (.*)$/))) return t('Կապի սխալ') + ': ' + x[1];
+  if ((x = m.match(/^Ֆայլը մեծ է (\d+) ՄԲ-ից՝ (.*)$/))) return t('«{0}» ֆայլը մեծ է {1} ՄԲ-ից', x[2], x[1]);
+  if ((x = m.match(/^Ֆայլը դատարկ է՝ (.*)$/))) return t('Ֆայլը դատարկ է') + ': ' + x[1];
+  return m;
+}
+function langBar() {
+  return `<div class="langs">${[['hy', 'ՀԱՅ'], ['en', 'EN'], ['ru', 'РУ']].map(([k, l]) => `<button type="button" data-lang="${k}" class="${LANG === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-lang]'); if (!b || b.dataset.lang === LANG) return; lsSet('nx_lang', b.dataset.lang); location.reload(); });
 
 function render() {
   const d = INFO;
   $('#root').innerHTML = `
-  <div class="head"><div class="mark">N</div><div><h1>${esc(d.companyName)}</h1><small>Հարցումներ Numetrix-ին</small></div></div>
+  <div class="head"><div class="mark">N</div><div style="flex:1"><h1>${esc(d.companyName)}</h1><small>${t('Հարցումներ Numetrix-ին')}</small></div>${langBar()}</div>
   <div class="card">
-    <h2>Նոր հարցում</h2>
-    <p class="sub">Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։</p>
-    ${SENT ? '<div class="ok">✔ Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։</div>' : ''}
+    <h2>${t('Նոր հարցում')}</h2>
+    <p class="sub">${t('Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։')}</p>
+    ${SENT ? '<div class="ok">✔ ' + t('Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։') + '</div>' : ''}
     <form id="f" class="grid" novalidate>
-      <div><label class="f">Ձեր անունը *</label><input class="inp" name="author" maxlength="100" value="${esc(lsGet('nx_portal_author'))}" required></div>
-      <div><label class="f">Ցանկալի ժամկետ</label><input class="inp" type="date" name="due"></div>
-      <div class="full"><label class="f">Ի՞նչ է պետք անել *</label><input class="inp" name="title" maxlength="300" placeholder="Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը" required></div>
-      <div class="full"><label class="f">Մանրամասներ</label><textarea class="inp" name="description" maxlength="5000" placeholder="Լրացուցիչ տեղեկություններ…"></textarea></div>
-      <div class="full"><label class="f">Հղում փաստաթղթին (եթե կա)</label><input class="inp" name="link" placeholder="https:\/\/…"></div>
-      <div class="full"><label class="f">Ֆայլեր (մինչև 5 հատ, յուրաքանչյուրը մինչև ${d.maxFileMb} ՄԲ)</label>
-        <div class="drop" id="drop">📎 Սեղմեք կամ քաշեք ֆայլերը այստեղ</div>
+      <div><label class="f">${t('Ձեր անունը')} *</label><input class="inp" name="author" maxlength="100" value="${esc(lsGet('nx_portal_author'))}" required></div>
+      <div><label class="f">${t('Ցանկալի ժամկետ')}</label><input class="inp" type="date" name="due"></div>
+      <div class="full"><label class="f">${t('Ի՞նչ է պետք անել')} *</label><input class="inp" name="title" maxlength="300" placeholder="${t('Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը')}" required></div>
+      <div class="full"><label class="f">${t('Մանրամասներ')}</label><textarea class="inp" name="description" maxlength="5000" placeholder="${t('Լրացուցիչ տեղեկություններ…')}"></textarea></div>
+      <div class="full"><label class="f">${t('Հղում փաստաթղթին (եթե կա)')}</label><input class="inp" name="link" placeholder="https:\/\/…"></div>
+      <div class="full"><label class="f">${t('Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)', 5, d.maxFileMb)}</label>
+        <div class="drop" id="drop">📎 ${t('Սեղմեք կամ քաշեք ֆայլերը այստեղ')}</div>
         <input type="file" id="fi" multiple hidden>
         <div class="flist" id="fl"></div></div>
-      <div class="full"><button class="btn" type="submit" id="go">Ուղարկել հարցումը</button><div class="err" id="err"></div></div>
+      <div class="full"><button class="btn" type="submit" id="go">${t('Ուղարկել հարցումը')}</button><div class="err" id="err"></div></div>
     </form>
   </div>
   <div class="card">
-    <h2>Ձեր հարցումները</h2>
+    <h2>${t('Ձեր հարցումները')}</h2>
     ${d.requests.length ? d.requests.map(r => `<div class="req"><div style="min-width:0;flex:1">
         <div class="t">${esc(r.title)}</div>
-        <div class="m">${esc(fmtDT(r.createdAt))}${r.due ? ' · ժամկետ՝ ' + esc(fmtDT(r.due)) : ''}${r.files.length ? ' · 📎 ' + r.files.length : ''}</div>
+        <div class="m">${esc(fmtDT(r.createdAt))}${r.due ? ' · ' + t('ժամկետ') + ': ' + esc(fmtDT(r.due)) : ''}${r.files.length ? ' · 📎 ' + r.files.length : ''}</div>
         ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
-      </div><span class="pill" style="--c:${ST_COLORS[r.status] || '#64748b'}">${esc(ST_LABEL[r.status] || r.status)}</span></div>`).join('') : '<div class="empty">Դեռ հարցումներ չկան</div>'}
+      </div><span class="pill" style="--c:${ST_COLORS[r.status] || '#64748b'}">${esc(t(ST_LABEL[r.status] || r.status))}</span></div>`).join('') : '<div class="empty">' + t('Դեռ հարցումներ չկան') + '</div>'}
   </div>`;
   bind();
 }
 function drawFiles() {
-  $('#fl').innerHTML = FILES.map((f, i) => `<div class="fitem">📄<span>${esc(f.name)}</span><small class="sub" style="margin:0">${fmtSize(f.size)}</small><button type="button" data-i="${i}" title="Հեռացնել">×</button></div>`).join('');
+  $('#fl').innerHTML = FILES.map((f, i) => `<div class="fitem">📄<span>${esc(f.name)}</span><small class="sub" style="margin:0">${fmtSize(f.size)}</small><button type="button" data-i="${i}" title="${t('Հեռացնել')}">×</button></div>`).join('');
   $('#fl').querySelectorAll('button').forEach(b => b.onclick = () => { FILES.splice(+b.dataset.i, 1); drawFiles(); });
 }
 function addFiles(list) {
   const err = $('#err'); err.textContent = '';
   [...list].forEach(f => {
-    if (FILES.length >= 5) { err.textContent = 'Առավելագույնը 5 ֆայլ'; return; }
-    if (f.size > INFO.maxFileMb * 1048576) { err.textContent = `«${f.name}» ֆայլը մեծ է ${INFO.maxFileMb} ՄԲ-ից`; return; }
+    if (FILES.length >= 5) { err.textContent = t('Առավելագույնը {0} ֆայլ', 5); return; }
+    if (f.size > INFO.maxFileMb * 1048576) { err.textContent = t('«{0}» ֆայլը մեծ է {1} ՄԲ-ից', f.name, INFO.maxFileMb); return; }
     FILES.push(f);
   });
   drawFiles();
 }
 function readB64(f) {
-  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Չհաջողվեց կարդալ ' + f.name)); r.readAsDataURL(f); });
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error(t('Չհաջողվեց կարդալ') + ' ' + f.name)); r.readAsDataURL(f); });
 }
 function bind() {
   const drop = $('#drop'), fi = $('#fi');
@@ -1018,14 +1052,14 @@ function bind() {
     e.preventDefault();
     const fd = new FormData(e.target), err = $('#err'), go = $('#go');
     const data = Object.fromEntries(fd.entries());
-    if (!data.author.trim() || !data.title.trim()) { err.textContent = 'Լրացրեք Ձեր անունը և թե ինչ է պետք անել'; return; }
-    go.disabled = true; go.textContent = FILES.length ? 'Ֆայլերը բեռնվում են…' : 'Ուղարկվում է…'; err.textContent = '';
+    if (!data.author.trim() || !data.title.trim()) { err.textContent = t('Լրացրեք Ձեր անունը և թե ինչ է պետք անել'); return; }
+    go.disabled = true; go.textContent = FILES.length ? t('Ֆայլերը բեռնվում են…') : t('Ուղարկվում է…'); err.textContent = '';
     try {
       data.files = await Promise.all(FILES.map(async f => ({ name: f.name, mime: f.type, data: await readB64(f) })));
       lsSet('nx_portal_author', data.author.trim());
       INFO = await call('portalSubmit', data);
       FILES = []; SENT = true; render(); window.scrollTo(0, 0);
-    } catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = 'Ուղարկել հարցումը'; }
+    } catch (ex) { err.textContent = ex.message; go.disabled = false; go.textContent = t('Ուղարկել հարցումը'); }
   };
 }
 
@@ -1037,7 +1071,7 @@ async function ccall(action, payload) {
   for (let i = 0; ; i++) {
     try { return await ccall1(action, payload); }
     catch (e) {
-      if (!RETRY_OK[action] || i >= 2 || !/Կապի սխալ/.test(e.message) || /AUTH/.test(e.message)) throw e;
+      if (!RETRY_OK[action] || i >= 2 || !/Կապի սխալ/.test(e.raw || e.message) || /AUTH/.test(e.raw || e.message)) throw e;
       await new Promise(r => setTimeout(r, 1500 * (i + 1)));
     }
   }
@@ -1047,15 +1081,16 @@ function ccall1(action, payload) {
     const done = r => {
       if (r && r.ok) return resolve(r.data);
       const msg = (r && r.error) || 'Կապի սխալ';
-      if (/^AUTH:/.test(msg)) { CL.tok = ''; lsSet('nx_client_tok', ''); fbStopC(); clLogin(msg.replace(/^AUTH:\s*/, '')); }
-      reject(new Error(msg.replace(/^AUTH:\s*/, '')));
+      const raw = msg.replace(/^AUTH:\s*/, '');
+      if (/^AUTH:/.test(msg)) { CL.tok = ''; lsSet('nx_client_tok', ''); fbStopC(); clLogin(trErr(raw)); }
+      const er = new Error(trErr(raw)); er.raw = raw; reject(er);
     };
-    const fail = e => reject(new Error('Կապի սխալ՝ ' + (e && e.message || e)));
+    const fail = e => { const m = 'Կապի սխալ՝ ' + (e && e.message || e), er = new Error(trErr(m)); er.raw = m; reject(er); };
     if (IS_GAS) google.script.run.withSuccessHandler(done).withFailureHandler(fail).api(action, CL.tok, payload || {});
     else if (API_URL) {
-      const tm = setTimeout(() => fail(new Error('սերվերը չի պատասխանում (60 վրկ)')), 60000);
+      const tm = setTimeout(() => fail(new Error(t('սերվերը չի պատասխանում (60 վրկ)'))), 60000);
       fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: CL.tok, payload: payload || {} }) })
-        .then(r => r.text()).then(t => { clearTimeout(tm); let j; try { j = JSON.parse(t); } catch (e) { throw new Error('սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)'); } done(j); })
+        .then(r => r.text()).then(txt => { clearTimeout(tm); let j; try { j = JSON.parse(txt); } catch (e) { throw new Error(t('սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)')); } done(j); })
         .catch(e => { clearTimeout(tm); fail(e); });
     }
     else fail(new Error('API_URL'));
@@ -1079,15 +1114,15 @@ function canInstall() { return !STANDALONE && (installEvt || (IOS && !IS_GAS)); 
 function canNotify() { return 'Notification' in window && Notification.permission === 'default' && !IS_GAS; }
 function appBar() {
   const b = [];
-  if (canInstall()) b.push('<button id="inst">📲 Տեղադրել հեռախոսում</button>');
-  if (canNotify()) b.push('<button id="ntf">🔔 Միացնել ծանուցումները</button>');
+  if (canInstall()) b.push('<button id="inst">📲 ' + t('Տեղադրել հեռախոսում') + '</button>');
+  if (canNotify()) b.push('<button id="ntf">🔔 ' + t('Միացնել ծանուցումները') + '</button>');
   return b.length ? `<div class="appbar">${b.join('')}</div>` : '';
 }
 function bindAppBar() {
   const i = $('#inst'); if (i) i.onclick = async () => {
     if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; clRender(); return; }
     const d = document.createElement('div'); d.className = 'ios';
-    d.innerHTML = `<div><b>Տեղադրել iPhone-ում</b><ol><li>Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)</li><li>Ընտրեք <b>«Add to Home Screen» / «На экран Домой»</b></li><li>Սեղմեք <b>Add</b></li></ol><p class="sub">Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։</p><button class="btn" id="iosok">Լավ</button></div>`;
+    d.innerHTML = `<div><b>${t('Տեղադրել iPhone-ում')}</b><ol><li>${t('Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)')}</li><li>${t('Ընտրեք')} <b>«Add to Home Screen» / «На экран Домой»</b></li><li>${t('Սեղմեք')} <b>Add</b></li></ol><p class="sub">${t('Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։')}</p><button class="btn" id="iosok">${t('Լավ')}</button></div>`;
     document.body.appendChild(d); d.onclick = e => { if (e.target === d || e.target.id === 'iosok') d.remove(); };
   };
   const n = $('#ntf'); if (n) n.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} clRender(); };
@@ -1104,8 +1139,8 @@ function notifyChanges(prev, next) {
     allThreads(next).forEach(r => {
       const o = old[r.thread]; if (!o || r.thread === CL.thread) return;
       let body = '';
-      if (r.unread > o.unread && r.last) body = '💬 ' + r.last.by + '՝ ' + r.last.text;
-      else if (r.status && r.status !== o.status) body = 'Կարգավիճակ՝ ' + (ST_LABEL[r.status] || r.status);
+      if (r.unread > o.unread && r.last) body = '💬 ' + r.last.by + ': ' + r.last.text;
+      else if (r.status && r.status !== o.status) body = t('Կարգավիճակ') + ': ' + t(ST_LABEL[r.status] || r.status);
       if (!body) return;
       const opt = { body: body.slice(0, 180), icon: 'icon-192.png', badge: 'icon-192.png', tag: r.thread, data: { id: r.thread } };
       if (swReg && swReg.showNotification) swReg.showNotification(String(r.title).slice(0, 80), opt);
@@ -1136,7 +1171,7 @@ function fbStopC() { if (typeof FBC === 'function') FBC(); FBC = null; FBC_T.for
 
 const VKEY = () => 'nx_cv_' + String(CL.tok).slice(0, 12);
 function clientInit() {
-  if (!IS_GAS && !API_URL) { $('#root').innerHTML = `<div class="card bad"><div class="big">⚙️</div><b>Հավելվածը դեռ կարգավորված չէ</b><p class="sub">index.html ֆայլում լրացրեք API_URL-ը (Apps Script-ի …/exec հղումը)։</p></div>`; return; }
+  if (!IS_GAS && !API_URL) { $('#root').innerHTML = `<div class="card bad"><div class="big">⚙️</div><b>${t('Հավելվածը դեռ կարգավորված չէ')}</b><p class="sub">index.html → API_URL</p></div>`; return; }
   if (!CL.tok) return clLogin();
   NxFb.start(ccall);   // Firebase-ը միանում է զուգահեռ
   // նախորդ անգամվա տվյալները՝ անմիջապես (թարմը կգա մի քանի վայրկյանից)
@@ -1158,27 +1193,27 @@ function clientInit() {
     clPoll(); fbStartC();
   }).catch(e => {
     if (!CL.tok) return;   // մուտքի էջն արդեն ցույց է տրված
-    if (CL.v) { toastC('⚠ Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները'); setTimeout(() => { if (CL.tok) clientInit(); }, 15000); return; }
-    $('#root').innerHTML = `<div class="card bad"><div class="big">⚠️</div><b>Չհաջողվեց բեռնել</b><p class="sub" style="margin-top:8px">${esc(e.message)}</p>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px"><button class="btn" id="rt1" style="width:auto">🔄 Կրկին փորձել</button><button class="btn2" id="rt2">Դուրս գալ և նորից մտնել</button></div></div>`;
-    $('#rt1').onclick = () => { $('#root').innerHTML = '<div class="card"><div class="empty">Բեռնվում է…</div></div>'; clientInit(); };
+    if (CL.v) { toastC('⚠ ' + t('Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները')); setTimeout(() => { if (CL.tok) clientInit(); }, 15000); return; }
+    $('#root').innerHTML = `<div class="card bad"><div class="big">⚠️</div><b>${t('Չհաջողվեց բեռնել')}</b><p class="sub" style="margin-top:8px">${esc(e.message)}</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px"><button class="btn" id="rt1" style="width:auto">🔄 ${t('Կրկին փորձել')}</button><button class="btn2" id="rt2">${t('Դուրս գալ և նորից մտնել')}</button></div></div>`;
+    $('#rt1').onclick = () => { $('#root').innerHTML = '<div class="card"><div class="empty">' + t('Բեռնվում է…') + '</div></div>'; clientInit(); };
     $('#rt2').onclick = () => { CL.tok = ''; lsSet('nx_client_tok', ''); clLogin(); };
   });
 }
 
 function clLogin(err) {
   const c = CL.check;
-  $('#root').innerHTML = `<div class="head"><div class="mark">N</div><div><h1>Numetrix</h1><small>Հաճախորդի պատուհան</small></div></div>
+  $('#root').innerHTML = `<div class="head"><div class="mark">N</div><div style="flex:1"><h1>Numetrix</h1><small>${t('Հաճախորդի պատուհան')}</small></div>${langBar()}</div>
   <div class="card" style="max-width:420px;margin:30px auto 0">
-    <h2>${c ? 'Բարև, ' + esc(c.name) : 'Մուտք'}</h2>
-    <p class="sub">${c ? (c.hasPin ? 'Մուտքագրեք Ձեր PIN-ը' : 'Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։') : 'Մուտքանունը տրամադրել է Numetrix-ը'}</p>
+    <h2>${c ? t('Բարև, {0}', esc(c.name)) : t('Մուտք')}</h2>
+    <p class="sub">${c ? (c.hasPin ? t('Մուտքագրեք Ձեր PIN-ը') : t('Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։')) : t('Մուտքանունը տրամադրել է Numetrix-ը')}</p>
     <form id="lf" novalidate>
       ${c ? `<input type="hidden" name="login" value="${esc(CL.login)}">
-        <label class="f">${c.hasPin ? 'PIN' : 'Նոր PIN'}</label><input class="inp" name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="${c.hasPin ? 'current-password' : 'new-password'}" autofocus>
-        ${c.hasPin ? '' : '<label class="f" style="margin-top:12px">Կրկնեք PIN-ը</label><input class="inp" name="pin2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password">'}`
-      : `<label class="f">Մուտքանուն</label><input class="inp" name="login" value="${esc(CL.login || lsGet('nx_client_login'))}" autocomplete="username" autocapitalize="none" autofocus>`}
-      <button class="btn" style="margin-top:16px" id="lgo">${c ? 'Մուտք' : 'Շարունակել'}</button>
-      ${c ? '<div style="text-align:center;margin-top:10px"><button type="button" class="lnk" id="lback">← Այլ մուտքանուն</button></div>' : ''}
+        <label class="f">${c.hasPin ? 'PIN' : t('Նոր PIN')}</label><input class="inp" name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="${c.hasPin ? 'current-password' : 'new-password'}" autofocus>
+        ${c.hasPin ? '' : '<label class="f" style="margin-top:12px">' + t('Կրկնեք PIN-ը') + '</label><input class="inp" name="pin2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password">'}`
+      : `<label class="f">${t('Մուտքանուն')}</label><input class="inp" name="login" value="${esc(CL.login || lsGet('nx_client_login'))}" autocomplete="username" autocapitalize="none" autofocus>`}
+      <button class="btn" style="margin-top:16px" id="lgo">${c ? t('Մուտք') : t('Շարունակել')}</button>
+      ${c ? '<div style="text-align:center;margin-top:10px"><button type="button" class="lnk" id="lback">← ' + t('Այլ մուտքանուն') + '</button></div>' : ''}
       <div class="err" id="lerr">${esc(err || '')}</div>
     </form>
   </div>`;
@@ -1189,17 +1224,17 @@ function clLogin(err) {
     go.disabled = true; le.textContent = '';
     try {
       if (!CL.check) {
-        CL.login = d.login.trim(); if (!CL.login) throw new Error('Գրեք մուտքանունը');
+        CL.login = d.login.trim(); if (!CL.login) throw new Error(t('Գրեք մուտքանունը'));
         CL.check = await ccall('clientCheck', { login: CL.login }); return clLogin();
       }
-      if (!CL.check.hasPin && d.pin !== d.pin2) throw new Error('PIN-երը չեն համընկնում');
+      if (!CL.check.hasPin && d.pin !== d.pin2) throw new Error(t('PIN-երը չեն համընկնում'));
       const r = await ccall('clientLogin', { login: CL.login, pin: d.pin, pin2: d.pin2, device: navigator.userAgent.slice(0, 150) });
       CL.tok = r.token; lsSet('nx_client_tok', r.token); lsSet('nx_client_login', CL.login); CL.check = null;
       clientInit();
     } catch (ex) { le.textContent = ex.message; go.disabled = false; }
   };
 }
-function stPill(st) { return `<span class="pill" style="--c:${ST_COLORS[st] || '#64748b'}">${esc(ST_LABEL[st] || st)}</span>`; }
+function stPill(st) { return `<span class="pill" style="--c:${ST_COLORS[st] || '#64748b'}">${esc(t(ST_LABEL[st] || st))}</span>`; }
 function ago(at) {
   if (!at) return '';
   const d = at.slice(0, 10), t = new Date(), z = n => String(n).padStart(2, '0'), td = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate());
@@ -1208,8 +1243,8 @@ function ago(at) {
 function initials(n) { return String(n || '?').replace(/[«»"']/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase(); }
 function clHead() {
   const v = CL.v;
-  return `<div class="top"><div class="mark">N</div><div><h1 style="margin:0;font-size:19px">${esc(v.firm || 'Numetrix')}</h1><small style="color:var(--muted)">Հաճախորդի պատուհան</small></div>
-    <div class="who"><b>${esc(v.me.name)}</b>${esc(v.companies.map(c => c.name).join(', '))}<br><button class="lnk" id="lo">Ելք</button></div></div>`;
+  return `<div class="top"><div class="mark">N</div><div><h1 style="margin:0;font-size:19px">${esc(v.firm || 'Numetrix')}</h1><small style="color:var(--muted)">${t('Հաճախորդի պատուհան')}</small></div>
+    <div class="who"><b>${esc(v.me.name)}</b>${esc(v.companies.map(c => c.name).join(', '))}<br>${langBar()} <button class="lnk" id="lo">${t('Ելք')}</button></div></div>`;
 }
 function clRender() {
   const v = CL.v; if (!v) return;
@@ -1219,31 +1254,31 @@ function clRender() {
   const q = (CL.q || '').trim();
   $('#root').innerHTML = clHead() + appBar() + `
   <div class="card" style="padding:12px">
-    <input class="inp" id="gq" placeholder="🔍 Որոնել հաղորդագրություններում և ֆայլերում…" value="${esc(q)}">
-    ${CL.res ? `<div style="margin-top:8px">${CL.res.length ? CL.res.map(x => `<div class="it" data-open="${esc(x.thread)}"><div style="flex:1;min-width:0"><div class="m">${esc(x.author)} · ${esc(fmtDT(x.at))}</div><div class="t" style="font-weight:500">${esc(x.text)}</div></div></div>`).join('') : '<div class="empty">Ոչինչ չի գտնվել</div>'}</div>` : ''}
+    <input class="inp" id="gq"  placeholder="🔍 ${t('Որոնել հաղորդագրություններում և ֆայլերում…')}" value="${esc(q)}">
+    ${CL.res ? `<div style="margin-top:8px">${CL.res.length ? CL.res.map(x => `<div class="it" data-open="${esc(x.thread)}"><div style="flex:1;min-width:0"><div class="m">${esc(x.author)} · ${esc(fmtDT(x.at))}</div><div class="t" style="font-weight:500">${esc(x.text)}</div></div></div>`).join('') : '<div class="empty">' + t('Ոչինչ չի գտնվել') + '</div>'}</div>` : ''}
   </div>
   <div class="card" style="padding:12px 12px 6px">
-    <h2 style="margin:4px 6px 8px">💬 Չաթ Numetrix-ի հետ</h2>
+    <h2 style="margin:4px 6px 8px">💬 ${t('Չաթ Numetrix-ի հետ')}</h2>
     ${v.chats.map(c => `<div class="it" data-open="${esc(c.thread)}"><div class="av">${esc(initials(c.companyName))}</div><div style="flex:1;min-width:0">
-        <div class="t">${esc(c.companyName)}</div><div class="m ell">${c.last ? (c.last.mine ? 'Դուք՝ ' : esc(c.last.by) + '՝ ') + esc(c.last.text) : 'Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…'}</div></div>
+        <div class="t">${esc(c.companyName)}</div><div class="m ell">${c.last ? (c.last.mine ? t('Դուք') + ': ' : esc(c.last.by) + ': ') + esc(c.last.text) : t('Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…')}</div></div>
         <div style="text-align:right;flex:none"><div class="m">${c.last ? esc(ago(c.last.at)) : ''}</div>${c.unread ? `<span class="un">${c.unread}</span>` : ''}</div></div>`).join('')}
   </div>
   <div class="card" style="padding:12px 12px 6px">
-    <div style="display:flex;align-items:center;gap:10px;margin:4px 6px 8px"><h2 style="margin:0;flex:1">📋 Անելիքներ</h2><button class="btn" id="nopen" style="width:auto;padding:8px 14px">＋ Նոր անելիք</button></div>
-    <div class="seg" style="margin-left:6px">${[['open', 'Ընթացիկ'], ['done', 'Ավարտված'], ['all', 'Բոլորը']].map(([k, l]) => `<button data-f="${k}" class="${CL.filter === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin:4px 6px 8px"><h2 style="margin:0;flex:1">📋 ${t('Անելիքներ')}</h2><button class="btn" id="nopen" style="width:auto;padding:8px 14px">＋ ${t('Նոր անելիք')}</button></div>
+    <div class="seg" style="margin-left:6px">${[['open', 'Ընթացիկ'], ['done', 'Ավարտված'], ['all', 'Բոլորը']].map(([k, l]) => `<button data-f="${k}" class="${CL.filter === k ? 'on' : ''}">${t(l)}</button>`).join('')}</div>
     ${reqs.length ? reqs.map(r => `<div class="it" data-open="${esc(r.id)}"><div style="flex:1;min-width:0">
         <div class="t">${esc(r.title)}${r.unread ? `<span class="un">${r.unread}</span>` : ''}</div>
-        <div class="m ell">${v.companies.length > 1 ? esc(r.companyName) + ' · ' : ''}${r.last ? (r.last.mine ? 'Դուք՝ ' : esc(r.last.by) + '՝ ') + esc(r.last.text) : esc(fmtDT(r.createdAt))}</div></div>
+        <div class="m ell">${v.companies.length > 1 ? esc(r.companyName) + ' · ' : ''}${r.last ? (r.last.mine ? t('Դուք') + ': ' : esc(r.last.by) + ': ') + esc(r.last.text) : esc(fmtDT(r.createdAt))}</div></div>
         <div style="text-align:right;flex:none">${stPill(r.status)}<div class="m">${esc(ago(r.lastAt))}</div></div></div>`).join('')
-      : '<div class="empty">Այստեղ դեռ ոչինչ չկա</div>'}
+      : '<div class="empty">' + t('Այստեղ դեռ ոչինչ չկա') + '</div>'}
   </div>`;
   $('#lo').onclick = clLogout;
   bindAppBar();
   $('#nopen').onclick = () => { CL.screen = 'new'; CL.files = []; clRender(); window.scrollTo(0, 0); };
   document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { CL.filter = b.dataset.f; clRender(); });
   document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => clOpen(b.dataset.open));
-  let t = null; const gq = $('#gq');
-  gq.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
+  let qT = null; const gq = $('#gq');
+  gq.oninput = () => { clearTimeout(qT); qT = setTimeout(async () => {
     CL.q = gq.value; if (CL.q.trim().length < 2) { CL.res = null; clRender(); return; }
     try { CL.res = (await ccall('chatSearch', { q: CL.q })).rows; } catch (e) { CL.res = []; }
     clRender(); const g2 = $('#gq'); g2.focus(); g2.setSelectionRange(g2.value.length, g2.value.length);
@@ -1252,16 +1287,16 @@ function clRender() {
 function clNewScreen() {
   const v = CL.v;
   $('#root').innerHTML = clHead() + `<div class="card">
-    <button class="lnk" id="bk">← Հետ</button>
-    <h2 style="margin-top:10px">Նոր անելիք Numetrix-ին</h2><p class="sub">Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։</p>
+    <button class="lnk" id="bk">← ${t('Հետ')}</button>
+    <h2 style="margin-top:10px">${t('Նոր անելիք Numetrix-ին')}</h2><p class="sub">${t('Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։')}</p>
     <form id="nf" class="grid" novalidate>
-      ${v.companies.length > 1 ? `<div class="full"><label class="f">Կազմակերպություն *</label><select class="inp" name="companyId"><option value="">— ընտրեք —</option>${v.companies.map(c => `<option value="${esc(c.id)}" ${lsGet('nx_client_comp') === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : `<input type="hidden" name="companyId" value="${esc((v.companies[0] || {}).id || '')}">`}
-      <div class="full"><label class="f">Ի՞նչ է պետք անել *</label><input class="inp" name="title" maxlength="300" placeholder="Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին"></div>
-      <div class="full"><label class="f">Մանրամասներ</label><textarea class="inp" name="description" maxlength="5000" placeholder="Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…"></textarea></div>
-      <div><label class="f">Ցանկալի ժամկետ</label><input class="inp" type="date" name="due"></div>
-      <div><label class="f">Հղում (եթե կա)</label><input class="inp" name="link" placeholder="https:\/\/…"></div>
-      <div class="full"><label class="f">Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ ${v.maxFileMb} ՄԲ)</label><div class="drop" id="drop" style="display:var(--dropd,block)">📎 Սեղմեք կամ քաշեք ֆայլերը այստեղ</div>${mediaBar('n')}<div class="flist" id="fl"></div></div>
-      <div class="full"><button class="btn" id="ngo">Ուղարկել</button></div>
+      ${v.companies.length > 1 ? `<div class="full"><label class="f">${t('Կազմակերպություն')} *</label><select class="inp" name="companyId"><option value="">— ${t('ընտրեք')} —</option>${v.companies.map(c => `<option value="${esc(c.id)}" ${lsGet('nx_client_comp') === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>` : `<input type="hidden" name="companyId" value="${esc((v.companies[0] || {}).id || '')}">`}
+      <div class="full"><label class="f">${t('Ի՞նչ է պետք անել')} *</label><input class="inp" name="title" maxlength="300" placeholder="${t('Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին')}"></div>
+      <div class="full"><label class="f">${t('Մանրամասներ')}</label><textarea class="inp" name="description" maxlength="5000" placeholder="${t('Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…')}"></textarea></div>
+      <div><label class="f">${t('Ցանկալի ժամկետ')}</label><input class="inp" type="date" name="due"></div>
+      <div><label class="f">${t('Հղում (եթե կա)')}</label><input class="inp" name="link" placeholder="https:\/\/…"></div>
+      <div class="full"><label class="f">${t('Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)', v.maxFileMb)}</label><div class="drop" id="drop" style="display:var(--dropd,block)">📎 ${t('Սեղմեք կամ քաշեք ֆայլերը այստեղ')}</div>${mediaBar('n')}<div class="flist" id="fl"></div></div>
+      <div class="full"><button class="btn" id="ngo">${t('Ուղարկել')}</button></div>
       <div class="full err" id="nerr"></div>
     </form></div>`;
   $('#lo').onclick = clLogout;
@@ -1271,18 +1306,18 @@ function clNewScreen() {
 
 function mediaBar(p) {
   return `<div class="mbar">
-    <button type="button" data-pick="${p}cam"><b>📷</b>Նկարել</button>
-    <button type="button" data-pick="${p}vid"><b>🎥</b>Տեսանյութ</button>
-    <button type="button" data-pick="${p}gal"><b>🖼️</b>Գալերեա</button>
-    <button type="button" id="${p}mic"><b>🎤</b>Ձայն</button>
-    <button type="button" data-pick="${p}any"><b>📎</b>Ֆայլ</button>
+    <button type="button" data-pick="${p}cam"><b>📷</b>${t('Նկարել')}</button>
+    <button type="button" data-pick="${p}vid"><b>🎥</b>${t('Տեսանյութ')}</button>
+    <button type="button" data-pick="${p}gal"><b>🖼️</b>${t('Գալերեա')}</button>
+    <button type="button" id="${p}mic"><b>🎤</b>${t('Ձայն')}</button>
+    <button type="button" data-pick="${p}any"><b>📎</b>${t('Ֆայլ')}</button>
   </div>
   <input type="file" id="${p}cam" accept="image/${'*'}" capture="environment" hidden>
   <input type="file" id="${p}vid" accept="video/${'*'}" capture="environment" hidden>
   <input type="file" id="${p}gal" accept="image/${'*'},video/${'*'}" multiple hidden>
   <input type="file" id="${p}aud" accept="audio/${'*'}" capture hidden>
   <input type="file" id="${p}any" multiple hidden>
-  <div class="rec hidden" id="${p}rec"><span class="dot"></span><span id="${p}rt">00:00</span><button type="button" class="x" id="${p}rx">Չեղարկել</button><button type="button" id="${p}rs">■ Կանգնեցնել</button></div>`;
+  <div class="rec hidden" id="${p}rec"><span class="dot"></span><span id="${p}rt">00:00</span><button type="button" class="x" id="${p}rx">${t('Չեղարկել')}</button><button type="button" id="${p}rs">■ ${t('Կանգնեցնել')}</button></div>`;
 }
 const URLS = new WeakMap();
 function objUrl(f) { if (!URLS.has(f)) URLS.set(f, URL.createObjectURL(f)); return URLS.get(f); }
@@ -1311,10 +1346,10 @@ function bindMedia(listKey, p, flId, errId, max, dropId) {
   const add = async list => {
     if (er()) er().textContent = '';
     for (let f of [...list]) {
-      if (CL[listKey].length >= max) { if (er()) er().textContent = 'Առավելագույնը ' + max + ' ֆայլ'; break; }
+      if (CL[listKey].length >= max) { if (er()) er().textContent = t('Առավելագույնը {0} ֆայլ', max); break; }
       f = await shrinkImage(f);
-      if (f.size > CL.v.maxFileMb * 1048576) { if (er()) er().textContent = `«${f.name}» ֆայլը մեծ է ${CL.v.maxFileMb} ՄԲ-ից${/^video[/]/.test(f.type) ? '։ Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։' : ''}`; continue; }
-      if (CL[listKey].reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { if (er()) er().textContent = 'Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։'; break; }
+      if (f.size > CL.v.maxFileMb * 1048576) { if (er()) er().textContent = t('«{0}» ֆայլը մեծ է {1} ՄԲ-ից', f.name, CL.v.maxFileMb) + (/^video[/]/.test(f.type) ? ' ' + t('Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։') : ''); continue; }
+      if (CL[listKey].reduce((a, x) => a + x.size, 0) + f.size > 45 * 1048576) { if (er()) er().textContent = t('Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։'); break; }
       CL[listKey].push(f);
     }
     draw();
@@ -1341,7 +1376,7 @@ async function startRec(p, done) {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (e) {
     const fi = $('#' + p + 'aud');
-    if (e && e.name === 'NotAllowedError') { NxDlg.alert('Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։'); return; }
+    if (e && e.name === 'NotAllowedError') { NxDlg.alert(t('Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։')); return; }
     if (fi) fi.click(); return;
   }
   const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
@@ -1369,16 +1404,16 @@ function clBindNew() {
   $('#nf').onsubmit = async e => {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(e.target).entries()), go = $('#ngo'), er = $('#nerr');
-    if (!d.companyId) { er.textContent = 'Ընտրեք կազմակերպությունը'; return; }
-    if (!d.title.trim()) { er.textContent = 'Գրեք, թե ինչ է պետք անել'; return; }
-    go.disabled = true; go.textContent = CL.files.length ? 'Ֆայլերը բեռնվում են…' : 'Ուղարկվում է…'; er.textContent = '';
+    if (!d.companyId) { er.textContent = t('Ընտրեք կազմակերպությունը'); return; }
+    if (!d.title.trim()) { er.textContent = t('Գրեք, թե ինչ է պետք անել'); return; }
+    go.disabled = true; go.textContent = CL.files.length ? t('Ֆայլերը բեռնվում են…') : t('Ուղարկվում է…'); er.textContent = '';
     try {
       d.files = await Promise.all(CL.files.map(async f => ({ name: f.name, mime: f.type, data: await readB64(f) })));
       lsSet('nx_client_comp', d.companyId);
       const r = await ccall('clientSubmit', d);
       CL.v = r.view; CL.files = []; CL.filter = 'open'; CL.screen = 'home';
-      toastC('✔ Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։'); clOpen(r.id);
-    } catch (ex) { er.textContent = ex.message; go.disabled = false; go.textContent = 'Ուղարկել'; }
+      toastC('✔ ' + t('Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։')); clOpen(r.id);
+    } catch (ex) { er.textContent = ex.message; go.disabled = false; go.textContent = t('Ուղարկել'); }
   };
 }
 function toastC(t) {
@@ -1395,28 +1430,28 @@ function clOpen(thread) {
   try { if (!history.state || history.state.nx !== 'chat') history.pushState({ nx: 'chat' }, ''); } catch (e) {}
   document.body.classList.add('inchat');
   const title = r ? r.title : c.companyName;
-  const sub = r ? `${esc(r.companyName)} · ${esc(r.id)}` : 'Չաթ Numetrix-ի հետ';
+  const sub = r ? `${esc(r.companyName)} · ${esc(r.id)}` : t('Չաթ Numetrix-ի հետ');
   $('#root').innerHTML = `<div class="chatpage">
     <div class="chbar"><button class="lnk" id="bk" style="font-size:22px;padding:0 6px">←</button><div class="av">${esc(initials(r ? r.companyName : c.companyName))}</div>
       <div style="flex:1;min-width:0"><div class="t ell">${esc(title)}</div><div class="m ell" id="chsub">${sub}</div></div>
       ${r ? '<button class="btn2" id="inf" style="padding:6px 10px">ℹ</button>' : ''}</div>
-    ${r ? `<div class="chinfo" id="chinfo" style="display:none">${stPill(r.status)}${r.description ? `<p style="white-space:pre-wrap;margin:8px 0 0">${esc(r.description)}</p>` : ''}${r.link ? `<p style="margin:6px 0 0">🔗 <a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link)}</a></p>` : ''}${r.due ? `<p class="m" style="margin:6px 0 0">Ցանկալի ժամկետ՝ ${esc(fmtDT(r.due))}</p>` : ''}${r.note ? `<p style="margin:6px 0 0">💬 ${esc(r.note)}</p>` : ''}<p class="m" style="margin:6px 0 0">Ուղարկվել է՝ ${esc(fmtDT(r.createdAt))}</p></div>` : ''}
+    ${r ? `<div class="chinfo" id="chinfo" style="display:none">${stPill(r.status)}${r.description ? `<p style="white-space:pre-wrap;margin:8px 0 0">${esc(r.description)}</p>` : ''}${r.link ? `<p style="margin:6px 0 0">🔗 <a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link)}</a></p>` : ''}${r.due ? `<p class="m" style="margin:6px 0 0">${t('Ցանկալի ժամկետ')}: ${esc(fmtDT(r.due))}</p>` : ''}${r.note ? `<p style="margin:6px 0 0">💬 ${esc(r.note)}</p>` : ''}<p class="m" style="margin:6px 0 0">${t('Ուղարկվել է')}: ${esc(fmtDT(r.createdAt))}</p></div>` : ''}
     <div class="chbody" id="chbox"></div></div>`;
   $('#bk').onclick = () => { try { if (history.state && history.state.nx === 'chat') return history.back(); } catch (e) {} clBack(); };
   fitChat();
   const inf = $('#inf'); if (inf) inf.onclick = () => { const x = $('#chinfo'); x.style.display = x.style.display === 'none' ? '' : 'none'; };
   CHAT = NxChat.mount($('#chbox'), {
     thread, side: 'client', call: ccall, meName: v.me.name,
-    emptyText: r ? 'Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։' : 'Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային 👋',
+    emptyText: r ? t('Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։') : t('Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային 👋'),
     topText: i => i && i.req ? `${stPill(i.req.status)}` : '',
     onInfo: i => { if (i.req) { const p = document.querySelector('#chinfo .pill'); if (p) p.outerHTML = stPill(i.req.status); } },
     canConvert: (m, i) => i && i.kind === 'G' && m.mine && m.side === 'client' && !m.deleted,
-    convertLabel: '📋 Դարձնել անելիք',
+    convertLabel: '📋 ' + t('Դարձնել անելիք'),
     onConvert: async (m, i) => {
-      if (!await NxDlg.confirm('Ստեղծե՞լ անելիք այս հաղորդագրությունից\n Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։')) return;
+      if (!await NxDlg.confirm(t('Ստեղծե՞լ անելիք այս հաղորդագրությունից') + '\n' + t('Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։'), { danger: false, ok: t('Այո'), cancel: t('Չեղարկել') })) return;
       const title = (m.text || (m.files[0] ? m.files[0].name : 'Անելիք')).split('\n')[0].slice(0, 200);
       const res = await ccall('clientSubmit', { companyId: i.companyId, title, description: m.text, fromMsg: m.id });
-      CL.v = res.view; toastC('✔ Ստեղծվեց անելիք ' + res.id); CHAT.refresh();
+      CL.v = res.view; toastC('✔ ' + t('Ստեղծվեց անելիք') + ' ' + res.id); CHAT.refresh();
     }
   });
 }
