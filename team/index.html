@@ -94,6 +94,45 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ptrow .pic{text-align:center;font-size:18px;padding:6px 4px}
 .ptrow .pta{display:flex;gap:4px}
 @media (max-width:900px){.ptrow{grid-template-columns:52px minmax(0,1fr);padding:10px;border:1px solid var(--line);border-radius:10px}.ptrow>*:nth-child(n+3){grid-column:1 / -1}}
+.musbtn{font-size:17px;line-height:1}.musbtn.on{background:var(--brandSoft)}
+#season.ssn{display:flex;gap:14px;align-items:center;margin:14px 24px 0;padding:12px 16px;border-radius:16px;background:linear-gradient(110deg,var(--sa),var(--sb));color:var(--si);position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+#season.ssn::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 92% 20%,rgba(255,255,255,.55),transparent 40%);pointer-events:none}
+.ssn-sc{border:0;background:rgba(255,255,255,.55);border-radius:14px;padding:6px 10px;font-size:26px;cursor:pointer;display:flex;gap:2px;flex:none}
+.ssn-sc span{display:inline-block;animation:ssnB 3.2s ease-in-out infinite}
+@keyframes ssnB{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-6deg)}}
+.ssn-txt{min-width:0;flex:1}.ssn-h{font-size:14.5px}.ssn-s{font-size:12.5px;opacity:.8;margin-top:2px}.ssn-f{font-size:13px;margin-top:4px;opacity:.95}
+.ssn-gift{flex:none;max-width:340px;z-index:1}
+.ssn-gb{border:1px dashed currentColor;background:rgba(255,255,255,.6);color:inherit;border-radius:12px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;display:flex;gap:6px;align-items:center;animation:ssnG 2.6s ease-in-out infinite}
+.ssn-gb:hover{background:#fff}
+@keyframes ssnG{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.ssn-open{background:rgba(255,255,255,.75);border-radius:12px;padding:8px 12px;font-size:13px;animation:ssnO .5s ease-out}
+@keyframes ssnO{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
+.ssn-x{border:0;background:transparent;color:inherit;font-size:16px;cursor:pointer;opacity:.6;z-index:1;align-self:flex-start}
+#season.ssn.mini{padding:6px 12px}#season.ssn.mini .ssn-sc{font-size:16px;padding:2px 6px}#season.ssn.mini .ssn-h{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#season.ssn.quiet .ssn-sc span{animation:none}
+.ssn-fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+@media (max-width:860px){#season.ssn{margin:10px 12px 0;flex-wrap:wrap;gap:10px;padding:10px 12px}.ssn-sc{font-size:20px}.ssn-gift{max-width:none;flex-basis:100%}.ssn-f{display:none}.ssn-x{position:absolute;right:8px;top:6px}}
+@media (prefers-reduced-motion:reduce){.ssn-sc span,.ssn-gb{animation:none}}
+.mailban{display:flex;gap:10px;align-items:center;padding:10px 14px;margin-bottom:14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;cursor:pointer;animation:mbp 2.4s ease-in-out infinite}
+@keyframes mbp{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.0)}50%{box-shadow:0 0 0 4px rgba(249,115,22,.18)}}
+.ibl{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ibr{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.ibr:last-child{border-bottom:0}.ibr:hover{background:#f3f6fc}
+.ibr .ibf{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibr .ibs{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
+.ibr .ibs b{font-weight:500}
+.ibr .ibm{display:flex;gap:8px;align-items:center;font-size:12.5px}
+.ibr.unr{background:#f8fbff}.ibr.unr .ibf,.ibr.unr .ibs b{font-weight:700}
+.ibr.unr::before{content:'';position:absolute}
+.ibsug{cursor:pointer;border:1px dashed #93c5fd;background:#eff6ff;color:#1d4ed8}
+.iblink{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);margin-bottom:12px}
+.ibmsg{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.ibmsg .h{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.ibmsg .h .sp{flex:1}
+.ibmsg .b{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px;font-size:14px;max-height:50vh;overflow:auto}
+.ibrep{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+@media (max-width:860px){.ibr{grid-template-columns:minmax(0,1fr);gap:2px}.ibr .ibm{justify-content:space-between}}
+.mcts{margin-top:6px;font-size:12.5px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mcts .tag{cursor:pointer;border:0}
 .cpb{border:0;background:none;padding:0;color:var(--muted);font:inherit;display:inline-flex;gap:4px;align-items:center;cursor:pointer}
 .cpb:hover{color:var(--brand)}
 .cpb svg{width:13px;height:13px}
@@ -580,9 +619,11 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
       <h1 id="pageTitle">Թասքեր</h1>
       <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" placeholder="Որոնում՝ թասք, կազմակերպություն, ID…" autocomplete="off"></div>
       <button class="iconbtn" data-act="hardRefresh" id="hardRef" title="Թարմացնել տվյալները (բոլորի փոփոխությունները)"><svg class="i"><use href="#i-refresh"/></svg></button>
+      <button class="iconbtn musbtn" id="musBtn" data-act="music" title="Սեզոնային երաժշտություն">🎵</button>
       <button class="iconbtn" data-act="toggleNotifs" title="Ծանուցումներ"><svg class="i"><use href="#i-bell"/></svg><span class="badge hidden" id="nBadge">0</span></button>
       <button class="btn primary" data-act="newTask"><svg class="i"><use href="#i-plus"/></svg><span>Նոր թասք</span></button>
     </header>
+    <div id="season"></div>
     <section class="content" id="view"></section>
   </div>
   <nav class="bnav" id="bnav"></nav>
@@ -625,6 +666,7 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
   <symbol id="i-cols" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="8" rx="1"/></symbol>
@@ -1434,6 +1476,312 @@ const NxChat = (function () {
 })();
 
 /* NXCHAT:END */
+/* NXSEASON:BEGIN — ավտոմատ տեղադրված src/season.js-ից */
+/* Numetrix Seasons — սեզոնային ձևավորում, ամենօրյա անակնկալ և ֆոնային երաժշտություն (միայն թիմի հավելվածում) */
+(function () {
+  'use strict';
+  const LS = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  const pad2 = n => (n < 10 ? '0' : '') + n;
+  const ymdOf = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  function rng(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const pick = (arr, r) => arr[Math.floor(r() * arr.length) % arr.length];
+
+  /* ---------------- ԱՄԻՍՆԵՐ ---------------- */
+  const MONTHS = [
+    { t: 'Հունվար', s: 'winter', sub: 'ձմեռային հեքիաթի ամիս', sc: ['❄️', '⛄', '🎄', '🕯️'], a: '#dbeafe', b: '#eef2ff', ink: '#1e3a8a', fx: 'snow',
+      f: ['Հունվարին օրը արդեն երկարում է՝ ամեն օր մոտ 1–2 րոպեով։', 'Ձյան փաթիլները բոլորը վեցանկյուն են, բայց երկու նույնը չկա։', 'Տարվա սկիզբը լավագույն պահն է հին թասքերը արխիվ ուղարկելու համար։', 'Տաք թեյ, մանդարին ու դեկտեմբերի հաշվետվությունները՝ հունվարյան դասական։'] },
+    { t: 'Փետրվար', s: 'winter', sub: 'կարճ, բայց ջերմ ամիս', sc: ['🌨️', '🔥', '❤️', '☕'], a: '#e0e7ff', b: '#fdf2f8', ink: '#3730a3', fx: 'snow',
+      f: ['Տրնդեզին խարույկի վրայով թռչում են՝ գարնան գալը դիմավորելու համար։', 'Փետրվարը միակ ամիսն է, որ կարող է ամբողջությամբ առանց լիալուսնի անցնել։', 'Ձմռան վերջին շաբաթները՝ տարեկան հաշվետվությունների պատրաստման լավ ժամանակն են։'] },
+    { t: 'Մարտ', s: 'spring', sub: 'գարնան զարթոնքը', sc: ['🌷', '🌱', '🐦', '☀️'], a: '#dcfce7', b: '#fef9c3', ink: '#166534', fx: 'petals',
+      f: ['Մարտի 20/21-ին գիշերահավասար է՝ օրն ու գիշերը հավասար են։', 'Ծիրանի ծառը Հայաստանում ծաղկող առաջիններից է։', 'Գարնանային մաքրություն՝ նաև թղթապանակներում 🙂'] },
+    { t: 'Ապրիլ', s: 'spring', sub: 'ծաղկունքի ամիս', sc: ['🌸', '🌼', '🦋', '🌦️'], a: '#fce7f3', b: '#ecfccb', ink: '#9d174d', fx: 'petals',
+      f: ['Ապրիլյան անձրևները բերում են մայիսյան ծաղիկները։', 'Մեղուն մեկ օրում կարող է այցելել մինչև 5000 ծաղիկ։', 'Եռամսյակի ավարտից հետո՝ եռամսյակային հաշվարկների շրջանն է։'] },
+    { t: 'Մայիս', s: 'spring', sub: 'կանաչի ու արևի ամիս', sc: ['🌳', '🍒', '🌺', '🐝'], a: '#d1fae5', b: '#fef3c7', ink: '#065f46', fx: 'petals',
+      f: ['Մայիսին հասնում են առաջին բալն ու ելակը։', 'Մայիսյան տոներ՝ 9-ը և 28-ը։', 'Ամենաերկար օրերը մոտենում են՝ էներգիան էլ հետը։'] },
+    { t: 'Հունիս', s: 'summer', sub: 'ամառվա սկիզբ', sc: ['☀️', '🍓', '🌻', '🏖️'], a: '#fef9c3', b: '#cffafe', ink: '#854d0e', fx: 'sparkle',
+      f: ['Հունիսի 21-ին տարվա ամենաերկար օրն է։', 'Ծիրանի սեզոնը սկսվում է՝ Արարատյան դաշտի ոսկին։', 'Կիսամյակի ավարտը մոտ է՝ ժամանակն է ստուգել պարտքերը։'] },
+    { t: 'Հուլիս', s: 'summer', sub: 'ամառվա սիրտը', sc: ['🌞', '💧', '🍉', '🌊'], a: '#ffedd5', b: '#e0f2fe', ink: '#9a3412', fx: 'sparkle',
+      f: ['Վարդավառին բոլորը ջրում են իրար՝ զովանալու ամենաուրախ ձևը։', 'Ձմերուկը 92%-ով ջուր է։', 'Շոգին՝ ավելի շատ ջուր և կարճ ընդմիջումներ 🙂'] },
+    { t: 'Օգոստոս', s: 'summer', sub: 'հասունացման ամիս', sc: ['🍑', '🍇', '🌾', '🌠'], a: '#fef3c7', b: '#fce7f3', ink: '#92400e', fx: 'sparkle',
+      f: ['Օգոստոսյան գիշերներին Պերսեիդների աստղանկն է՝ նայեք երկնքին։', 'Խաղողն ու դեղձը հասնում են։', 'Արձակուրդներից հետո՝ վերադառնում ենք ռիթմի։'] },
+    { t: 'Սեպտեմբեր', s: 'autumn', sub: 'մեկ տաք, մեկ հով', sc: ['🍂', '📚', '🍏', '🌤️'], a: '#fef3c7', b: '#ffedd5', ink: '#92400e', fx: 'leaves',
+      f: ['Սեպտեմբերին ծառերը սկսում են դեղնել՝ քլորոֆիլը քայքայվում է, ու երևում են դեղին գույները։', 'Սեպտեմբերի 21-ը՝ Անկախության օր։', 'Աշնանային գիշերահավասարը՝ սեպտեմբերի 22/23-ին։'] },
+    { t: 'Հոկտեմբեր', s: 'autumn', sub: 'բերքահավաքի ամիս', sc: ['🍁', '🍇', '🍎', '🧺'], a: '#ffedd5', b: '#fef3c7', ink: '#9a3412', fx: 'leaves',
+      f: ['Հոկտեմբերը բերքահավաքի և գինու ամիսն է՝ խաղողը, խնձորն ու նուռը հասել են։', 'Նուռը Հայաստանի խորհրդանիշներից է՝ հատիկների քանակը կարող է հասնել 600-ի։', 'Եռամսյակի հաշվարկների ամիս է՝ մեկ բաժակ թեյ և առաջ 🍂', 'Աշնանային արևը ամենամեղմն է՝ դուրս եկեք 10 րոպեով։'] },
+    { t: 'Նոյեմբեր', s: 'autumn', sub: 'տերևաթափ', sc: ['🍂', '🌧️', '☕', '🧣'], a: '#f5f5f4', b: '#fed7aa', ink: '#78350f', fx: 'leaves',
+      f: ['Տերևաթափը ծառի ձևն է ձմռանը ջուր խնայելու։', 'Նոյեմբերը ամենահարմար ամիսն է տարեվերջյան պլանավորման համար։', 'Տաք թեյ, ծիրանաչիր ու կարգավորված թղթապանակներ ☕'] },
+    { t: 'Դեկտեմբեր', s: 'winter', sub: 'ամանորյա տրամադրություն', sc: ['🎄', '🎁', '❄️', '✨'], a: '#dcfce7', b: '#fee2e2', ink: '#14532d', fx: 'snow',
+      f: ['Դեկտեմբերի 21/22-ին տարվա ամենակարճ օրն է՝ հետո լույսը միայն ավելանում է։', 'Ամանորյա սեղանին՝ գաթա, անուշապուր ու տոլմա 🎄', 'Տարեվերջ է՝ ժամանակն է շնորհակալություն ասել թիմին։'] }
+  ];
+
+  /* ---------------- ՀԱՏՈՒԿ ՕՐԵՐ ---------------- */
+  function easter(y) { // Գրիգորյան Զատիկ
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3),
+      h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+      mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(y, mo - 1, da);
+  }
+  function special(d) {
+    const md = pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()), y = d.getFullYear();
+    const E = easter(y), V = new Date(E.getTime()); V.setDate(V.getDate() + 98);
+    if (ymdOf(d) === ymdOf(E)) return { k: 'easter', t: 'Սուրբ Զատիկ', sc: ['🥚', '🐣', '🌷', '🕊️'], fx: 'petals', msg: 'Քրիստոս յարյավ ի մեռելոց 🥚' };
+    if (ymdOf(d) === ymdOf(V)) return { k: 'vardavar', t: 'Վարդավառ', sc: ['💧', '🌹', '💦', '🌊'], fx: 'water', msg: 'Վարդավառ է՝ զգույշ մտեք փողոց 💦' };
+    const S = {
+      '12-31': { t: 'Ամանորի նախօրյակ', sc: ['🎆', '🥂', '🎄', '🎁'], fx: 'confetti', msg: 'Շնորհավոր Ամանոր, թիմ։ Շնորհակալություն այս տարվա համար 🎆' },
+      '01-01': { t: 'Ամանոր', sc: ['🎆', '🎄', '🎁', '✨'], fx: 'confetti', msg: 'Շնորհավոր Նոր տարի 🎄' },
+      '01-06': { t: 'Սուրբ Ծնունդ', sc: ['⭐', '🕯️', '🎄', '🕊️'], fx: 'snow', msg: 'Քրիստոս ծնավ և հայտնեցավ ⭐' },
+      '02-13': { t: 'Տրնդեզ', sc: ['🔥', '💑', '🌾', '✨'], fx: 'sparkle', msg: 'Տրնդեզ է՝ խարույկ, ուրախություն ու գարնան սպասում 🔥' },
+      '02-14': { t: 'Սիրահարների օր', sc: ['❤️', '💌', '🌹', '💕'], fx: 'hearts', msg: 'Սիրեք Ձեր գործը, և այն էլ Ձեզ կսիրի ❤️' },
+      '03-08': { t: 'Կանանց միջազգային օր', sc: ['🌷', '💐', '🌸', '💝'], fx: 'petals', msg: 'Շնորհավոր, սիրելի կանայք 💐' },
+      '04-07': { t: 'Մայրության և գեղեցկության տոն', sc: ['🌷', '💐', '👩‍👧', '🌸'], fx: 'petals', msg: 'Շնորհավոր, մայրեր և բոլոր գեղեցկուհիները 🌷' },
+      '04-24': { t: 'Հայոց ցեղասպանության զոհերի հիշատակի օր', sc: ['🕯️', '💜'], fx: '', quiet: true, msg: 'Հիշում ենք և պահանջում' },
+      '05-09': { t: 'Հաղթանակի և խաղաղության տոն', sc: ['🕊️', '🌷', '🎗️'], fx: 'petals', msg: 'Խաղաղ երկինք 🕊️' },
+      '05-28': { t: 'Հանրապետության օր', sc: ['🇦🇲', '🌺', '✨'], fx: 'flag', msg: 'Շնորհավոր Հանրապետության օրը 🇦🇲' },
+      '06-01': { t: 'Երեխաների պաշտպանության օր', sc: ['🎈', '🧸', '🍭', '☀️'], fx: 'confetti', msg: 'Մի պահ եղեք երեխա՝ ժպտացեք 🎈' },
+      '07-05': { t: 'Սահմանադրության օր', sc: ['📜', '🇦🇲'], fx: 'flag', msg: 'Շնորհավոր Սահմանադրության օրը 📜' },
+      '09-01': { t: 'Գիտելիքի օր', sc: ['📚', '🎒', '🔔', '✏️'], fx: 'leaves', msg: 'Սովորելը երբեք չի ավարտվում 📚' },
+      '09-21': { t: 'Անկախության օր', sc: ['🇦🇲', '🎆', '✨'], fx: 'flag', msg: 'Շնորհավոր Անկախության օրը 🇦🇲' }
+    };
+    return S[md] ? Object.assign({ k: md }, S[md]) : null;
+  }
+
+  /* ---------------- ԱՄԵՆՕՐՅԱ ԱՆԱԿՆԿԱԼՆԵՐ ---------------- */
+  const SURPRISE = [
+    '🏅 Այսօրվա մարտահրավեր՝ փակեք մեկ թասք, որը վաղուց հետաձգում եք։',
+    '🍵 Այսօրվա խորհուրդ՝ յուրաքանչյուր 50 րոպեն մեկ 5 րոպե կանգնեք ու ձգվեք։',
+    '😄 Հաշվապահը այն մարդն է, ով գիտի ամեն ինչի գինը, բայց ոչ մի բանի արժեքը չի մոռանում գրանցել։',
+    '💬 Այսօր գրեք մեկ գործընկերոջ՝ «շնորհակալություն» ինչ-որ բանի համար։',
+    '🎯 Այսօրվա թիրախ՝ նախ ամենադժվար թասքը, հետո՝ սուրճ։',
+    '🧠 Հետաքրքիր փաստ՝ կրկնակի գրանցման համակարգը նկարագրել է Լուկա Պաչոլին՝ 1494-ին։',
+    '📎 Խորհուրդ՝ կցեք ֆայլերը թասքին՝ հետո ոչ ոք չի փնտրի «էն նամակը»։',
+    '🌟 Դուք ավելի լավ եք աշխատում, քան կարծում եք։',
+    '🎵 Միացրեք երաժշտությունը վերևի 🎵 կոճակով և աշխատեք ռիթմով։',
+    '🧹 5 րոպեանոց մաքրություն՝ փակեք ավելորդ ներդիրները բրաուզերում։',
+    '🔢 Հետաքրքիր փաստ՝ «զրո» թիվը Եվրոպա է հասել միայն XII դարում։',
+    '☕ Այսօր սուրճը թիմի ամենաարագ աշխատողն է 🙂',
+    '🗓️ Ստուգեք այս շաբաթվա ժամկետները՝ ոչ մի անակնկալ ուրբաթ օրը։',
+    '🙌 Գովեք ինքներդ Ձեզ երեկվա արածի համար։',
+    '📞 Զանգեք մի հաճախորդի ուղղակի հարցնելու՝ ինչպես են։ Սա հրաշքներ է գործում։',
+    '🌿 Ջուր խմեք։ Հիմա։ 🙂',
+    '🧩 Բաժանեք մեծ թասքը 3 փոքրի՝ սկսելը կդառնա հեշտ։',
+    '✨ Այսօր հաջողակ օր է՝ մենք այդպես որոշեցինք։'
+  ];
+  const WEEKDAY = ['Կիրակի', 'Երկուշաբթի', 'Երեքշաբթի', 'Չորեքշաբթի', 'Հինգշաբթի', 'Ուրբաթ', 'Շաբաթ'];
+  const MON_GEN = ['հունվարի', 'փետրվարի', 'մարտի', 'ապրիլի', 'մայիսի', 'հունիսի', 'հուլիսի', 'օգոստոսի', 'սեպտեմբերի', 'հոկտեմբերի', 'նոյեմբերի', 'դեկտեմբերի'];
+  function greet(d) { const h = d.getHours(); return h < 5 ? 'Բարի գիշեր' : h < 12 ? 'Բարի առավոտ' : h < 18 ? 'Բարի օր' : 'Բարի երեկո'; }
+  function dayVibe(d) { const w = d.getDay(); return w === 1 ? 'Նոր շաբաթ՝ նոր հնարավորություններ 💪' : w === 5 ? 'Ուրբաթ է 🎉 Մի քիչ էլ, ու հանգիստ' : w === 3 ? 'Շաբաթվա կեսն է՝ ամեն ինչ ստացվում է 👌' : ''; }
+
+  /* ---------------- ՄԱՍՆԻԿՆԵՐ ---------------- */
+  let FX = null;
+  function fxRun(kind, secs) {
+    if (!kind || LS.get('nx_fx', '1') !== '1') return;
+    try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+    if (FX) { FX.until = performance.now() + secs * 1000; FX.kind = kind; return; }
+    const cv = document.createElement('canvas');
+    cv.className = 'ssn-fx'; document.body.appendChild(cv);
+    const cx = cv.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const size = () => { cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; };
+    size(); addEventListener('resize', size);
+    const SET = {
+      leaves: { n: 26, e: ['🍂', '🍁', '🍂', '🍃'], sz: [16, 26], vy: [0.5, 1.2], sway: 1.4 },
+      snow: { n: 60, dot: '#bfdbfe', sz: [2.5, 5.5], vy: [0.4, 1.1], sway: 0.6 },
+      petals: { n: 24, e: ['🌸', '🌼', '🌷', '💮'], sz: [14, 22], vy: [0.4, 1], sway: 1.2 },
+      sparkle: { n: 26, e: ['✨', '⭐', '✨'], sz: [10, 18], vy: [-0.4, 0.4], sway: 0.4, twinkle: 1 },
+      hearts: { n: 22, e: ['❤️', '💕', '💗'], sz: [14, 22], vy: [-1, -0.4], sway: 0.8 },
+      water: { n: 40, e: ['💧', '💦'], sz: [12, 20], vy: [1.5, 3], sway: 0.3 },
+      confetti: { n: 70, conf: ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#eab308'], sz: [5, 9], vy: [1, 2.4], sway: 1 },
+      flag: { n: 54, conf: ['#d90012', '#0033a0', '#f2a800'], sz: [5, 9], vy: [1, 2.2], sway: 1 }
+    };
+    FX = { kind, until: performance.now() + secs * 1000, ps: [] };
+    const spawn = (k, top) => { const c = SET[k], r = Math.random; const s = c.sz[0] + r() * (c.sz[1] - c.sz[0]);
+      return { k, x: r() * innerWidth, y: top ? -20 - r() * innerHeight * 0.5 : r() * innerHeight, s, vy: c.vy[0] + r() * (c.vy[1] - c.vy[0]), ph: r() * 6.28, rot: r() * 6.28, vr: (r() - 0.5) * 0.04,
+        e: c.e ? c.e[Math.floor(r() * c.e.length)] : '', col: c.conf ? c.conf[Math.floor(r() * c.conf.length)] : c.dot }; };
+    const loop = t => {
+      const c = SET[FX.kind]; if (!c) { stop(); return; }
+      const alive = t < FX.until;
+      while (alive && FX.ps.length < c.n) FX.ps.push(spawn(FX.kind, true));
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, innerWidth, innerHeight);
+      FX.ps = FX.ps.filter(p => {
+        const cc = SET[p.k];
+        p.y += p.vy; p.ph += 0.02; p.x += Math.sin(p.ph) * cc.sway; p.rot += p.vr;
+        if (p.y > innerHeight + 30 || p.y < -60 && p.vy < 0) { if (!alive) return false; Object.assign(p, spawn(p.k, p.vy > 0)); if (p.vy < 0) p.y = innerHeight + 20; }
+        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
+        cx.globalAlpha = cc.twinkle ? 0.5 + 0.5 * Math.sin(p.ph * 4) : 0.9;
+        if (p.e) { cx.font = p.s + 'px serif'; cx.textAlign = 'center'; cx.fillText(p.e, 0, 0); }
+        else if (cc.conf) { cx.fillStyle = p.col; cx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); }
+        else { cx.fillStyle = p.col; cx.shadowColor = 'rgba(148,163,184,.9)'; cx.shadowBlur = 4; cx.beginPath(); cx.arc(0, 0, p.s, 0, 6.28); cx.fill(); }
+        cx.restore(); return true;
+      });
+      if (!alive && !FX.ps.length) { stop(); return; }
+      FX.raf = requestAnimationFrame(loop);
+    };
+    const stop = () => { cancelAnimationFrame(FX && FX.raf); removeEventListener('resize', size); cv.remove(); FX = null; };
+    FX.raf = requestAnimationFrame(loop);
+  }
+
+  /* ---------------- ԵՐԱԺՇՏՈՒԹՅՈՒՆ (WebAudio, ստեղծվում է ծրագրում) ---------------- */
+  const SCALES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10], mixo: [0, 2, 4, 5, 7, 9, 10] };
+  const STYLE = {
+    winter: { root: 62, sc: 'major', bpm: 80, prog: [0, 5, 3, 4], lead: 'bell', pad: 0.5, rhy: [[1, 1, 2], [2, 2], [1, 1, 1, 1], [3, 1]] },
+    spring: { root: 65, sc: 'major', bpm: 96, prog: [0, 3, 5, 4], lead: 'pluck', pad: 0.35, birds: 1, rhy: [[1, 1, 1, 1], [0.5, 0.5, 1, 2], [2, 1, 1]] },
+    summer: { root: 67, sc: 'mixo', bpm: 108, prog: [0, 6, 3, 0], lead: 'marimba', pad: 0.3, shaker: 1, rhy: [[0.5, 0.5, 0.5, 0.5, 1, 1], [1, 0.5, 0.5, 2], [1, 1, 1, 1]] },
+    autumn: { root: 57, sc: 'dorian', bpm: 70, prog: [0, 5, 3, 6], lead: 'piano', pad: 0.55, rhy: [[1, 1, 2], [2, 1, 1], [1.5, 0.5, 2], [4]] }
+  };
+  /* հանրային սեփականություն (XIX դար) */
+  const JINGLE = { bpm: 116, beats: 4, mel: [[64, 1], [64, 1], [64, 2], [64, 1], [64, 1], [64, 2], [64, 1], [67, 1], [60, 1.5], [62, 0.5], [64, 4], [65, 1], [65, 1], [65, 1.5], [65, 0.5], [65, 1], [64, 1], [64, 1], [64, 0.5], [64, 0.5], [64, 1], [62, 1], [62, 1], [64, 1], [62, 2], [67, 2],
+    [64, 1], [64, 1], [64, 2], [64, 1], [64, 1], [64, 2], [64, 1], [67, 1], [60, 1.5], [62, 0.5], [64, 4], [65, 1], [65, 1], [65, 1.5], [65, 0.5], [65, 1], [64, 1], [64, 1], [64, 0.5], [64, 0.5], [67, 1], [67, 1], [65, 1], [62, 1], [60, 4]],
+    ch: [[48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [53, 57, 60], [48, 52, 55], [50, 55, 59], [43, 50, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [53, 57, 60], [48, 52, 55], [43, 50, 55], [48, 52, 55]] };
+  const SILENT = { bpm: 66, beats: 3, mel: [[67, 1.5], [69, 0.5], [67, 1], [64, 3], [67, 1.5], [69, 0.5], [67, 1], [64, 3], [74, 2], [74, 1], [71, 3], [72, 2], [72, 1], [67, 3], [69, 2], [69, 1], [72, 1.5], [71, 0.5], [69, 1], [67, 1.5], [69, 0.5], [67, 1], [64, 3]],
+    ch: [[48, 52, 55], [48, 52, 55], [48, 52, 55], [48, 52, 55], [43, 50, 55], [43, 50, 55], [48, 52, 55], [48, 52, 55], [53, 57, 60], [53, 57, 60], [48, 52, 55], [48, 52, 55]] };
+  const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+  const M = { ctx: null, on: false, master: null, timer: null, next: 0, bar: 0, tune: null, ti: 0, tb: 0, style: null, seed: 1, prev: 0 };
+  function vol() { return Math.max(0, Math.min(1, +LS.get('nx_mvol', '0.5'))); }
+  function ensureCtx() {
+    if (M.ctx) return M.ctx;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    M.ctx = new AC();
+    const comp = M.ctx.createDynamicsCompressor(); comp.connect(M.ctx.destination);
+    M.lp = M.ctx.createBiquadFilter(); M.lp.type = 'lowpass'; M.lp.frequency.value = 5200; M.lp.connect(comp);
+    M.master = M.ctx.createGain(); M.master.gain.value = 0; M.master.connect(M.lp);
+    return M.ctx;
+  }
+  function env(g, t, a, peak, dur, rel) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * 0.6), t + a + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dur + rel); }
+  function osc(type, f, t, end, gainNode, det) { const o = M.ctx.createOscillator(); o.type = type; o.frequency.value = f; if (det) o.detune.value = det; o.connect(gainNode); o.start(t); o.stop(end); return o; }
+  function voice(kind, midi, t, dur, v) {
+    const c = M.ctx, g = c.createGain(); g.connect(M.master); const f = mf(midi);
+    if (kind === 'bell') { env(g, t, 0.005, 0.22 * v, 0.2, 1.6); osc('sine', f, t, t + 2.2, g); const g2 = c.createGain(); g2.connect(M.master); env(g2, t, 0.003, 0.07 * v, 0.05, 0.7); osc('sine', f * 2.76, t, t + 1, g2); const g3 = c.createGain(); g3.connect(M.master); env(g3, t, 0.002, 0.03 * v, 0.02, 0.4); osc('sine', f * 5.4, t, t + 0.6, g3); }
+    else if (kind === 'pluck') { env(g, t, 0.004, 0.2 * v, 0.08, 0.5); osc('triangle', f, t, t + 0.8, g); }
+    else if (kind === 'marimba') { env(g, t, 0.003, 0.24 * v, 0.05, 0.35); osc('sine', f, t, t + 0.5, g); const g2 = c.createGain(); g2.connect(M.master); env(g2, t, 0.002, 0.05 * v, 0.02, 0.1); osc('sine', f * 4, t, t + 0.2, g2); }
+    else if (kind === 'piano') { env(g, t, 0.006, 0.2 * v, Math.min(dur, 0.6), 0.9); osc('triangle', f, t, t + dur + 1.2, g); const g2 = c.createGain(); g2.connect(M.master); env(g2, t, 0.004, 0.05 * v, 0.1, 0.5); osc('sine', f * 2, t, t + 0.8, g2); }
+    else if (kind === 'pad') { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; g.disconnect(); g.connect(lp); lp.connect(M.master);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06 * v, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.6);
+      osc('sawtooth', f, t, t + dur + 0.7, g, -6); osc('sawtooth', f, t, t + dur + 0.7, g, 7); }
+  }
+  function noiseHit(t, len, v, hp) { const c = M.ctx, b = c.createBuffer(1, Math.floor(c.sampleRate * len), c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const s = c.createBufferSource(); s.buffer = b; const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = c.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(M.master); s.start(t); }
+  function bird(t) { const c = M.ctx, g = c.createGain(); g.connect(M.master); const o = c.createOscillator(); o.type = 'sine'; const f0 = 2400 + Math.random() * 1200;
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * 1.5, t + 0.06); o.frequency.exponentialRampToValueAtTime(f0 * 0.9, t + 0.12);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.03, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14); o.connect(g); o.start(t); o.stop(t + 0.16); }
+  function scheduleBar() {
+    const st = M.style, r = rng(M.seed + M.bar * 7919);
+    // պարբերաբար՝ հայտնի ամանորյա մեղեդի (ձմռանը)
+    if (M.tune) return scheduleTune();
+    if (st.tunes && M.bar > 0 && M.bar % 24 === 0 && r() < 0.8) { M.tune = pick(st.tunes, r); M.ti = 0; M.tb = 0; return scheduleTune(); }
+    const spb = 60 / st.bpm, t0 = M.next, beats = 4;
+    if (M.bar % 16 === 15) { M.next += beats * spb; M.bar++; return; }   // շնչառություն
+    const sc = SCALES[st.sc], deg = st.prog[Math.floor(M.bar / 2) % st.prog.length];
+    const note = (d, oct) => st.root + 12 * (oct || 0) + sc[((d % 7) + 7) % 7] + 12 * Math.floor(d / 7);
+    if (M.bar % 2 === 0) [0, 2, 4].forEach(k => voice('pad', note(deg + k, -1), t0, beats * spb * 2 - 0.1, st.pad));
+    let t = t0; const pat = pick(st.rhy, r);
+    pat.forEach(b => {
+      if (r() < 0.82) { let d = M.prev + Math.round((r() - 0.5) * 4); if (r() < 0.4) d = deg + pick([0, 2, 4, 7], r); d = Math.max(deg - 2, Math.min(deg + 9, d)); M.prev = d; voice(st.lead, note(d, 1), t, b * spb, 0.9); }
+      t += b * spb;
+    });
+    if (st.shaker) for (let i = 0; i < 8; i++) noiseHit(t0 + i * spb / 2, 0.05, i % 2 ? 0.012 : 0.02, 6000);
+    if (st.birds && r() < 0.35) { const bt = t0 + r() * beats * spb; bird(bt); bird(bt + 0.18); }
+    M.next += beats * spb; M.bar++;
+  }
+  function scheduleTune() {
+    const T = M.tune, spb = 60 / T.bpm, t0 = M.next, bl = T.beats;
+    const bars = Math.ceil(T.mel.reduce((a, x) => a + x[1], 0) / bl);
+    if (M.tb >= bars) { M.tune = null; M.next += bl * spb; M.bar++; return; }
+    const ch = T.ch[M.tb % T.ch.length]; ch.forEach(n => voice('pad', n, t0, bl * spb - 0.05, 0.6));
+    voice('bell', ch[0] - 12, t0, spb, 0.5);
+    let acc = 0, start = M.tb * bl;
+    for (let i = 0; i < T.mel.length; i++) { const [m, b] = T.mel[i]; if (acc >= start && acc < start + bl) voice('bell', m + 12, t0 + (acc - start) * spb, b * spb, 0.8); acc += b; }
+    M.tb++; M.next += bl * spb; M.bar++;
+  }
+  function musicStart() {
+    if (M.on || CUR.quiet) return;
+    if (!ensureCtx()) return;
+    M.on = true;
+    const go = () => {
+      if (!M.on) return;
+      if (M.ctx.state === 'suspended') M.ctx.resume();
+      M.master.gain.cancelScheduledValues(M.ctx.currentTime);
+      M.master.gain.setTargetAtTime(0.5 * vol(), M.ctx.currentTime, 1.2);
+      M.next = Math.max(M.next, M.ctx.currentTime + 0.1);
+      clearInterval(M.timer);
+      M.timer = setInterval(() => { if (!M.on) return; while (M.next < M.ctx.currentTime + 0.6) scheduleBar(); }, 120);
+    };
+    if (M.ctx.state === 'suspended') M.ctx.resume().then(go, go); else go();
+    paintBtn();
+  }
+  function musicStop() {
+    M.on = false; clearInterval(M.timer);
+    if (M.ctx && M.master) { M.master.gain.cancelScheduledValues(M.ctx.currentTime); M.master.gain.setTargetAtTime(0, M.ctx.currentTime, 0.25); M.next = 0; }
+    paintBtn();
+  }
+  function musicWanted() { return LS.get('nx_music', '1') === '1' && !CUR.quiet; }
+  function paintBtn() { const b = document.getElementById('musBtn'); if (!b) return; b.classList.toggle('on', M.on); b.title = M.on ? 'Սեզոնային երաժշտություն՝ միացված (սեղմեք՝ անջատելու)' : 'Սեզոնային երաժշտություն՝ անջատված (սեղմեք՝ միացնելու)'; b.textContent = M.on ? '🎵' : '🔇'; }
+
+  /* ---------------- ԻՆՏԵՐՖԵՅՍ ---------------- */
+  let CUR = {}, NAME = '', ROOT = null;
+  function compute(d) {
+    const mo = MONTHS[d.getMonth()], sp = special(d), st = Object.assign({}, STYLE[mo.s]);
+    if (mo.s === 'winter' && (d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 14))) st.tunes = [JINGLE, SILENT];
+    const r = rng(hash(ymdOf(d)));
+    return { d, mo, sp, st, quiet: !!(sp && sp.quiet), fx: sp ? sp.fx : mo.fx, sc: sp ? sp.sc : mo.sc, fact: pick(mo.f, r), surprise: pick(SURPRISE, rng(hash(ymdOf(d) + 's'))) };
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+  function render() {
+    if (!ROOT) return;
+    const c = CUR, d = c.d, key = ymdOf(d);
+    if (LS.get('nx_season', '1') !== '1') { ROOT.innerHTML = ''; ROOT.className = ''; return; }
+    const opened = LS.get('nx_gift', '') === key, mini = LS.get('nx_ssn_min', '') === key;
+    const first = (NAME || '').split(' ')[0];
+    const head = c.sp ? `<b>${esc(c.sp.t)}</b> · ${esc(c.sp.msg)}` : `<b>${esc(greet(d))}${first ? ', ' + esc(first) : ''}</b> · ${esc(c.mo.t)}՝ ${esc(c.mo.sub)}`;
+    ROOT.className = 'ssn' + (mini ? ' mini' : '') + (c.quiet ? ' quiet' : '');
+    ROOT.style.setProperty('--sa', c.quiet ? '#ede9fe' : c.mo.a); ROOT.style.setProperty('--sb', c.quiet ? '#f5f3ff' : c.mo.b); ROOT.style.setProperty('--si', c.quiet ? '#4c1d95' : c.mo.ink);
+    document.documentElement.style.setProperty('--ssn-a', c.quiet ? '#ede9fe' : c.mo.a);
+    if (mini) { ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք">${c.sc.slice(0, 2).join('')}</button><span class="ssn-h">${head}</span><button class="ssn-x" data-ssn="max" title="Բացել">⌄</button>`; return; }
+    const vibe = c.quiet ? '' : dayVibe(d);
+    ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք 🙂">${c.sc.map((e, i) => `<span style="animation-delay:${i * 0.4}s">${e}</span>`).join('')}</button>
+      <div class="ssn-txt"><div class="ssn-h">${head}</div>
+        <div class="ssn-s">${esc(WEEKDAY[d.getDay()])}, ${d.getDate()} ${esc(MON_GEN[d.getMonth()])}${vibe ? ' · ' + esc(vibe) : ''}</div>
+        ${c.quiet ? '' : `<div class="ssn-f">🌿 ${esc(c.fact)}</div>`}</div>
+      <div class="ssn-gift">${c.quiet ? '' : opened ? `<div class="ssn-open">${esc(c.surprise)}</div>` : `<button data-ssn="gift" class="ssn-gb">🎁<span>Այսօրվա անակնկալը</span></button>`}</div>
+      <button class="ssn-x" data-ssn="min" title="Փոքրացնել այսօրվա համար">⌃</button>`;
+  }
+  function onClick(e) {
+    const b = e.target.closest('[data-ssn]'); if (!b) return;
+    const a = b.dataset.ssn, key = ymdOf(CUR.d);
+    if (a === 'burst') fxRun(CUR.fx || 'sparkle', 6);
+    else if (a === 'gift') { LS.set('nx_gift', key); render(); fxRun(CUR.quiet ? '' : 'confetti', 5); if (M.ctx && M.on) { const t = M.ctx.currentTime + 0.05; [72, 76, 79, 84].forEach((m, i) => voice('bell', m, t + i * 0.12, 0.3, 0.9)); } }
+    else if (a === 'min') { LS.set('nx_ssn_min', key); render(); }
+    else if (a === 'max') { LS.set('nx_ssn_min', ''); render(); }
+  }
+  function init(opts) {
+    opts = opts || {}; NAME = opts.name || '';
+    ROOT = document.getElementById('season');
+    CUR = compute(new Date());
+    if (ROOT && !ROOT.dataset.on) { ROOT.dataset.on = '1'; ROOT.addEventListener('click', onClick); }
+    render();
+    const key = ymdOf(CUR.d);
+    if (LS.get('nx_fx_day', '') !== key) { LS.set('nx_fx_day', key); setTimeout(() => fxRun(CUR.fx, 14), 700); }
+    else setTimeout(() => fxRun(CUR.fx, 5), 700);
+    M.style = CUR.st; M.seed = hash(key);
+    paintBtn();
+    // բրաուզերը թույլ է տալիս ձայն միայն օգտատիրոջ առաջին գործողությունից հետո
+    if (musicWanted() && !M.on) {
+      const kick = () => { removeEventListener('pointerdown', kick, true); removeEventListener('keydown', kick, true); if (musicWanted()) musicStart(); };
+      addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
+    }
+    // կեսգիշերից հետո՝ նոր օր
+    clearInterval(M.dayT); M.dayT = setInterval(() => { const n = new Date(); if (ymdOf(n) !== ymdOf(CUR.d)) { CUR = compute(n); M.style = CUR.st; M.seed = hash(ymdOf(n)); render(); } }, 60000);
+  }
+  function toggleMusic() { if (M.on) { LS.set('nx_music', '0'); musicStop(); } else { LS.set('nx_music', '1'); musicStart(); } return M.on; }
+  function setVol(v) { LS.set('nx_mvol', String(v)); if (M.on && M.ctx) M.master.gain.setTargetAtTime(0.5 * vol(), M.ctx.currentTime, 0.2); }
+  function setOpt(k, on) { LS.set(k, on ? '1' : '0'); if (k === 'nx_season') render(); if (k === 'nx_music') { on ? musicStart() : musicStop(); } }
+  window.NxSeason = { init, toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, info: () => CUR, _special: special, _compute: compute };
+})();
+
+/* NXSEASON:END */
 
 /******************************************************************************
  *  ԿԱՐԳԱՎՈՐՈՒՄ. եթե այս ֆայլը տեղադրում եք առանձին (GitHub Pages և այլն),
@@ -1660,7 +2008,7 @@ function desktopNotify(n) {
   if (!canDesktopNotify()) return;
   try {
     const x = new Notification('Numetrix · ' + (n.from || ''), { body: n.text, tag: 'nx-' + n.id, requireInteraction: true });
-    x.onclick = () => { window.focus(); x.close(); if (n.taskId) openTask(n.taskId); };
+    x.onclick = () => { window.focus(); x.close(); if (/^M:/.test(n.taskId || '')) openMailNotif(n); else if (n.taskId) openTask(n.taskId); };
   } catch (e) {}
 }
 function handleNotifs(list, initial) {
@@ -1676,7 +2024,7 @@ function handleNotifs(list, initial) {
   if (!fresh.length) return;
   chime();
   fresh.slice(-4).forEach(n => {
-    toast(`<b>${esc(n.from)}</b><br>${esc(n.text)}`, 'nt', n.taskId ? () => openTask(n.taskId) : null);
+    toast(`<b>${esc(n.from)}</b><br>${esc(n.text)}`, 'nt', /^M:/.test(n.taskId || '') ? () => openMailNotif(n) : n.taskId ? () => openTask(n.taskId) : null, n.type === 'mail' ? 30000 : undefined);
     desktopNotify(n);
   });
   if (fresh.length > 4) toast(`Եվս ${fresh.length - 4} նոր ծանուցում`, 'nt', () => toggleNotifs());
@@ -1685,6 +2033,7 @@ function renderBadge() {
   const u = S.d.notifs.filter(n => !n.read).length;
   const b = $('#nBadge'); b.textContent = u > 99 ? '99+' : u; b.classList.toggle('hidden', !u);
   document.title = (u ? `(${u}) ` : '') + 'Numetrix Tasks';
+  try { const ab = u + (S.mailU > 0 && inboxOk() ? S.mailU : 0); if (navigator.setAppBadge) { ab ? navigator.setAppBadge(ab) : navigator.clearAppBadge(); } } catch (e) {}
 }
 
 /* ====================== polling ====================== */
@@ -1694,6 +2043,7 @@ async function pollOnce() {
     S.d.today = r.today;
     if (r.notifs) { S.d.nv = r.nv; handleNotifs(r.notifs); }
     if (r.dv !== S.d.dv) await refresh(true);
+    if (r.mailU != null) setMailU(r.mailU);
     if (r.cv && r.cv !== S.ch.cv) { S.ch.cv = r.cv; loadChatUnread(); if (S.view === 'chats') loadChats(); }
   } catch (e) { /* ցանցի խափանում — կփորձենք նորից */ }
 }
@@ -1851,6 +2201,7 @@ function showApp() {
   if (S.view === 'stats' && !isMgr()) S.view = 'tasks';
   handleNotifs(S.d.notifs, true);
   renderShell(); renderView(); updateNotifCta();
+  try { NxSeason.init({ name: me() }); } catch (e) { console.warn('season', e); }
   startPolling();
 }
 
@@ -1957,6 +2308,7 @@ function navDefs() {
     { k: 'sep1', sep: true },
     { k: 'companies', i: 'building', l: 'Կազմակերպություններ', c: S.d.companies.filter(c => c.active !== 'Ոչ').length },
     { k: 'docs', i: 'docs', l: 'Փաստաթղթեր', c: '' },
+    { k: 'mail', i: 'mail', l: 'Էլ. նամակներ', c: S.mailU > 0 && inboxOk() ? S.mailU : '' },
     { k: 'team', i: 'users', l: 'Թիմ', c: S.d.employees.filter(e => e.active).length },
     { k: 'settings', i: 'gear', l: 'Կարգավորումներ', c: '', req: true },
     livePortals().length ? { k: 'src', i: 'gov', l: 'Ուղարկել հաշվետվություն', ext: 'src' } : null,
@@ -2188,16 +2540,16 @@ function colsModal(view) {
   m.querySelector('#colReset').onclick = () => { list = COLS[view]().map(d => Object.assign({}, d, { on: d.req || !d.hide })); m.querySelector('#colWrap').innerHTML = draw(); bind(); };
 }
 
-const TITLES = { chats: 'Չաթեր', clients: 'Հաճախորդների մուտքեր', requests: 'Գործընկերների հարցումներ', stats: 'Վիճակագրություն', tasks: 'Թասքեր', reports: 'Հաշվետվություններ', archive: 'Արխիվ', companies: 'Կազմակերպություններ', docs: 'Փաստաթղթեր', team: 'Թիմ', settings: 'Կարգավորումներ' };
+const TITLES = { chats: 'Չաթեր', clients: 'Հաճախորդների մուտքեր', requests: 'Գործընկերների հարցումներ', stats: 'Վիճակագրություն', tasks: 'Թասքեր', reports: 'Հաշվետվություններ', archive: 'Արխիվ', companies: 'Կազմակերպություններ', docs: 'Փաստաթղթեր', mail: 'Էլ. նամակներ', team: 'Թիմ', settings: 'Կարգավորումներ' };
 function renderView() {
   if (!S.d) return;
   $('#pageTitle').textContent = TITLES[S.view] || '';
   const v = $('#view');
-  const fn = { chats: viewChats, clients: viewClients, requests: viewRequests, stats: viewStats, tasks: viewTasks, reports: viewReports, archive: viewArchive, companies: viewCompanies, docs: viewDocs, team: viewTeam, settings: viewSettings }[S.view] || viewTasks;
+  const fn = { chats: viewChats, clients: viewClients, requests: viewRequests, stats: viewStats, tasks: viewTasks, reports: viewReports, archive: viewArchive, companies: viewCompanies, docs: viewDocs, mail: viewMail, team: viewTeam, settings: viewSettings }[S.view] || viewTasks;
   applyTaskCols();
   // բաց չաթը չվերաբեռնել (որ չկորի գրածը/ձայնագրությունը)
   if (S.view === 'chats' && v.querySelector('.chats') && TEAMCHAT && TEAMCHAT.thread === S.ch.thread && S.ch.thread) { drawChatList(); return; }
-  v.innerHTML = fn();
+  v.innerHTML = mailBanner() + fn();
   bindColHeads();
   if (S.view === 'tasks') bindPageDrag();
   if (S.view === 'stats') bindStatsChart();
@@ -3114,6 +3466,14 @@ function srcPick(pid) {
   m.addEventListener('click', e => { const b = e.target.closest('[data-cp]'); if (b) { e.preventDefault(); toast(copyText(b.dataset.cp) ? '📋 Պատճենված է՝ ' + esc(b.dataset.cp) : 'Չհաջողվեց պատճենել', copyText ? 'ok' : 'err'); } });
   draw(); setTimeout(() => $('#srcQ').focus(), 30);
 }
+/** Հաշվետվության տեսակին կցված կայքը (կամ null) */
+function rtPortal(code) { const r = code && S.d.reportTypes.find(x => x.code === code); const pt = r && portal(r.portal); return pt && pt.url ? pt : null; }
+/** Թասքի կոճակը. հաշվետվության տեսակին կայք է կցված՝ ուղիղ այդ կայքը, այլապես՝ ընտրություն */
+function taskPortalBtn(t) {
+  const pt = t.kind === S.d.consts.KIND_REPORT ? rtPortal(t.reportCode) : null;
+  if (pt) return `<button class="btn sm primary srcbtn" data-act="srcGo" data-id="${esc(t.companyId)}" data-p="${esc(pt.id)}" title="${esc(pt.full || pt.name)} · բացել կայքը և պատճենել ՀՎՀՀ-ն">📤 Ուղարկել՝ ${esc(pt.icon)} ${esc(pt.name)}</button>`;
+  return livePortals().length ? `<button class="btn sm srcbtn" data-act="srcFor" data-id="${esc(t.companyId)}">📤 Ուղարկել հաշվետվություն</button>` : '';
+}
 /* ---- Կարգավորումներ՝ կայքերի խմբագրիչ ---- */
 const ptRows = () => (S.ptRows = S.ptRows || allPortals().map(x => Object.assign({}, x)));
 function ptRead() {
@@ -3143,6 +3503,184 @@ function portalsCard() {
     <div class="hint" style="margin-top:8px">Գաղտնաբառեր չեն պահվում՝ դրանք լրացնում է բրաուզերը։</div></div>`;
 }
 
+/* ====================== ԷԼ. ՆԱՄԱԿՆԵՐ ======================
+   Ուղարկվում են ընկերության Gmail-ից (Apps Script-ի հաշիվը) */
+const inboxOk = () => { const v = S.d.settings.mailInbox || 'Բոլորը'; return v === 'Բոլորը' || (v === 'Ղեկավարները' && isMgr()); };
+function viewMail() {
+  const tab = inboxOk() ? (S.mailTab || 'in') : 'out';
+  const tabs = inboxOk() ? `<div class="seg" style="margin-right:8px">${[['in', '📥 Ստացված' + (S.mailU > 0 ? ` (${S.mailU})` : '')], ['out', '📤 Ուղարկված']].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-act="mailTab" data-k="${k}">${l}</button>`).join('')}</div>` : '';
+  return tab === 'in' ? viewInbox(tabs) : viewSent(tabs);
+}
+function viewSent(tabs) {
+  if (!S.mail) { S.mail = { rows: null }; call('mailLog', {}, { silent: true }).then(r => { S.mail.rows = r; }).catch(e => { S.mail.rows = []; toast(esc(e.message), 'err'); }).finally(() => { if (S.view === 'mail') renderView(); }); }
+  const R = S.mail.rows;
+  return `<div class="toolbar">${tabs}<span class="muted">${isMgr() ? 'Ընկերության Gmail-ից ուղարկված բոլոր նամակները' : 'Ձեր ուղարկած նամակները'}</span><span class="sp"></span><button class="btn" data-act="mailRefresh" title="Թարմացնել">↻</button><button class="btn primary" data-act="mailNew">${ico('mail')} Նոր նամակ</button></div>
+  ${R == null ? '<div class="card muted" style="padding:18px">⏳ Բեռնվում է…</div>' : R.length ? `<div class="tblwrap"><table class="tbl mcards"><thead><tr><th>Ամսաթիվ</th><th>Ում</th><th>Թեմա</th><th>Կազմակերպություն</th><th>Ուղարկող</th><th>Ֆայլեր</th></tr></thead><tbody>
+    ${R.map(r => `<tr class="click" data-act="mailOpen" data-id="${esc(r.id)}"><td data-l="Ամսաթիվ" style="white-space:nowrap">${esc(fmtDT(r.at))}</td><td data-l="Ում">${esc(r.to)}${r.cc ? `<div class="muted" style="font-size:12px">Cc՝ ${esc(r.cc)}</div>` : ''}</td><td data-l="Թեմա"><b>${esc(r.subject)}</b>${r.taskId ? ` <span class="tag">${esc(r.taskId)}</span>` : ''}</td><td data-l="Կազմակերպություն">${esc(r.companyName || '—')}</td><td data-l="Ուղարկող">${esc(r.by)}</td><td data-l="Ֆայլեր">${r.files ? '📎 ' + r.files.split(', ').length : '—'}</td></tr>`).join('')}
+  </tbody></table></div>` : '<div class="card" style="padding:22px;text-align:center"><div style="font-size:34px">✉️</div><p class="muted">Դեռ նամակներ չեն ուղարկվել</p><button class="btn primary" data-act="mailNew">Նոր նամակ</button></div>'}`;
+}
+function inboxLoad(more) {
+  const I = S.inbox || (S.inbox = { rows: null, q: '', cid: '' });
+  if (I.busy) return; I.busy = true; if (!more) I.err = '';
+  call('mailInbox', { q: I.q, companyId: I.cid, start: more ? (I.rows || []).length : 0 }, { silent: true })
+    .then(r => { I.rows = more ? (I.rows || []).concat(r.rows) : r.rows; I.more = r.more; I.account = r.account; if (r.unread != null && !I.cid && !I.q) setMailU(r.unread, true); })
+    .catch(e => { I.rows = I.rows || []; I.err = e.message; })
+    .finally(() => { I.busy = false; if (S.view === 'mail') renderView(); });
+}
+function viewInbox(tabs) {
+  const I = S.inbox || (S.inbox = { rows: null, q: '', cid: '' });
+  if (I.rows == null && !I.busy) inboxLoad();
+  const comps = S.d.companies.filter(c => c.active !== 'Ոչ');
+  const R = I.rows;
+  return `<div class="toolbar" style="flex-wrap:wrap">${tabs}
+    <select class="inp" id="ibC" style="max-width:240px"><option value="">Բոլոր նամակները</option>${comps.map(c => `<option value="${esc(c.id)}" ${I.cid === c.id ? 'selected' : ''}>🏢 ${esc(c.name)}</option>`).join('')}</select>
+    <input class="inp" id="ibQ" value="${esc(I.q)}" placeholder="Որոնել (ումից, թեմա…)" style="max-width:220px">
+    <span class="sp"></span><button class="btn" data-act="inboxRefresh" title="Թարմացնել">↻</button><button class="btn primary" data-act="mailNew">${ico('mail')} Նոր նամակ</button></div>
+  ${I.account ? `<div class="hint" style="margin:-4px 0 10px">📬 ${esc(I.account)}${I.cid ? ' · միայն այս կազմակերպությանը կցված նամակները' : ''}</div>` : ''}
+  ${I.err ? `<div class="card" style="padding:16px;border-color:#fecaca;background:#fef2f2;color:#991b1b">⚠️ ${esc(I.err)}</div>` : ''}
+  ${R == null ? '<div class="card muted" style="padding:18px">⏳ Բեռնվում են նամակները…</div>' : R.length ? `<div class="ibl">${R.map(r => `<div class="ibr ${r.unread ? 'unr' : ''}" data-act="ibOpen" data-id="${esc(r.id)}">
+      <div class="ibf">${esc(r.from)}${r.n > 1 ? ` <span class="muted">(${r.n})</span>` : ''}</div>
+      <div class="ibs"><b>${esc(r.subject)}</b> <span class="muted">— ${esc(r.snippet)}</span></div>
+      <div class="ibm">${r.att ? '📎 ' : ''}${r.companyName ? `<span class="tag" style="background:#e0f2fe;color:#075985">🏢 ${esc(r.companyName)}</span>` : r.sugId ? `<button type="button" class="tag ibsug" data-act="ibQuick" data-id="${esc(r.id)}" data-cid="${esc(r.sugId)}" title="Կցել այս կազմակերպությանը">🔗 ${esc(r.sugName)}?</button>` : ''}<span class="muted" style="white-space:nowrap">${esc(fmtDT(r.date))}</span></div>
+    </div>`).join('')}</div>${I.more ? `<div style="text-align:center;margin-top:10px"><button class="btn" data-act="inboxMore" ${I.busy ? 'disabled' : ''}>Ավելին…</button></div>` : ''}` : '<div class="card muted" style="padding:22px;text-align:center">Նամակներ չկան</div>'}`;
+}
+document.addEventListener('change', e => { const so = e.target && e.target.dataset && e.target.dataset.ssnopt; if (so) { NxSeason.setOpt(so, e.target.checked); if (so === 'nx_music') NxSeason.init({ name: me() }); } });
+document.addEventListener('input', e => { if (e.target && e.target.dataset && 'ssnvol' in e.target.dataset) NxSeason.setVol(+e.target.value); });
+document.addEventListener('change', e => { if (e.target && e.target.id === 'ibC') { S.inbox.cid = e.target.value; S.inbox.rows = null; renderView(); } });
+document.addEventListener('keydown', e => { if (e.target && e.target.id === 'ibQ' && e.key === 'Enter') { S.inbox.q = e.target.value.trim(); S.inbox.rows = null; renderView(); } });
+function openMailNotif(n) {
+  const id = String(n.taskId || '').split(':')[1];
+  S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null;
+  if (S.view !== 'mail') ACT.go({ dataset: { v: 'mail' } }); else renderView();
+  if (id) ibOpen(id);
+}
+function mailBanner() {
+  if (!(S.mailU > 0) || !inboxOk() || S.view === 'mail') return '';
+  return `<div class="mailban" data-act="mailBan"><span style="font-size:20px">📬</span><span><b>Ունեք ${S.mailU} չկարդացված էլ. նամակ</b><span class="muted"> · ընկերության փոստարկղում</span></span><span class="sp" style="flex:1"></span><span class="btn sm primary">Բացել</span></div>`;
+}
+function refreshBanner() {
+  const v = $('#view'); if (!v) return;
+  const old = v.querySelector(':scope > .mailban'), h = mailBanner();
+  if (old) { if (h) old.outerHTML = h; else old.remove(); } else if (h) v.insertAdjacentHTML('afterbegin', h);
+}
+function setMailU(n, quiet) {
+  if (n == null || n < 0) return;
+  const prev = S.mailU;
+  S.mailU = n;
+  if (prev != null && n > prev && !quiet) {
+    chime();
+    toast(`✉️ <b>Նոր էլ. նամակ</b> (${n} չկարդացված)`, 'nt', () => { S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null; ACT.go({ dataset: { v: 'mail' } }); });
+    if (canDesktopNotify()) { try { const x = new Notification('Numetrix · Էլ. փոստ', { body: 'Նոր նամակ ընկերության փոստարկղում', tag: 'nx-mail' }); x.onclick = () => { window.focus(); x.close(); S.mailTab = 'in'; ACT.go({ dataset: { v: 'mail' } }); }; } catch (e) {} }
+    if (S.view === 'mail' && S.inbox && !S.inbox.cid && !S.inbox.q) { S.inbox.rows = null; }
+  }
+  if (prev !== n) { renderShell(); if (S.view === 'mail') renderView(); else refreshBanner(); renderBadge(); }
+}
+async function ibOpen(id) {
+  let T;
+  try { T = await call('mailThread', { id }); } catch (e) { toast(esc(e.message), 'err'); return; }
+  const I = S.inbox; const row = I && I.rows && I.rows.find(x => x.id === id);
+  if (row && row.unread) { row.unread = false; if (S.mailU > 0) setMailU(S.mailU - 1, true); }
+  const comps = S.d.companies.filter(c => c.active !== 'Ոչ');
+  const sug = row && row.sugId;
+  const last = T.msgs[T.msgs.length - 1];
+  const m = openModal('✉️ ' + (T.subject || ''), `
+    <div class="iblink"><span style="font-weight:600">🏢 Կազմակերպություն՝</span>
+      <select class="inp" id="tlC" style="max-width:280px"><option value="">— կցված չէ —</option>${comps.map(c => `<option value="${esc(c.id)}" ${(T.companyId || (!T.companyId && sug)) === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
+      ${T.msgs.some(x => x.att.length) ? '<label class="chk"><input type="checkbox" id="tlF" checked> Ֆայլերը պահել թղթապանակում</label>' : ''}
+      <button type="button" class="btn sm primary" id="tlGo">${T.companyId ? 'Փոխել' : '🔗 Կցել'}</button>
+      <span class="hint" id="tlSt">${T.companyId ? 'Կցված է՝ ' + esc(T.companyName) : sug ? 'Առաջարկ՝ ըստ ուղարկողի հասցեի' : ''}</span></div>
+    ${T.msgs.map(x => `<div class="ibmsg"><div class="h"><b>${esc(x.from)}</b> <span class="muted">&lt;${esc(x.email)}&gt;</span><span class="sp"></span><span class="muted">${esc(fmtDT(x.date))}</span></div>
+      <div class="muted" style="font-size:12px">Ում՝ ${esc(x.to)}${x.cc ? ' · Cc՝ ' + esc(x.cc) : ''}</div>
+      <div class="b">${linkify(x.body)}</div>
+      ${x.att.length ? `<div class="files">${x.att.map(a => `<div class="file">${ico('clip')}<a href="#" data-ibatt="${x.i}:${a.j}">${esc(a.name)}</a><small>${esc(fmtSize(a.size))}</small></div>`).join('')}</div>` : ''}</div>`).join('')}
+    <div class="ibrep"><label class="f">Պատասխան</label><textarea class="inp" id="rpB" rows="4" placeholder="Գրեք պատասխանը…"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px"><label class="btn sm" style="cursor:pointer">${ico('clip')} Կցել<input type="file" id="rpU" multiple hidden></label><span id="rpL" class="hint"></span><span class="sp" style="flex:1"></span><button type="button" class="btn primary" id="rpGo">${ico('send')} Պատասխանել</button></div></div>`,
+    null, { okOnly: true, wide: true, extra: `<button type="button" class="btn" id="ibTask" style="margin-right:auto">➕ Ստեղծել թասք</button>` });
+  const ups = [];
+  m.querySelector('#rpU').onchange = ev => { ups.push(...ev.target.files); ev.target.value = ''; m.querySelector('#rpL').textContent = ups.map(x => x.name).join(', '); };
+  m.querySelector('#rpGo').onclick = async ev => {
+    const body = m.querySelector('#rpB').value.trim(); if (!body) { m.querySelector('#rpB').focus(); return; }
+    ev.target.disabled = true;
+    try { const uploads = []; for (const x of ups) uploads.push({ name: x.name, mime: x.type, data: await readB64(x) }); await call('mailReply', { id, body, uploads }); toast('✉️ Պատասխանն ուղարկվեց՝ ' + esc(last.email), 'ok'); closeModal(); S.mail = null; }
+    catch (e) { toast(esc(e.message), 'err'); ev.target.disabled = false; }
+  };
+  m.querySelector('#tlGo').onclick = async ev => {
+    const cid = m.querySelector('#tlC').value, sf = m.querySelector('#tlF');
+    ev.target.disabled = true;
+    try {
+      const r = await call('mailLink', { id, companyId: cid, saveFiles: !!(sf && sf.checked) });
+      m.querySelector('#tlSt').textContent = r.companyId ? '✔ Կցված է՝ ' + r.companyName + (r.saved ? ` · ${r.saved} ֆայլ պահվեց թղթապանակում` : '') : 'Կցումը հանված է';
+      if (row) { row.companyId = r.companyId; row.companyName = r.companyName; row.sugId = ''; }
+      toast(r.companyId ? `🔗 Նամակը կցվեց՝ ${esc(r.companyName)}` : 'Կցումը հանված է', 'ok');
+      if (S.view === 'mail') renderView();
+    } catch (e) { toast(esc(e.message), 'err'); }
+    ev.target.disabled = false;
+  };
+  m.addEventListener('click', async ev => {
+    const a = ev.target.closest('[data-ibatt]'); if (!a) return; ev.preventDefault();
+    const [i, j] = a.dataset.ibatt.split(':');
+    try { const f = await call('mailAtt', { id, i, j }); const bin = atob(f.data), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k); const url = URL.createObjectURL(new Blob([u8], { type: f.mime })); const l = document.createElement('a'); l.href = url; l.download = f.name; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); }
+    catch (e) { toast(esc(e.message), 'err'); }
+  });
+  m.querySelector('#ibTask').onclick = () => {
+    const cid = m.querySelector('#tlC').value;
+    const desc = `✉️ ${last.from} <${last.email}> · ${fmtDT(last.date)}\n\n${String(last.body || '').slice(0, 1500)}`;
+    closeModal(); newTask({ companyId: cid, title: T.subject || '', description: desc });
+  };
+}
+function mailShow(id) {
+  const r = (S.mail && S.mail.rows || []).find(x => x.id === id); if (!r) return;
+  openModal('✉️ ' + r.subject, `<div class="hint" style="margin:0 0 10px">${esc(fmtDT(r.at))} · ${esc(r.by)}</div>
+    <div><b>Ում՝</b> ${esc(r.to)}</div>${r.cc ? `<div><b>Cc՝</b> ${esc(r.cc)}</div>` : ''}${r.companyName ? `<div><b>Կազմակերպություն՝</b> ${esc(r.companyName)}</div>` : ''}${r.files ? `<div><b>Ֆայլեր՝</b> ${esc(r.files)}</div>` : ''}
+    <div style="white-space:pre-wrap;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)">${linkify(r.body || '')}</div>`, null, { okOnly: true, wide: true,
+    extra: `<button type="button" class="btn" id="mailAgain" style="margin-right:auto">↻ Նորից ուղարկել / փոխել</button>` });
+  $('#mailAgain').onclick = () => mailCompose({ companyId: r.companyId, taskId: r.taskId, to: r.to, cc: r.cc, subject: r.subject, body: r.body });
+}
+async function mailCompose(o) {
+  o = o || {};
+  const comps = S.d.companies.filter(c => c.active !== 'Ոչ');
+  let info = { contacts: [], files: [], from: '', quota: null };
+  const load = async cid => { try { info = await call('mailInit', { companyId: cid || '', taskId: o.taskId || '' }, { silent: true }); } catch (e) {} };
+  await load(o.companyId);
+  const task = o.taskId ? S.d.tasks.find(t => t.id === o.taskId) : null;
+  const subj = o.subject || (task ? task.title + (task.companyName ? ' — ' + task.companyName : '') : '');
+  const ups = [];
+  const m = openModal('✉️ Նոր էլ. նամակ', `<div class="fgrid">
+    <div class="full hint" id="mFrom" style="margin:0"></div>
+    <div class="full"><label class="f">Կազմակերպություն (ըստ ցանկության)</label><select class="inp" name="companyId" ${task ? 'disabled' : ''}><option value="">—</option>${comps.map(c => `<option value="${esc(c.id)}" ${c.id === o.companyId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="full"><label class="f">Ում *</label><input class="inp" name="to" type="email" multiple value="${esc(o.to || '')}" placeholder="email@example.com (մի քանիսը՝ ստորակետով)" required autocomplete="email"><div id="mCts" class="mcts"></div></div>
+    <div class="full"><label class="f">Պատճեն (Cc)</label><input class="inp" name="cc" value="${esc(o.cc || '')}" placeholder="ըստ ցանկության"></div>
+    <div class="full"><label class="f">Թեմա *</label><input class="inp" name="subject" value="${esc(subj)}" required></div>
+    <div class="full"><label class="f">Տեքստ</label><textarea class="inp" name="body" rows="8" placeholder="Հարգելի գործընկեր, …">${esc(o.body || '')}</textarea><label class="chk" style="margin-top:6px"><input type="checkbox" name="sig" checked> Ավելացնել ստորագրություն՝ «${esc(me())} · <span id="mFirm"></span>»</label></div>
+    <div class="full" id="mTF"></div>
+    <div class="full"><label class="f">Կցել ֆայլեր</label><label class="btn sm" style="cursor:pointer">${ico('clip')} Ընտրել ֆայլ<input type="file" id="mUp" multiple hidden></label><span class="hint" style="margin-left:8px">ընդհանուրը՝ մինչև 24 ՄԲ</span><div class="files" id="mUpL" style="margin-top:6px"></div></div>
+  </div>`, async f => {
+    const to = String(f.to || '').trim();
+    if (!to) throw new Error('Նշեք ստացողի էլ. հասցեն');
+    const uploads = [];
+    for (const x of ups) uploads.push({ name: x.name, mime: x.type, data: await readB64(x) });
+    const taskFiles = [...m.querySelectorAll('[name=tf]:checked')].map(x => x.value);
+    const r = await call('mailSend', { to, cc: f.cc, subject: f.subject, body: f.body, noSig: !f.sig, companyId: task ? (task.companyId || '') : (f.companyId || ''), taskId: o.taskId || '', taskFiles, uploads });
+    toast(`✉️ Նամակն ուղարկվեց՝ ${esc(to)}${r.quota != null ? ` · այսօր դեռ կարող եք ուղարկել ${r.quota}` : ''}`, 'ok');
+    S.mail = null; if (S.view === 'mail') renderView();
+  }, { submit: '✉️ Ուղարկել', wide: true });
+  const draw = () => {
+    m.querySelector('#mFrom').innerHTML = info.from ? `Ուղարկող՝ <b>${esc(info.firm || '')}</b> &lt;${esc(info.from)}&gt;${info.quota != null ? ` · այսօր հասանելի՝ ${info.quota} նամակ` : ''}` : '';
+    m.querySelector('#mFirm').textContent = info.firm || S.d.settings.companyName || '';
+    m.querySelector('#mCts').innerHTML = info.contacts.length ? 'Կոնտակտներ՝ ' + info.contacts.map(c => `<button type="button" class="tag" data-em="${esc(c.email)}" title="${esc(c.name)}">+ ${esc(c.email)}</button>`).join(' ') : '';
+    m.querySelector('#mTF').innerHTML = info.files.length ? `<label class="f">Թասքի ֆայլերից</label><div class="pick">${info.files.map(x => `<label><input type="checkbox" name="tf" value="${esc(x.id)}">${ico('clip')}<span>${esc(x.name)} <small class="muted">${esc(fmtSize(x.size))}</small></span></label>`).join('')}</div>` : '';
+  };
+  const upDraw = () => { m.querySelector('#mUpL').innerHTML = ups.map((x, i) => `<div class="file">${ico('clip')}<span>${esc(x.name)}</span><small>${esc(fmtSize(x.size))}</small><button type="button" data-updel="${i}" title="Հեռացնել">×</button></div>`).join(''); };
+  m.querySelector('#mUp').onchange = ev => { [...ev.target.files].forEach(x => { if (x.size > 24 * 1048576) toast(`«${esc(x.name)}» ֆայլը մեծ է`, 'err'); else ups.push(x); }); ev.target.value = ''; upDraw(); };
+  m.addEventListener('click', ev => {
+    const d = ev.target.closest('[data-updel]'); if (d) { ev.preventDefault(); ups.splice(+d.dataset.updel, 1); upDraw(); return; }
+    const b = ev.target.closest('[data-em]'); if (b) { ev.preventDefault(); const i = m.querySelector('[name=to]'); const cur = i.value.split(/[,;\s]+/).filter(Boolean); if (!cur.includes(b.dataset.em)) cur.push(b.dataset.em); i.value = cur.join(', '); }
+  });
+  const cs = m.querySelector('[name=companyId]'); cs.onchange = async () => { await load(cs.value); draw(); };
+  draw();
+  setTimeout(() => m.querySelector('[name=' + (o.to ? 'subject' : 'to') + ']').focus(), 50);
+}
+
 /* ====================== TEAM VIEW ====================== */
 function viewTeam() {
   const td = today();
@@ -3163,6 +3701,20 @@ function viewTeam() {
       <button class="btn sm" style="margin-top:8px" data-act="empTasks" data-n="${esc(e.name)}">Տեսնել թասքերը →</button>
     </div>`;
   }).join('')}</div>`;
+}
+function deleteEmp(name) {
+  const tasks = S.d.tasks.filter(t => t.assignee === name);
+  const comps = S.d.companies.filter(c => c.responsible === name || Object.values(parseRA(c.reportAssignees)).includes(name));
+  const others = S.d.employees.filter(x => x.active && x.name !== name);
+  const need = tasks.length || comps.length;
+  openModal('Ջնջել աշխատակցին', `<p style="margin-top:0"><b>${esc(name)}</b>-ը կհեռացվի աշխատակիցների ցանկից, նրա սարքերը կանջատվեն, իսկ անձնական տվյալները (լիազորագրերի համար)՝ կջնջվեն։ Արխիվը, մեկնաբանություններն ու պատմությունը կմնան։</p>
+    ${need ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;margin-bottom:12px">Նա ունի <b>${tasks.length}</b> բաց թասք և պատասխանատու է <b>${comps.length}</b> կազմակերպության համար։</div>
+    <label class="f">Ու՞մ փոխանցել *</label><select class="inp" name="to" required><option value="">— ընտրեք —</option>${others.map(x => `<option>${esc(x.name)}</option>`).join('')}</select>` : '<p class="muted">Բաց թասքեր և կազմակերպություններ չունի։</p>'}
+    <div class="hint" style="margin-top:10px">Եթե պարզապես ժամանակավորապես չի աշխատում, ավելի լավ է «Ակտիվ»՝ «Ոչ» դնել։</div>`, async f => {
+    const r = await call('deleteEmployee', { name, to: f.to || '' });
+    toast(`🗑 ${esc(name)}-ը ջնջված է${r.tasks || r.companies ? ` · ${esc(f.to)}-ին փոխանցվեց ${r.tasks} թասք, ${r.companies} կազմակերպություն` : ''}`, 'ok');
+    await refresh();
+  }, { submit: 'Ջնջել', wide: false });
 }
 async function editEmp(name) {
   const e = name ? emp(name) : { role: 'Աշխատակից', active: true, color: S.d.consts.COLORS[S.d.employees.length % 10] };
@@ -3200,7 +3752,8 @@ async function editEmp(name) {
     const any = ['birth', 'docNo', 'docDate', 'docBy', 'idCard', 'ssn', 'phone', 'addr'].some(k => String(data[k] || '').trim());
     if (any || A.active || A.docNo) await call('authSave', { emp: f.name.trim(), origEmp: name || '', active: true, data });
     toast('Պահպանված է', 'ok'); await refresh();
-  }, { submit: 'Պահպանել', wide: true });
+  }, { submit: 'Պահպանել', wide: true, extra: name && name !== me() && (S.d.me.owner || e.role !== 'Ղեկավար') ? `<button type="button" class="btn danger" id="empDel" style="margin-right:auto">🗑 Ջնջել ցանկից</button>` : '' });
+  const ed = m.querySelector('#empDel'); if (ed) ed.onclick = () => deleteEmp(name);
   const tm = m.querySelector('#tmOn');
   if (tm) tm.onchange = () => { m.querySelector('#tmDate').style.display = tm.checked ? '' : 'none'; if (tm.checked && !m.querySelector('[name=mgrUntil]').value) m.querySelector('[name=mgrUntil]').focus(); };
 }
@@ -3511,6 +4064,14 @@ function viewSettings() {
   const dis = mg ? '' : 'disabled';
   return `
   <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))">
+    <div class="card"><h3>🍂 Սեզոնային ձևավորում (այս սարքում)</h3>
+      <p class="muted" style="font-size:13px">Ամեն ամիս՝ իր գույներով, տրամադրությամբ և երաժշտությամբ, իսկ ամեն օր՝ նոր անակնկալ։</p>
+      <label class="chk"><input type="checkbox" data-ssnopt="nx_season" ${NxSeason.opt('nx_season') ? 'checked' : ''}> Ցույց տալ սեզոնային գոտին</label>
+      <label class="chk"><input type="checkbox" data-ssnopt="nx_fx" ${NxSeason.opt('nx_fx') ? 'checked' : ''}> Անիմացիաներ (տերևներ, ձյուն, ծաղիկներ…)</label>
+      <label class="chk"><input type="checkbox" data-ssnopt="nx_music" ${NxSeason.opt('nx_music') ? 'checked' : ''}> 🎵 Ֆոնային երաժշտություն</label>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><span class="muted" style="font-size:13px">Ձայնի ուժգնություն</span><input type="range" min="0" max="1" step="0.05" value="${NxSeason.vol()}" data-ssnvol style="flex:1;max-width:220px"></div>
+      <div style="margin-top:10px"><button class="btn sm" data-act="ssnBurst">✨ Փորձել անիմացիան</button></div>
+    </div>
     <div class="card"><h3>🔔 Ծանուցումներ այս սարքում</h3>
       <p class="muted" style="font-size:13px">Նոր թասք, մեկնաբանություն, կարգավիճակի փոփոխություն։ Էջը պետք է բաց լինի բրաուզերում (կարող է լինել այլ թաբում)։</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -3535,16 +4096,17 @@ function viewSettings() {
         <div class="full"><label class="f">Հաշվետվությունների սկիզբ (լռելյայն)</label><input class="inp" type="date" name="defaultStart" value="${esc(s.defaultStart || '')}" ${dis}><div class="hint">Այն կազմակերպությունների համար, որոնց «Սկսած» դաշտը դատարկ է</div></div>
         <div class="full"><label class="f">Ժամկետն անցած հաշվետվություններ ստեղծել՝ մինչև (օր)</label><input class="inp" type="number" min="0" max="365" name="overdueGrace" value="${esc(s.overdueGrace || 0)}" ${dis}><div class="hint">0՝ ստեղծվում են միայն այն հաշվետվությունները, որոնց ժամկետը դեռ չի անցել։ Հին ամսաթվով կազմակերպություն գրանցելիս անցյալի հաշվետվությունները համարվում են ուղարկված։</div></div>
         <div class="full"><label class="f">Ոչ աշխատանքային (տոնական) օրեր</label><textarea class="inp" name="holidays" rows="2" ${dis}>${esc((s.holidays || []).join(', '))}</textarea><div class="hint">ԱԱ-ՕՕ՝ ամեն տարի կրկնվող, ՏՏՏՏ-ԱԱ-ՕՕ՝ կոնկրետ օր։ Շաբաթ/կիրակին հաշվվում են ավտոմատ։</div></div>
+        <div class="full"><label class="f">📥 Ստացված էլ. նամակները (Gmail) տեսնում են</label><select class="inp" name="mailInbox" ${dis}>${['Բոլորը', 'Ղեկավարները', 'Անջատված'].map(v => `<option ${(s.mailInbox || 'Բոլորը') === v ? 'selected' : ''}>${v}</option>`).join('')}</select><div class="hint">«Էլ. նամակներ» բաժնում՝ ընկերության փոստարկղի ստացված նամակները և նոր նամակի ծանուցումը</div></div>
         <label class="chk full"><input type="checkbox" name="autoPriority" ${s.autoPriority ? 'checked' : ''} ${dis}> Հաշվետվության կարևորությունը ավտոմատ բարձրացնել ժամկետը մոտենալիս</label>
         ${mg ? '<div class="full"><button class="btn primary" type="button" data-act="saveSettings">Պահպանել</button></div>' : ''}
       </form>
     </div>` : ''}
   </div>
   ${mg ? `  <div class="toolbar" style="margin-top:26px"><h3 style="margin:0">Հաշվետվությունների տեսակներ</h3><span class="sp"></span>${mg ? `<button class="btn" data-act="cleanupOld">🧹 Հեռացնել ժամկետանց հինները</button><button class="btn" data-act="genReports">↻ Ստեղծել պակասողները</button><button class="btn primary" data-act="editRT">${ico('plus')} Տեսակ</button>` : ''}</div>
-  <table class="tbl"><thead><tr><th>Կոդ</th><th>Անվանում</th><th>Պարբերականություն</th><th>Ժամկետ</th><th>Կազմակերպություններ</th><th>Ակտիվ</th></tr></thead><tbody>
+  <table class="tbl"><thead><tr><th>Կոդ</th><th>Անվանում</th><th>Պարբերականություն</th><th>Ժամկետ</th><th>Ուղարկվում է</th><th>Կազմակերպություններ</th><th>Ակտիվ</th></tr></thead><tbody>
   ${S.d.reportTypes.map(r => `<tr class="${mg ? 'click' : ''}" ${mg ? `data-act="editRT" data-code="${esc(r.code)}"` : ''} style="${r.active === 'Ոչ' ? 'opacity:.5' : ''}">
     <td><b>${esc(r.code)}</b></td><td>${esc(r.name)}${r.notes ? `<div class="muted" style="font-size:12px">${esc(r.notes)}</div>` : ''}</td><td>${periodOk(r) ? esc(r.period) : `<span style="color:var(--red);font-weight:600">⚠ «${esc(r.periodRaw || r.period)}» — չի ճանաչվել</span>`}</td>
-    <td>${esc(dueText(r))}</td><td>${S.d.companies.filter(c => applies(r, c)).length}</td><td>${r.active === 'Ոչ' ? 'Ոչ' : '✓'}</td></tr>`).join('')}
+    <td>${esc(dueText(r))}</td><td>${(pt => pt ? esc(pt.icon + ' ' + pt.name) : '<span class="muted">—</span>')(portal(r.portal))}</td><td>${S.d.companies.filter(c => applies(r, c)).length}</td><td>${r.active === 'Ոչ' ? 'Ոչ' : '✓'}</td></tr>`).join('')}
   </tbody></table>` : ''}
   <div class="hint" style="margin-top:8px">Թասքը ստեղծվում է ժամանակաշրջանի ավարտին հաջորդող օրը։ Ժամկետը, որ ընկնում է շաբաթ/կիրակի կամ տոնական օր, տեղափոխվում է հաջորդ աշխատանքային օր։ ⚠️ Ժամկետները լրացված են օրինակով՝ ստուգեք։</div>`;
 }
@@ -3575,6 +4137,7 @@ function editRT(code) {
     <div><label class="f">Ժամկետի օր (1–31)</label><input class="inp" type="number" min="1" max="31" name="dueDay" value="${esc(r.dueDay)}"></div>
     <div><label class="f">Ակտիվ</label><select class="inp" name="active"><option ${r.active !== 'Ոչ' ? 'selected' : ''}>Այո</option><option ${r.active === 'Ոչ' ? 'selected' : ''}>Ոչ</option></select></div>
     <div><label class="f">Նշումներ</label><input class="inp" name="notes" value="${esc(r.notes || '')}"></div>
+    <div class="full"><label class="f">📤 Որտեղ է ուղարկվում</label><select class="inp" name="portal"><option value="">— նշված չէ —</option>${allPortals().map(pt => `<option value="${esc(pt.id)}" ${r.portal === pt.id ? 'selected' : ''}>${esc(pt.icon)} ${esc(pt.name)}${pt.full ? ' · ' + esc(pt.full) : ''}${pt.url ? '' : ' (հղումը նշված չէ)'}</option>`).join('')}</select><div class="hint">Այս տեսակի հաշվետվության թասքում կհայտնվի կոճակ, որը կբացի հենց այս կայքը։ Ցանկում չկա՞՝ ավելացրեք Կարգավորումներ → «Հաշվետվությունների կայքեր»։</div></div>
     <div class="full preview" id="rtPrev"></div>
   </div>`, async f => {
     const res = await call('saveReportType', Object.assign({ origCode: code || '' }, f));
@@ -3604,6 +4167,7 @@ function newTask(preset) {
     <div><label class="f">Երբ պետք է վերջացնի *</label><input class="inp" type="date" name="due" value="${esc(preset.due || dueForPrio(pr))}" required></div>
     <div class="full"><label class="f">Կարևորություն</label><div class="prio">${K.PRIORITIES.map((p, i) => `<label style="--c:${PRIO_COLORS[i]}"><input type="radio" name="priority" value="${esc(p)}" ${p === pr ? 'checked' : ''}><span>${esc(p)}</span></label>`).join('')}</div></div>
     <div class="full"><label class="f">Կցել գործընկերների (ըստ ցանկության)</label><div class="pick">${emps.map(e => `<label><input type="checkbox" name="participants" value="${esc(e.name)}">${av(e.name, 'sm')}<span>${esc(e.name)}</span></label>`).join('')}</div></div>
+    <div class="full"><label class="f">Կցված ֆայլեր</label><label class="btn sm" style="cursor:pointer">${ico('clip')} Կցել ֆայլ<input type="file" id="ntFiles" multiple hidden></label><span class="hint" style="margin-left:8px">մինչև 25 ՄԲ</span><div class="files" id="ntList" style="margin-top:6px"></div></div>
   </div>`, async f => {
     let companyId = '';
     if (f.company.trim()) {
@@ -3611,13 +4175,28 @@ function newTask(preset) {
       if (!c) throw new Error('Կազմակերպությունը չի գտնվել ցանկում');
       companyId = c.id;
     }
+    const big = ntFiles.find(x => x.size > 25 * 1048576);
+    if (big) throw new Error(`«${big.name}» ֆայլը մեծ է 25 ՄԲ-ից`);
     const t = await call('createTask', { companyId, title: f.title, description: f.description, assignee: f.assignee, due: f.due, priority: f.priority, participants: [].concat(f.participants || []), requestId: preset.requestId || '', msgId: preset.msgId || '' });
     if (preset.requestId) { S.reqs = null; if (S.d.reqNew) await refresh(true); }
     if (preset.msgId) { if (TEAMCHAT) TEAMCHAT.refresh(); toast('Թասքը ստեղծված է' + (preset.fromClient ? ' · հաճախորդը կտեսնի այն իր «Անելիքներ»-ում' : ''), 'ok'); }
     toast(`✔ Թասքը ստեղծվեց և ուղարկվեց ${esc(t.assignee)}-ին`, 'ok');
     S.d.tasks.push(t);
     renderShell(); renderView();
+    if (ntFiles.length) {
+      const files = ntFiles.slice(); let n = 0;
+      toast(`📎 Ֆայլերը բեռնվում են (${files.length})…`, 'nt');
+      for (const fl of files) {
+        try { const data = await readB64(fl); await call('uploadFile', { taskId: t.id, file: { name: fl.name, mime: fl.type, data } }, { silent: true }); n++; }
+        catch (e) { toast(`«${esc(fl.name)}»՝ ${esc(e.message)}`, 'err'); }
+      }
+      if (n) toast('📎 Թասքին կցվեց ' + n + ' ֆայլ', 'ok');
+    }
   }, { submit: 'Ստեղծել թասքը', wide: true });
+  const ntFiles = [];
+  const ntDraw = () => { m.querySelector('#ntList').innerHTML = ntFiles.map((x, i) => `<div class="file">${ico('clip')}<span>${esc(x.name)}</span><small>${esc(fmtSize(x.size))}</small><button type="button" data-ntdel="${i}" title="Հեռացնել">×</button></div>`).join(''); };
+  m.querySelector('#ntFiles').onchange = ev => { [...ev.target.files].forEach(x => { if (x.size > 25 * 1048576) toast(`«${esc(x.name)}» ֆայլը մեծ է 25 ՄԲ-ից`, 'err'); else ntFiles.push(x); }); ev.target.value = ''; ntDraw(); };
+  m.querySelector('#ntList').onclick = ev => { const b = ev.target.closest('[data-ntdel]'); if (b) { ev.preventDefault(); ntFiles.splice(+b.dataset.ntdel, 1); ntDraw(); } };
   m.querySelectorAll('input[name=priority]').forEach(r => r.onchange = () => { m.querySelector('[name=due]').value = dueForPrio(r.value); });
   setTimeout(() => m.querySelector('[name=' + (preset.companyId ? (preset.title ? 'assignee' : 'title') : 'company') + ']').focus(), 50);
 }
@@ -3695,7 +4274,7 @@ function renderDrawer() {
     <div class="ttl">
       <div class="sub"><span class="kt" style="margin:0">${esc(t.kind)}</span><span>${esc(t.id)}</span>${t.archived ? '<span class="tag">🗄 Արխիվում է</span>' : ''}<span class="pill" style="--c:${stColor(t.status)}">${esc(t.status)}</span></div>
       ${own && !isRep ? `<input class="inp${dirty('title')}" id="dTitle" value="${esc(t.title)}">` : `<h2>${esc(t.title)}</h2>`}
-      <div class="muted" style="margin-top:4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">${t.companyName ? '🏢 ' + esc(t.companyName) : 'Ներքին թասք'}${isRep ? ' · ' + esc(periodLabel(t)) : ''}${t.companyId && livePortals().length ? `<button class="btn sm srcbtn" data-act="srcFor" data-id="${esc(t.companyId)}">📤 Ուղարկել հաշվետվություն</button>` : ''}</div>
+      <div class="muted" style="margin-top:4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">${t.companyName ? '🏢 ' + esc(t.companyName) : 'Ներքին թասք'}${isRep ? ' · ' + esc(periodLabel(t)) : ''}${t.companyId ? taskPortalBtn(t) : ''}${!t0.archived ? `<button class="btn sm" data-act="mailNew" data-task="${esc(t.id)}" data-cid="${esc(t.companyId || '')}">${ico('mail')}Նամակ</button>` : ''}</div>
     </div>
     <button class="iconbtn" data-act="closeDrawer">${ico('x')}</button>
   </div>
@@ -3729,7 +4308,7 @@ function renderDrawer() {
   </div>
   <div class="df">
     ${t0.archived && isMgr() ? `<button class="btn" data-act="restore" data-id="${esc(t.id)}">↩ Վերականգնել արխիվից</button>` : ''}
-    ${!ro ? `<button class="btn primary" data-act="saveTask" ${nDirty ? '' : 'disabled'}>💾 Պահպանել</button>` : ''}
+    ${!ro ? `<button class="btn primary" data-act="saveTask" title="Պահպանել և փակել">💾 Պահպանել</button>` : ''}
     ${!t0.archived && !isRep && !ro ? `<button class="btn" data-act="finishTask" style="color:var(--green)">${ico('check')} Ավարտել</button>` : ''}
     ${nDirty ? `<span class="unsaved">Չպահպանված փոփոխություններ</span><button class="btn sm" data-act="discardEdit">Չեղարկել</button>` : ''}
     <span style="flex:1"></span>
@@ -3763,15 +4342,20 @@ function stageEdit(k, v, quiet) {
 }
 function isDirty() { return !!(S.drawer && S.drawer.edit && Object.keys(S.drawer.edit).length); }
 async function confirmDiscard() { return !isDirty() || NxDlg.confirm('Կան չպահպանված փոփոխություններ\nՇարունակե՞լ առանց պահպանելու։', { ok: 'Չպահպանել', cancel: 'Մնալ', danger: true }); }
-async function saveTask(extra) {
+async function saveTask(extra, stay) {
   if (!S.drawer) return;
+  const id = S.drawer.id;
+  // չուղարկված մեկնաբանությունը նույնպես ուղարկվում է
+  const ct = $('#cText');
+  if (ct && ct.value.trim() && !extra) { await sendComment(); if (!S.drawer || S.drawer.id !== id || ($('#cText') && $('#cText').value.trim())) return; }
   const patch = Object.assign({}, S.drawer.edit || {}, extra || {});
-  if (!Object.keys(patch).length) return;
+  if (!Object.keys(patch).length) { if (!stay) closeDrawer(); return; }
   if (patch.status && ARCHIVE_ST.includes(patch.status) && !(await NxDlg.confirm(`Նշե՞լ «${patch.status}»\nԹասքը կտեղափոխվի արխիվ։`, { ok: 'Այո, ' + patch.status, danger: false }))) return;
   const keep = S.drawer.edit;
   S.drawer.edit = {};
   const ok = await patchTask(patch, '✔ Պահպանված է');
-  if (!ok && S.drawer) { S.drawer.edit = keep; renderDrawer(); }
+  if (!ok && S.drawer) { S.drawer.edit = keep; renderDrawer(); return; }
+  if (ok && !stay && S.drawer && S.drawer.id === id) closeDrawer();
 }
 const ARCHIVE_ST = ['Ավարտված', 'Ուղարկված է'];
 async function patchTask(patch, okMsg) {
@@ -3875,10 +4459,21 @@ function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTM
 
 /* ====================== EVENTS ====================== */
 const ACT = {
-  go: el => { closeMs(); const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
+  go: el => { closeMs(); const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => { const on = $('#side').classList.toggle('on'); if (on && innerWidth <= 860) histPush({ nxs: 1, nxv: S.view }); },
   installApp: () => { $('#side').classList.remove('on'); installApp(); },
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
+  mailNew: (el, e) => { if (e) e.stopPropagation(); mailCompose({ companyId: el.dataset.cid || '', taskId: el.dataset.task || '' }); },
+  mailRefresh: () => { S.mail = null; renderView(); },
+  mailTab: el => { S.mailTab = el.dataset.k; renderView(); },
+  music: () => { const on = NxSeason.toggleMusic(); toast(on ? '🎵 Սեզոնային երաժշտությունը միացված է' : '🔇 Երաժշտությունն անջատված է', 'ok', null, 2500); if (S.view === 'settings') renderView(); },
+  ssnBurst: () => NxSeason.burst(),
+  mailBan: () => { S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null; ACT.go({ dataset: { v: 'mail' } }); },
+  inboxRefresh: () => { if (S.inbox) S.inbox.rows = null; renderView(); },
+  inboxMore: () => inboxLoad(true),
+  ibOpen: el => ibOpen(el.dataset.id),
+  ibQuick: async (el, e) => { e.stopPropagation(); el.disabled = true; try { const r = await call('mailLink', { id: el.dataset.id, companyId: el.dataset.cid, saveFiles: false }); const row = S.inbox.rows.find(x => x.id === el.dataset.id); if (row) { row.companyId = r.companyId; row.companyName = r.companyName; } toast('🔗 Կցվեց՝ ' + esc(r.companyName), 'ok'); renderView(); } catch (err) { toast(esc(err.message), 'err'); el.disabled = false; } },
+  mailOpen: el => mailShow(el.dataset.id),
   srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id, el.dataset.p); },
   srcFor: (el, e) => { e.stopPropagation(); srcFor(el.dataset.id); },
   srcTab: el => { S.srcTab = el.dataset.k; if (S.srcDraw) S.srcDraw(); },
@@ -3992,6 +4587,7 @@ const ACT = {
   notifClick: el => {
     const n = S.d.notifs.find(x => String(x.id) === el.dataset.id); if (!n) return;
     if (!n.read) { n.read = true; renderBadge(); call('markNotifs', { ids: [n.id] }, { silent: true }).catch(() => {}); }
+    if (n.type === 'mail' || /^M:/.test(n.taskId || '')) { closeNotifs(); openMailNotif(n); return; }
     if (n.type === 'chat' || /^(G-|R-)/.test(n.taskId || '')) { closeNotifs(); openChat(n.taskId); return; }
     if (n.taskId) openTask(n.taskId);
     else { closeNotifs(); if (n.type === 'reports') ACT.go({ dataset: { v: 'reports' } }); else if (n.type === 'request') ACT.go({ dataset: { v: 'requests' } }); }
@@ -4041,7 +4637,7 @@ const ACT = {
   genReports: async () => { const r = await call('generateReportsNow', {}); toast(r.generated ? `Ստեղծվեց ${r.generated} հաշվետվություն` : 'Բոլոր հաշվետվություններն արդեն ստեղծված են', 'ok'); await refresh(); },
   saveSettings: async () => {
     const f = formData($('#setForm'));
-    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
+    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, mailInbox: f.mailInbox, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
     catch (e) { toast(esc(e.message), 'err'); }
   }
 };
