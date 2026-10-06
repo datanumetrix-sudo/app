@@ -108,16 +108,36 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ssn-open{background:rgba(255,255,255,.75);border-radius:12px;padding:8px 12px;font-size:13px;animation:ssnO .5s ease-out}
 @keyframes ssnO{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
 .ssn-np{font-size:12.5px;margin-top:4px;display:flex;gap:6px;align-items:center}.ssn-np button{border:0;background:rgba(255,255,255,.6);border-radius:8px;cursor:pointer;padding:1px 6px;font-size:12px}
+.ssn-ctl{display:flex;flex-direction:column;gap:2px;align-self:flex-start;z-index:1}.ssn-fact{opacity:.85}
 .ssn-x{border:0;background:transparent;color:inherit;font-size:16px;cursor:pointer;opacity:.6;z-index:1;align-self:flex-start}
 #season.ssn.mini{padding:6px 12px}#season.ssn.mini .ssn-sc{font-size:16px;padding:2px 6px}#season.ssn.mini .ssn-h{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #season.ssn.quiet .ssn-sc span{animation:none}
 .ssn-fx{position:fixed;inset:0;pointer-events:none;z-index:60}
-@media (max-width:860px){#season.ssn{margin:10px 12px 0;flex-wrap:wrap;gap:10px;padding:10px 12px}.ssn-sc{font-size:20px}.ssn-gift{max-width:none;flex-basis:100%}.ssn-f{display:none}.ssn-x{position:absolute;right:8px;top:6px}}
+@media (max-width:860px){#season.ssn{margin:10px 12px 0;flex-wrap:wrap;gap:10px;padding:10px 12px}.ssn-sc{font-size:20px}.ssn-gift{max-width:none;flex-basis:100%}.ssn-f{display:none}.ssn-ctl{position:absolute;right:6px;top:4px;flex-direction:row}}
 @media (prefers-reduced-motion:reduce){.ssn-sc span,.ssn-gb{animation:none}}
 .mailban{display:flex;gap:10px;align-items:center;padding:10px 14px;margin-bottom:14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;cursor:pointer;animation:mbp 2.4s ease-in-out infinite}
 @keyframes mbp{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.0)}50%{box-shadow:0 0 0 4px rgba(249,115,22,.18)}}
+.mbx{display:grid;grid-template-columns:400px minmax(0,1fr);gap:14px;align-items:start}
+.mcos{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:sticky;top:10px}
+.mcsr{padding:8px;border-bottom:1px solid var(--line)}.mcsr .inp{width:100%}
+.mcol{max-height:56vh;overflow:auto}
+.mcoh,.mco{display:grid;grid-template-columns:minmax(0,1fr) 58px 74px 64px;gap:4px;align-items:center;padding:8px 12px}
+.mcoh{background:#f8fafc;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--muted);font-weight:600;text-align:center;line-height:1.25}
+.mcoh span:first-child{text-align:left}.mcoh small{display:block;font-weight:400}
+.mco{border-bottom:1px solid var(--line);cursor:pointer}.mco:hover{background:#f8faff}.mco.on{background:var(--brandSoft)}
+.mco .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mco.on .nm{font-weight:700}
+.mco.tot{background:#f8fafc;font-weight:700}.mco.none{border-bottom:0;border-top:1px solid var(--line)}.mco.none .nm{color:var(--muted)}
+.mco .c{text-align:center}.mco .c b{display:inline-block;min-width:26px;border-radius:99px;padding:1px 7px;font-size:12.5px}
+.mco .c b.z{color:#cbd5e1;font-weight:400}
+.mco .new b:not(.z){background:#2457f5;color:#fff}.mco .unr b:not(.z){background:#fee2e2;color:#b91c1c}.mco .rd b:not(.z){background:#f1f5f9;color:#475569}
+.mbulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--brandSoft);border:1px solid #c7d6ff;border-radius:12px;padding:8px 12px;margin-bottom:8px}
+.ibg{background:#f8fafc;padding:6px 14px;font-size:12px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line)}
+.ibr .dot,.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.ibr.sel{background:#eef3ff}
+.t-ok{background:#dcfce7;color:#166534}.t-wait{background:#ffedd5;color:#9a3412}.t-late{background:#fee2e2;color:#991b1b}
+@media (max-width:1000px){.mbx{grid-template-columns:1fr}.mcos{position:static}.mcol{max-height:40vh}}
 .ibl{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.ibr{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.ibr{display:grid;grid-template-columns:22px 170px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
 .ibr:last-child{border-bottom:0}.ibr:hover{background:#f3f6fc}
 .ibr .ibf{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ibr .ibs{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
@@ -131,7 +151,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ibmsg .h{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.ibmsg .h .sp{flex:1}
 .ibmsg .b{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px;font-size:14px;max-height:50vh;overflow:auto}
 .ibrep{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
-@media (max-width:860px){.ibr{grid-template-columns:minmax(0,1fr);gap:2px}.ibr .ibm{justify-content:space-between}}
+@media (max-width:860px){.ibr{grid-template-columns:22px minmax(0,1fr);gap:2px 8px}.ibr .ibs,.ibr .ibm{grid-column:2}.ibr .ibm{justify-content:space-between;flex-wrap:wrap}}
 .mcts{margin-top:6px;font-size:12.5px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .mcts .tag{cursor:pointer;border:0}
 .cpb{border:0;background:none;padding:0;color:var(--muted);font:inherit;display:inline-flex;gap:4px;align-items:center;cursor:pointer}
@@ -620,6 +640,7 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
       <h1 id="pageTitle">Թասքեր</h1>
       <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" placeholder="Որոնում՝ թասք, կազմակերպություն, ID…" autocomplete="off"></div>
       <button class="iconbtn" data-act="hardRefresh" id="hardRef" title="Թարմացնել տվյալները (բոլորի փոփոխությունները)"><svg class="i"><use href="#i-refresh"/></svg></button>
+      <button class="iconbtn musbtn" id="ssnBtn" data-act="ssnToggle" title="Սեզոնային ձևավորում">🍂</button>
       <button class="iconbtn musbtn" id="musBtn" data-act="music" title="Սեզոնային երաժշտություն">🎵</button>
       <button class="iconbtn" data-act="toggleNotifs" title="Ծանուցումներ"><svg class="i"><use href="#i-bell"/></svg><span class="badge hidden" id="nBadge">0</span></button>
       <button class="btn primary" data-act="newTask"><svg class="i"><use href="#i-plus"/></svg><span>Նոր թասք</span></button>
@@ -1519,6 +1540,160 @@ const NxChat = (function () {
       f: ['Դեկտեմբերի 21/22-ին տարվա ամենակարճ օրն է՝ հետո լույսը միայն ավելանում է։', 'Ամանորյա սեղանին՝ գաթա, անուշապուր ու տոլմա 🎄', 'Տարեվերջ է՝ ժամանակն է շնորհակալություն ասել թիմին։'] }
   ];
 
+  /* ---------------- ՕՐՎԱ ԹԵՄԱՆԵՐ (ամեն ամիս՝ 10 տրամադրություն, օրերը հերթով) ----------------
+     [վերնագիր, տող, պատկերներ, գույն 1, գույն 2, տեքստի գույն, անիմացիա] */
+  const DAYS = [
+    [ // Հունվար
+      ['Ամանորյա հեքիաթը շարունակվում է', 'Տոնածառը դեռ վառվում է, իսկ գրասենյակում՝ թարմ սկիզբ։', '🎄 ✨ 🎁 🕯️', '#dcfce7', '#fee2e2', '#14532d', 'snow'],
+      ['Ձյունապատ լռություն', 'Քաղաքը սպիտակ է ու հանգիստ, ինչպես մաքուր թերթ։', '❄️ 🏔️ 🌨️ 🤍', '#e0f2fe', '#f8fafc', '#0c4a6e', 'snow'],
+      ['Տաք թեյ և մանդարին', 'Մանդարինի բույրը՝ ձմռան ամենաջերմ հիշողությունը։', '🍊 🍵 🧣 ☕', '#ffedd5', '#fef9c3', '#9a3412', 'sparkle'],
+      ['Սառցե նախշեր պատուհանին', 'Ձմեռը նկարել է պատուհանին՝ առանց վրձնի։', '🪟 ❄️ ✨ 🌬️', '#dbeafe', '#ede9fe', '#1e3a8a', 'snow'],
+      ['Ձնագնդի ու ծիծաղ', 'Մի պահ եղեք երեխա՝ հիշեք առաջին ձնեմարդուն։', '⛄ 🧤 ❄️ 😄', '#e0f2fe', '#fce7f3', '#075985', 'snow'],
+      ['Բուխարու մոտ', 'Ճարճատող կրակ, բաց գիրք և ժամանակ ինքներդ ձեզ համար։', '🔥 📖 🛋️ 🕯️', '#fee2e2', '#ffedd5', '#7c2d12', 'sparkle'],
+      ['Աստղազարդ ձմեռային գիշեր', 'Ձմռանը աստղերը ավելի պայծառ են՝ օդը մաքուր է։', '🌌 ⭐ 🌙 ❄️', '#e0e7ff', '#f1f5f9', '#312e81', 'stars'],
+      ['Լեռներում՝ ձմեռ', 'Ծաղկաձորի լանջերը սպասում են դահուկորդներին։', '🏔️ ⛷️ 🎿 ❄️', '#e0f2fe', '#ecfeff', '#0e7490', 'snow'],
+      ['Նոր նպատակներ', 'Տարին նոր է, և ամեն ինչ դեռ առջևում է։', '🎯 📝 🚀 ✨', '#ede9fe', '#e0f2fe', '#4c1d95', 'sparkle'],
+      ['Ձմեռային արև', 'Ցուրտ է, բայց արևը ժպտում է ձյան վրա։', '☀️ ❄️ 🌤️ 💛', '#fef9c3', '#e0f2fe', '#854d0e', 'sparkle']
+    ],
+    [ // Փետրվար
+      ['Վերջին ձյունը', 'Ձմեռը հրաժեշտ է տալիս՝ դանդաղ ու գեղեցիկ։', '🌨️ ❄️ 🤍 🌫️', '#e0e7ff', '#f8fafc', '#3730a3', 'snow'],
+      ['Տրնդեզի կրակ', 'Խարույկի կրակը կանչում է գարնանը։', '🔥 ✨ 🌾 💑', '#ffedd5', '#fee2e2', '#9a3412', 'sparkle'],
+      ['Սիրո ամիս', 'Սերը նաև մանրուքներում է՝ ժպիտ, սուրճ, օգնություն։', '❤️ 💌 🌹 💕', '#fce7f3', '#fff1f2', '#9d174d', 'hearts'],
+      ['Մառախլապատ առավոտ', 'Մառախուղի միջից քաղաքը դանդաղ արթնանում է։', '🌫️ 🏙️ ☕ 🌁', '#f1f5f9', '#e2e8f0', '#334155', 'fog'],
+      ['Ձնհալ', 'Առաջին կաթիլները կտուրից՝ գարունը մոտ է։', '💧 🌤️ 🧊 🌱', '#ecfeff', '#f0fdf4', '#155e75', 'rain'],
+      ['Վերմակ ու ֆիլմ', 'Ցուրտ երեկոն ստեղծված է տանը մնալու համար։', '🎬 🍿 🛋️ 🧦', '#ede9fe', '#fce7f3', '#5b21b6', 'stars'],
+      ['Տաք ապուր', 'Մայրիկի ապուրը՝ ձմռան լավագույն դեղը։', '🍲 🥖 🧄 ☕', '#ffedd5', '#fef3c7', '#92400e', 'sparkle'],
+      ['Ձյունծաղիկ', 'Առաջին ծաղիկը ձյան տակից՝ փոքր, բայց համառ։', '🌼 ❄️ 🌱 🤍', '#ecfccb', '#f0f9ff', '#3f6212', 'snow'],
+      ['Թռչունների սնուցիչ', 'Մի բուռ սերմ պատուհանին՝ և ձմեռը ավելի տաք է։', '🐦 🌰 🪟 ❄️', '#e0f2fe', '#fef9c3', '#075985', 'birds'],
+      ['Գարնան սպասում', 'Օրերն ավելի երկար են, և լույսը վերադառնում է։', '🌤️ ⏳ 🌷 💚', '#dcfce7', '#fef9c3', '#166534', 'sparkle']
+    ],
+    [ // Մարտ
+      ['Գարնան զարթոնք', 'Բնությունը բացում է աչքերը։', '🌱 🌷 🐦 ☀️', '#dcfce7', '#fef9c3', '#166534', 'petals'],
+      ['Ծիրանի ծաղիկներ', 'Ծիրանենին ծաղկեց՝ Հայաստանի գարունը սկսվեց։', '🌸 🌳 🐝 🍑', '#fce7f3', '#ecfccb', '#9d174d', 'petals'],
+      ['Գարնանային անձրև', 'Անձրևը լվանում է ձմռան հոգնածությունը։', '🌧️ ☔ 🌱 💧', '#e0f2fe', '#dcfce7', '#0c4a6e', 'rain'],
+      ['Ծիծեռնակները վերադառնում են', 'Նրանք միշտ գտնում են տան ճանապարհը։', '🐦 🏡 ☀️ 💙', '#e0f2fe', '#fef9c3', '#075985', 'birds'],
+      ['Մարտի 8-ի տրամադրություն', 'Կակաչներ, ժպիտներ և ջերմ խոսքեր։', '🌷 💐 💝 ✨', '#fce7f3', '#fff7ed', '#be185d', 'petals'],
+      ['Գիշերահավասար', 'Լույսն ու մութը հավասար են՝ հավասարակշռության օր։', '⚖️ ☀️ 🌙 🌗', '#fef9c3', '#e0e7ff', '#713f12', 'sparkle'],
+      ['Գարնանային մաքրություն', 'Բացեք պատուհանները և թղթապանակները՝ թարմ օդ։', '🪟 🧹 🌬️ 🌱', '#ecfccb', '#e0f2fe', '#3f6212', 'petals'],
+      ['Առաջին կանաչը', 'Խոտը կանաչեց մեկ գիշերում։', '🌿 🍀 🌱 💚', '#dcfce7', '#f0fdf4', '#14532d', 'petals'],
+      ['Արևոտ պատշգամբ', 'Առաջին տաք արևը դեմքին՝ փոքր երջանկություն։', '☀️ 🪴 ☕ 😌', '#fef9c3', '#ffedd5', '#854d0e', 'sparkle'],
+      ['Թիթեռներ', 'Առաջին թիթեռը՝ գարնան նամակաբերը։', '🦋 🌼 🌷 🌤️', '#fae8ff', '#ecfccb', '#86198f', 'petals']
+    ],
+    [ // Ապրիլ
+      ['Ծաղկունք', 'Այգիները սպիտակ ու վարդագույն են։', '🌸 🌳 🌼 🐝', '#fce7f3', '#ecfccb', '#9d174d', 'petals'],
+      ['Ապրիլյան անձրևներ', 'Արևն ու անձրևը խաղում են թաքստոց։', '🌦️ ☔ 🌈 🌷', '#e0f2fe', '#fce7f3', '#0c4a6e', 'rain'],
+      ['Ծիածան', 'Անձրևից հետո՝ միշտ գույներ։', '🌈 ☀️ 💧 ✨', '#fef9c3', '#e0f2fe', '#854d0e', 'sparkle'],
+      ['Մայրության տոն', 'Ապրիլի 7՝ մայրերի և գեղեցկության օրը։', '🌷 💐 👩‍👧 💗', '#fce7f3', '#fff1f2', '#be185d', 'petals'],
+      ['Մեղուների աշխատանքը', 'Մեղուն էլ հաշվապահ է՝ ամեն ծաղիկ հաշվին է։', '🐝 🌼 🍯 🌸', '#fef3c7', '#ecfccb', '#92400e', 'petals'],
+      ['Թռչունների երգ', 'Առավոտյան համերգը սկսվում է լուսաբացին։', '🐦 🎶 🌅 🌳', '#ffedd5', '#e0f2fe', '#9a3412', 'birds'],
+      ['Կանաչ զբոսանք', 'Ճաշի ընդմիջմանը՝ 10 րոպե զբոսանք այգում։', '🚶 🌳 🌿 ☀️', '#dcfce7', '#fef9c3', '#166534', 'petals'],
+      ['Զատիկի գույներ', 'Ներկված ձվեր և գարնան լույս։', '🥚 🐣 🌷 🕊️', '#fef9c3', '#fce7f3', '#854d0e', 'petals'],
+      ['Եռամսյակի վերջ', 'Ամփոփում ենք, պլանավորում և առաջ գնում։', '📊 ✅ 🌱 💪', '#e0e7ff', '#dcfce7', '#3730a3', 'sparkle'],
+      ['Գարնանային երեկո', 'Երկար, մեղմ երեկոներ և բաց պատուհաններ։', '🌆 🌙 🌸 🍃', '#ede9fe', '#fce7f3', '#5b21b6', 'stars']
+    ],
+    [ // Մայիս
+      ['Կանաչի ու արևի ամիս', 'Ամեն ինչ ծաղկում է՝ նաև տրամադրությունը։', '🌳 🌺 ☀️ 🐝', '#d1fae5', '#fef3c7', '#065f46', 'petals'],
+      ['Առաջին ելակը', 'Մայիսյան ելակը՝ ամառվա առաջին համը։', '🍓 🌿 ☀️ 😋', '#fee2e2', '#dcfce7', '#991b1b', 'petals'],
+      ['Բալի սեզոն', 'Կարմիր, քաղցր ու մի քիչ թթու՝ ինչպես կյանքը։', '🍒 🌳 ☀️ 🧺', '#fee2e2', '#fef3c7', '#9f1239', 'petals'],
+      ['Վարդերի բույր', 'Մայիսը վարդերի ամիսն է։', '🌹 🌺 💐 ✨', '#fce7f3', '#fef2f2', '#9d174d', 'petals'],
+      ['Խաղաղ երկինք', 'Մայիսի 9՝ հիշում ենք և գնահատում խաղաղությունը։', '🕊️ 🌷 🎗️ ☀️', '#e0f2fe', '#f0fdf4', '#075985', 'birds'],
+      ['Ամպրոպ', 'Մայիսյան ամպրոպը թարմացնում է օդը։', '⛈️ 🌧️ ⚡ 🌈', '#e2e8f0', '#e0f2fe', '#334155', 'rain'],
+      ['Պիկնիկ', 'Մի օր կթողնենք քաղաքը՝ խոտ, կարպետ, թեյ։', '🧺 🥪 🌳 ☀️', '#dcfce7', '#fef9c3', '#166534', 'sparkle'],
+      ['Մայիսի 28', 'Հանրապետության օր՝ հպարտ և ուրախ։', '🇦🇲 🌺 ✨ 🎉', '#fee2e2', '#e0e7ff', '#991b1b', 'flag'],
+      ['Լուսատտիկներ', 'Տաք գիշերներին այգում վառվում են փոքր լույսեր։', '✨ 🌙 🌳 💛', '#fef9c3', '#1e293b', '#854d0e', 'fireflies'],
+      ['Գարնան հրաժեշտ', 'Ամառը թակում է դուռը։', '☀️ 🌻 🏖️ 👋', '#fef9c3', '#ffedd5', '#854d0e', 'sparkle']
+    ],
+    [ // Հունիս
+      ['Ամառվա սկիզբ', 'Լույսը երկար է, իսկ օրերը՝ թեթև։', '☀️ 🌻 🏖️ 😎', '#fef9c3', '#cffafe', '#854d0e', 'sparkle'],
+      ['Ծիրանի ոսկի', 'Արարատյան դաշտի ծիրանը՝ Հայաստանի համը։', '🍑 🧺 ☀️ 🌳', '#ffedd5', '#fef9c3', '#9a3412', 'sparkle'],
+      ['Երեխաների օր', 'Մի պահ եղեք երեխա՝ ժպտացեք առանց պատճառի։', '🎈 🧸 🍭 ☀️', '#fce7f3', '#e0f2fe', '#be185d', 'confetti'],
+      ['Ամենաերկար օրը', 'Հունիսի 21՝ ամենաշատ լույսը տարվա մեջ։', '🌞 ⏳ 🌅 ✨', '#fef08a', '#ffedd5', '#854d0e', 'sparkle'],
+      ['Սևանի կապույտը', 'Լճի քամին ու ձկան բույրը՝ ամառվա երազանք։', '🌊 ⛵ 🐟 💙', '#cffafe', '#e0f2fe', '#155e75', 'water'],
+      ['Ելակի մուրաբա', 'Տատիկի մուրաբան՝ ձմռան համար պահված ամառ։', '🍓 🫙 🍯 💛', '#fee2e2', '#fef9c3', '#991b1b', 'sparkle'],
+      ['Կիսամյակի ավարտ', 'Կես տարին՝ հետևում, կեսը՝ առջևում։', '📊 🎯 ✅ ☀️', '#e0e7ff', '#fef9c3', '#3730a3', 'sparkle'],
+      ['Ամառային անձրև', 'Տաք անձրև և գոլորշի ասֆալտից։', '🌦️ ☔ 💧 🌈', '#e0f2fe', '#fef9c3', '#0c4a6e', 'rain'],
+      ['Արևածաղիկներ', 'Նրանք միշտ նայում են դեպի լույսը։', '🌻 ☀️ 🐝 💛', '#fef08a', '#dcfce7', '#713f12', 'sparkle'],
+      ['Ամառային երեկո', 'Բակում՝ ծիծաղ, թեյ և զովություն։', '🌇 🍹 🌙 ✨', '#ffedd5', '#ede9fe', '#9a3412', 'fireflies']
+    ],
+    [ // Հուլիս
+      ['Ամառվա սիրտը', 'Շոգ է, բայց կյանքը եռում է։', '🌞 🍉 🌊 😎', '#ffedd5', '#e0f2fe', '#9a3412', 'sparkle'],
+      ['Ձմերուկ', 'Սառը ձմերուկը՝ շոգի լավագույն լուծումը։', '🍉 🧊 ☀️ 😋', '#dcfce7', '#fee2e2', '#166534', 'water'],
+      ['Վարդավառի ոգին', 'Ջուր, ծիծաղ և զովություն։', '💧 💦 🌹 🌊', '#cffafe', '#fce7f3', '#155e75', 'water'],
+      ['Լեռնային զովություն', 'Դիլիջանի անտառները կանչում են։', '🌲 🏔️ 🌬️ 🍃', '#dcfce7', '#e0f2fe', '#14532d', 'leaves'],
+      ['Պաղպաղակ', 'Մեկ գնդիկ՝ և աշխատանքը ավելի քաղցր է։', '🍦 🍨 ☀️ 😊', '#fce7f3', '#fef9c3', '#be185d', 'sparkle'],
+      ['Աստղերի գիշեր', 'Ամառային երկինքը լի է աստղերով։', '🌌 ⭐ 🌙 ✨', '#e0e7ff', '#1e293b', '#312e81', 'stars'],
+      ['Արձակուրդի երազներ', 'Ծովը սպասում է, իսկ մինչ այդ՝ թասքերը։', '🏖️ ✈️ 🧳 🌴', '#cffafe', '#fef9c3', '#155e75', 'sparkle'],
+      ['Ջրի մեծ բաժակ', 'Շոգին՝ ջուր, ստվեր և կարճ ընդմիջումներ։', '💧 🥤 🧊 ☀️', '#e0f2fe', '#ecfeff', '#0c4a6e', 'water'],
+      ['Ամառային ամպրոպ', 'Մեկ ժամ ամպրոպ՝ և քաղաքը թարմացավ։', '⛈️ ⚡ 🌧️ 🌈', '#e2e8f0', '#e0f2fe', '#334155', 'rain'],
+      ['Լուսատտիկների այգի', 'Տաք գիշերների փոքրիկ լապտերներ։', '✨ 🌳 🌙 💛', '#fef9c3', '#ede9fe', '#713f12', 'fireflies']
+    ],
+    [ // Օգոստոս
+      ['Հասունացման ամիս', 'Ամեն ինչ քաղցրանում է՝ մրգերը, օրերը, երեկոները։', '🍑 🍇 🌾 ☀️', '#fef3c7', '#fce7f3', '#92400e', 'sparkle'],
+      ['Աստղանկ', 'Պերսեիդներ՝ ժամանակն է երազանք պահելու։', '🌠 ⭐ 🌌 🙏', '#e0e7ff', '#1e293b', '#312e81', 'stars'],
+      ['Խաղողի առաջին ողկույզները', 'Այգիները ոսկեգույն են։', '🍇 🌿 ☀️ 🧺', '#ede9fe', '#fef3c7', '#5b21b6', 'leaves'],
+      ['Դեղձի բույր', 'Հասած դեղձը՝ օգոստոսի համը։', '🍑 🌳 ☀️ 😋', '#ffedd5', '#fef9c3', '#9a3412', 'sparkle'],
+      ['Ծովափնյա հիշողություններ', 'Ավազ, աղի քամի և ալիքների ձայն։', '🏖️ 🐚 🌊 ⛱️', '#cffafe', '#fef9c3', '#155e75', 'water'],
+      ['Ամառային կարոտ', 'Ամառը դեռ այստեղ է, բայց արդեն կարոտում ենք։', '🌅 🍃 💭 ☀️', '#ffedd5', '#ede9fe', '#9a3412', 'leaves'],
+      ['Ցորենի դաշտեր', 'Ոսկե դաշտեր հորիզոնից հորիզոն։', '🌾 🚜 ☀️ 🍞', '#fef3c7', '#fef9c3', '#854d0e', 'sparkle'],
+      ['Վերադարձ ռիթմին', 'Արձակուրդից հետո՝ թարմ ուժերով։', '💼 ☕ 📈 💪', '#e0e7ff', '#dcfce7', '#3730a3', 'sparkle'],
+      ['Թուզ և մեղր', 'Ամառվա վերջին քաղցր նվերները։', '🍯 🫐 🍐 🌿', '#fef3c7', '#ede9fe', '#92400e', 'sparkle'],
+      ['Ամառվա վերջին շաբաթ', 'Վայելեք երկար լույսի վերջին օրերը։', '🌇 👋 🌻 ✨', '#ffedd5', '#fce7f3', '#9a3412', 'fireflies']
+    ],
+    [ // Սեպտեմբեր
+      ['Մեկ տաք, մեկ հով', 'Առավոտը զով է, կեսօրը՝ դեռ ամառ։', '🌤️ 🍃 🧥 ☀️', '#fef3c7', '#e0f2fe', '#92400e', 'leaves'],
+      ['Գիտելիքի օր', 'Դասագրքերի բույրը և առաջին զանգը։', '📚 🎒 🔔 ✏️', '#e0e7ff', '#fef9c3', '#3730a3', 'leaves'],
+      ['Առաջին դեղին տերևը', 'Ծառը դեռ կանաչ է, բայց աշունը արդեն ներսում է։', '🍂 🌳 💛 🍃', '#fef9c3', '#dcfce7', '#854d0e', 'leaves'],
+      ['Անկախության օր', 'Սեպտեմբերի 21՝ հպարտություն և երախտիք։', '🇦🇲 🎆 ✨ 💪', '#fee2e2', '#e0e7ff', '#991b1b', 'flag'],
+      ['Թռչունների չվերթ', 'Երամները հարավ են գնում՝ գարնանը կվերադառնան։', '🐦 🍂 🌤️ 🗺️', '#e0f2fe', '#fef3c7', '#075985', 'birds'],
+      ['Աշնանային գիշերահավասար', 'Լույսն ու մութը կրկին հավասար են։', '⚖️ 🍂 🌗 🌅', '#ffedd5', '#ede9fe', '#9a3412', 'leaves'],
+      ['Խնձորի բույր', 'Առաջին աշնանային խնձորը՝ թթվաքաղցր ու կրճտան։', '🍎 🍏 🧺 🌳', '#fee2e2', '#dcfce7', '#991b1b', 'leaves'],
+      ['Ոսկե ժամ', 'Վերջալույսն ավելի շուտ է գալիս և ավելի գեղեցիկ։', '🌅 🍂 ✨ 📸', '#ffedd5', '#fce7f3', '#9a3412', 'sparkle'],
+      ['Թեթև անձրև', 'Առաջին աշնանային անձրևը և անձրևանոցների վերադարձը։', '🌧️ ☂️ 🍂 💧', '#e2e8f0', '#fef3c7', '#334155', 'rain'],
+      ['Աշնան սկիզբ', 'Նոր սեզոն՝ նոր նպատակներ և հին լավ սովորույթներ։', '🍁 📝 ☕ 🧣', '#fef3c7', '#ffedd5', '#92400e', 'leaves']
+    ],
+    [ // Հոկտեմբեր
+      ['Ոսկե աշուն', 'Ծառերը հագել են իրենց ամենագեղեցիկ զգեստը։', '🍁 🍂 🌳 ✨', '#fed7aa', '#fef3c7', '#9a3412', 'leaves'],
+      ['Բերքահավաք', 'Խաղող, խնձոր, նուռ՝ տարվա աշխատանքի պտուղները։', '🍇 🍎 🧺 🍐', '#ffedd5', '#fef3c7', '#9a3412', 'leaves'],
+      ['Մառախլապատ առավոտ', 'Մառախուղը պարուրել է քաղաքը՝ խորհրդավոր ու հանգիստ։', '🌫️ 🍂 ☕ 🌁', '#f1f5f9', '#e7e5e4', '#44403c', 'fog'],
+      ['Աշնանային անձրև', 'Անձրևը թակում է պատուհանին, իսկ ներսում՝ տաք է։', '🌧️ ☔ 🍂 🪟', '#e2e8f0', '#e0f2fe', '#334155', 'rain'],
+      ['Նռան սեզոն', 'Նուռը՝ հայկական աշնան կարմիր սիրտը։', '❤️ 🍷 🌰 🍂', '#fee2e2', '#fef3c7', '#991b1b', 'leaves'],
+      ['Գինու ամիս', 'Կարասներում հասունանում է նոր գինին։', '🍷 🍇 🏺 🌄', '#fae8ff', '#ffedd5', '#86198f', 'leaves'],
+      ['Գիրք և վերմակ', 'Աշնանային երեկոյի լավագույն ընկերները։', '📖 🧣 🕯️ ☕', '#fef3c7', '#ede9fe', '#78350f', 'leaves'],
+      ['Աշնանային քամի', 'Քամին պարեցնում է տերևները փողոցում։', '🌬️ 🍂 🍁 🌀', '#fed7aa', '#e0f2fe', '#9a3412', 'wind'],
+      ['Շագանակներ', 'Տաք շագանակների բույրը փողոցում։', '🌰 🔥 🍂 🧥', '#e7e5e4', '#fed7aa', '#57534e', 'leaves'],
+      ['Աշնանային մելամաղձություն', 'Մի քիչ տխրություն էլ գեղեցիկ է։ Գնահատեք այս պահը։', '🍂 🎻 🌧️ 💭', '#e7e5e4', '#ede9fe', '#44403c', 'fog']
+    ],
+    [ // Նոյեմբեր
+      ['Տերևաթափ', 'Ծառերը թեթևանում են՝ պատրաստվելով ձմռանը։', '🍂 🌳 🍁 🌬️', '#fed7aa', '#f5f5f4', '#78350f', 'wind'],
+      ['Առաջին ցուրտ', 'Առավոտյան՝ առաջին եղյամը խոտերին։', '🧊 🍂 🧣 🥶', '#e0f2fe', '#f5f5f4', '#0c4a6e', 'snow'],
+      ['Մոխրագույն երկինք', 'Ամպամած է, բայց ներսում լույս կա։', '☁️ 💡 ☕ 🍂', '#e2e8f0', '#f1f5f9', '#334155', 'fog'],
+      ['Ծխնելույզների ծուխ', 'Գյուղերում վառվում են առաջին վառարանները։', '🏡 🔥 🌫️ 🍂', '#e7e5e4', '#ffedd5', '#57534e', 'fog'],
+      ['Ծիրանաչիր և թեյ', 'Աշնան պաշարները՝ ձմռան սկիզբն ավելի քաղցր։', '🍑 🍵 🍯 🧺', '#fef3c7', '#ffedd5', '#92400e', 'leaves'],
+      ['Երախտագիտության օր', 'Ասեք «շնորհակալություն» մեկին, ով օգնեց այս տարի։', '🙏 💛 🍂 🤝', '#fef9c3', '#fed7aa', '#854d0e', 'sparkle'],
+      ['Մեղմ անձրև', 'Նոյեմբերյան անձրևը անաղմուկ է ու երկար։', '🌧️ ☂️ 🍂 💧', '#e2e8f0', '#e0f2fe', '#334155', 'rain'],
+      ['Տարեվերջի պլանավորում', 'Ժամանակն է նայել առաջ՝ դեկտեմբերը մոտ է։', '🗓️ 📋 ✅ ☕', '#e0e7ff', '#f1f5f9', '#3730a3', 'sparkle'],
+      ['Մոմերի երեկո', 'Կարճ օրեր, երկար երեկոներ և մեղմ լույս։', '🕯️ 🌙 📖 🍂', '#fef3c7', '#ede9fe', '#78350f', 'stars'],
+      ['Ձմռան նախաշեմին', 'Օդում արդեն ձյան հոտ կա։', '🌨️ 🍂 🧤 ✨', '#e0f2fe', '#fed7aa', '#0c4a6e', 'snow']
+    ],
+    [ // Դեկտեմբեր
+      ['Ամանորյա տրամադրություն', 'Լույսեր, սպասումներ և հրաշքի զգացում։', '🎄 ✨ 🎁 ❄️', '#dcfce7', '#fee2e2', '#14532d', 'snow'],
+      ['Առաջին ձյունը', 'Քաղաքը մեկ գիշերում դարձավ սպիտակ։', '❄️ 🌨️ ⛄ 🤍', '#e0f2fe', '#f8fafc', '#0c4a6e', 'snow'],
+      ['Տոնածառի զարդարում', 'Ամեն խաղալիք՝ մի հիշողություն։', '🎄 🌟 🎀 🔔', '#dcfce7', '#fef9c3', '#14532d', 'sparkle'],
+      ['Գաթայի բույր', 'Խոհանոցից գալիս է տոնական բույր։', '🥮 🍯 🌰 🎄', '#fef3c7', '#ffedd5', '#92400e', 'snow'],
+      ['Նվերների ցուցակ', 'Ո՞ւմ ինչ ենք նվիրելու այս տարի։', '🎁 📝 🎀 😊', '#fee2e2', '#dcfce7', '#991b1b', 'sparkle'],
+      ['Ամենակարճ օրը', 'Դեկտեմբերի 21՝ դրանից հետո լույսը միայն կավելանա։', '🌑 🕯️ ✨ 🌅', '#ede9fe', '#1e293b', '#4c1d95', 'stars'],
+      ['Ձմեռային երեկո', 'Վառված լույսերը փողոցներում և տաք ձեռնոցներ։', '🌃 🧤 ✨ ❄️', '#e0e7ff', '#fee2e2', '#312e81', 'snow'],
+      ['Տարեվերջյան հաշվետվություններ', 'Վերջին ջանքեր՝ և տարին փակված է։', '📊 ✅ 🎄 💪', '#e0e7ff', '#dcfce7', '#3730a3', 'snow'],
+      ['Ամանորյա երգեր', 'Զանգակների ձայնը և ամանորյա մեղեդիներ։', '🔔 🎶 🎄 ❄️', '#fee2e2', '#dcfce7', '#991b1b', 'snow'],
+      ['Շնորհակալություն, թիմ', 'Այս տարին միասին ենք անցել։ Շնորհակալություն։', '🤝 🎄 💛 ✨', '#fef9c3', '#dcfce7', '#854d0e', 'sparkle']
+    ]
+  ];
+  /* օրվա թեմա. ամսվա օրը հերթով պտտվում է 10 թեմաներով, տարեցտարի սկիզբը տեղաշարժվում է */
+  function dayTheme(d) {
+    const L = DAYS[d.getMonth()], k = (d.getDate() - 1 + d.getFullYear() * 3) % L.length, t = L[k];
+    return { t: t[0], line: t[1], sc: t[2].split(' '), a: t[3], b: t[4], ink: t[5], fx: t[6] };
+  }
+
   /* ---------------- ՀԱՏՈՒԿ ՕՐԵՐ ---------------- */
   function easter(y) { // Գրիգորյան Զատիկ
     const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3),
@@ -1596,11 +1771,18 @@ const NxChat = (function () {
       hearts: { n: 22, e: ['❤️', '💕', '💗'], sz: [14, 22], vy: [-1, -0.4], sway: 0.8 },
       water: { n: 40, e: ['💧', '💦'], sz: [12, 20], vy: [1.5, 3], sway: 0.3 },
       confetti: { n: 70, conf: ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#eab308'], sz: [5, 9], vy: [1, 2.4], sway: 1 },
-      flag: { n: 54, conf: ['#d90012', '#0033a0', '#f2a800'], sz: [5, 9], vy: [1, 2.2], sway: 1 }
+      flag: { n: 54, conf: ['#d90012', '#0033a0', '#f2a800'], sz: [5, 9], vy: [1, 2.2], sway: 1 },
+      rain: { n: 70, line: '#60a5fa', sz: [10, 18], vy: [6, 9], sway: 0 },
+      fog: { n: 14, blob: 1, sz: [140, 260], vy: [-0.05, 0.05], sway: 0.25, vx: [0.2, 0.6] },
+      birds: { n: 9, e: ['🐦', '🕊️'], sz: [14, 20], vy: [-0.2, 0.2], sway: 0.3, vx: [1.2, 2.2], flip: 1 },
+      stars: { n: 40, e: ['✦', '✧', '⭐'], sz: [8, 16], vy: [0, 0], sway: 0, twinkle: 1, still: 1 },
+      fireflies: { n: 26, glow: '#fde047', sz: [2, 3.5], vy: [-0.3, 0.3], sway: 0.8, twinkle: 1 },
+      wind: { n: 30, e: ['🍂', '🍁', '🍃'], sz: [14, 24], vy: [0.3, 0.9], sway: 0.6, vx: [2.5, 4.5] }
     };
     FX = { kind, until: performance.now() + secs * 1000, ps: [] };
     const spawn = (k, top) => { const c = SET[k], r = Math.random; const s = c.sz[0] + r() * (c.sz[1] - c.sz[0]);
-      return { k, x: r() * innerWidth, y: top ? -20 - r() * innerHeight * 0.5 : r() * innerHeight, s, vy: c.vy[0] + r() * (c.vy[1] - c.vy[0]), ph: r() * 6.28, rot: r() * 6.28, vr: (r() - 0.5) * 0.04,
+      const side = !!c.vx, still = !!c.still;
+      return { k, x: side ? (top ? -60 - r() * innerWidth * 0.5 : r() * innerWidth) : r() * innerWidth, y: side || still ? r() * innerHeight * (c.blob ? 1 : 0.7) : top ? -20 - r() * innerHeight * 0.5 : r() * innerHeight, s, vy: c.vy[0] + r() * (c.vy[1] - c.vy[0]), vx: side ? c.vx[0] + r() * (c.vx[1] - c.vx[0]) : 0, ph: r() * 6.28, rot: c.line || c.flip || c.blob || still ? 0 : r() * 6.28, vr: c.line || c.flip || c.blob || still ? 0 : (r() - 0.5) * 0.04,
         e: c.e ? c.e[Math.floor(r() * c.e.length)] : '', col: c.conf ? c.conf[Math.floor(r() * c.conf.length)] : c.dot }; };
     const loop = t => {
       const c = SET[FX.kind]; if (!c) { stop(); return; }
@@ -1609,11 +1791,17 @@ const NxChat = (function () {
       cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, innerWidth, innerHeight);
       FX.ps = FX.ps.filter(p => {
         const cc = SET[p.k];
-        p.y += p.vy; p.ph += 0.02; p.x += Math.sin(p.ph) * cc.sway; p.rot += p.vr;
-        if (p.y > innerHeight + 30 || p.y < -60 && p.vy < 0) { if (!alive) return false; Object.assign(p, spawn(p.k, p.vy > 0)); if (p.vy < 0) p.y = innerHeight + 20; }
+        p.y += p.vy; p.x += p.vx; p.ph += 0.02; p.x += Math.sin(p.ph) * cc.sway; p.rot += p.vr;
+        if (cc.still && !alive) { p.fade = (p.fade || 1) - 0.02; if (p.fade <= 0) return false; }
+        if (p.x > innerWidth + 260 || p.y > innerHeight + 30 || p.y < -60 && p.vy < 0) { if (!alive) return false; Object.assign(p, spawn(p.k, true)); if (p.vy < 0 && !cc.vx) p.y = innerHeight + 20; }
         cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
-        cx.globalAlpha = cc.twinkle ? 0.5 + 0.5 * Math.sin(p.ph * 4) : 0.9;
-        if (p.e) { cx.font = p.s + 'px serif'; cx.textAlign = 'center'; cx.fillText(p.e, 0, 0); }
+        cx.globalAlpha = (cc.twinkle ? 0.45 + 0.55 * Math.abs(Math.sin(p.ph * 3)) : 0.9) * (p.fade || 1);
+        if (cc.line) { cx.strokeStyle = cc.line; cx.globalAlpha = 0.45; cx.lineWidth = 1.2; cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(-1.5, p.s); cx.stroke(); }
+        else if (cc.blob) { const g = cx.createRadialGradient(0, 0, 0, 0, 0, p.s); g.addColorStop(0, 'rgba(148,163,184,.42)'); g.addColorStop(1, 'rgba(148,163,184,0)'); cx.fillStyle = g; cx.beginPath(); cx.arc(0, 0, p.s, 0, 6.28); cx.fill(); }
+        else if (cc.glow) { cx.fillStyle = cc.glow; cx.shadowColor = cc.glow; cx.shadowBlur = 12; cx.beginPath(); cx.arc(0, 0, p.s, 0, 6.28); cx.fill(); }
+        else if (cc.flip && p.e) { cx.scale(-1, 1); cx.font = p.s + 'px serif'; cx.textAlign = 'center'; cx.fillText(p.e, 0, 0); }
+        else if (cc.still && p.e && p.e !== '⭐') { cx.fillStyle = '#facc15'; cx.font = p.s + 'px serif'; cx.textAlign = 'center'; cx.fillText(p.e, 0, 0); }
+        else if (p.e) { cx.font = p.s + 'px serif'; cx.textAlign = 'center'; cx.fillText(p.e, 0, 0); }
         else if (cc.conf) { cx.fillStyle = p.col; cx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); }
         else { cx.fillStyle = p.col; cx.shadowColor = 'rgba(148,163,184,.9)'; cx.shadowBlur = 4; cx.beginPath(); cx.arc(0, 0, p.s, 0, 6.28); cx.fill(); }
         cx.restore(); return true;
@@ -1659,7 +1847,7 @@ const NxChat = (function () {
     } catch (e) { if (M.on && M.list.length > 1 && !/NotAllowed/.test(e && e.name || '')) setTimeout(() => playIdx(M.idx + 1), 1500); }
     M.busy = false; paintBtn(); render();
   }
-  async function musicStart() {
+  async function musicStart(quiet) {
     if (M.on || CUR.quiet || !CALL) return;
     M.on = true; paintBtn();
     if (!M.audio) { M.audio = new Audio(); M.audio.preload = 'auto'; M.audio.addEventListener('ended', () => playIdx(M.idx + 1)); }
@@ -1668,7 +1856,7 @@ const NxChat = (function () {
       try { const r = await CALL('musicToday', { date: key }); M.list = r.list || []; M.date = key; M.idx = 0; } catch (e) { M.list = []; }
     }
     if (!M.on) return;
-    if (!M.list.length) { M.on = false; paintBtn(); if (TOAST && !M.told) { M.told = 1; TOAST('🎵 Երգեր դեռ ավելացված չեն. ղեկավարը կարող է վերբեռնել դրանք Կարգավորումներ → «Երաժշտություն» բաժնում'); } return; }
+    if (!M.list.length) { M.on = false; paintBtn(); if (TOAST && !M.told && !quiet) { M.told = 1; TOAST('🎵 Երգեր դեռ ավելացված չեն. ղեկավարը կարող է վերբեռնել դրանք Կարգավորումներ → «Երաժշտություն» բաժնում'); } return; }
     if (M.audio.src && M.cur) { M.audio.volume = vol(); M.audio.play().catch(() => {}); paintBtn(); render(); return; }
     playIdx(M.idx);
   }
@@ -1680,9 +1868,9 @@ const NxChat = (function () {
   /* ---------------- ԻՆՏԵՐՖԵՅՍ ---------------- */
   let CUR = {}, NAME = '', ROOT = null;
   function compute(d) {
-    const mo = MONTHS[d.getMonth()], sp = special(d);
+    const mo = MONTHS[d.getMonth()], sp = special(d), th = dayTheme(d);
     const r = rng(hash(ymdOf(d)));
-    return { d, mo, sp, quiet: !!(sp && sp.quiet), fx: sp ? sp.fx : mo.fx, sc: sp ? sp.sc : mo.sc, fact: pick(mo.f, r), surprise: pick(SURPRISE, rng(hash(ymdOf(d) + 's'))) };
+    return { d, mo, sp, th, quiet: !!(sp && sp.quiet), fx: sp ? sp.fx : th.fx, sc: sp ? sp.sc : th.sc, fact: pick(mo.f, r), surprise: pick(SURPRISE, rng(hash(ymdOf(d) + 's'))) };
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
   function render() {
@@ -1691,19 +1879,20 @@ const NxChat = (function () {
     if (LS.get('nx_season', '1') !== '1') { ROOT.innerHTML = ''; ROOT.className = ''; return; }
     const opened = LS.get('nx_gift', '') === key, mini = LS.get('nx_ssn_min', '') === key;
     const first = (NAME || '').split(' ')[0];
-    const head = c.sp ? `<b>${esc(c.sp.t)}</b> · ${esc(c.sp.msg)}` : `<b>${esc(greet(d))}${first ? ', ' + esc(first) : ''}</b> · ${esc(c.mo.t)}՝ ${esc(c.mo.sub)}`;
+    const head = c.sp ? `<b>${esc(c.sp.t)}</b> · ${esc(c.sp.msg)}` : `<b>${esc(greet(d))}${first ? ', ' + esc(first) : ''}</b> · ${esc(c.th.t)}`;
     ROOT.className = 'ssn' + (mini ? ' mini' : '') + (c.quiet ? ' quiet' : '');
-    ROOT.style.setProperty('--sa', c.quiet ? '#ede9fe' : c.mo.a); ROOT.style.setProperty('--sb', c.quiet ? '#f5f3ff' : c.mo.b); ROOT.style.setProperty('--si', c.quiet ? '#4c1d95' : c.mo.ink);
-    document.documentElement.style.setProperty('--ssn-a', c.quiet ? '#ede9fe' : c.mo.a);
+    const dark = !c.quiet && /^#1e293b$/i.test(c.th.b);   // գիշերային թեմաներ
+    ROOT.style.setProperty('--sa', c.quiet ? '#ede9fe' : c.th.a); ROOT.style.setProperty('--sb', c.quiet ? '#f5f3ff' : dark ? '#c7d2fe' : c.th.b); ROOT.style.setProperty('--si', c.quiet ? '#4c1d95' : c.th.ink);
+    document.documentElement.style.setProperty('--ssn-a', c.quiet ? '#ede9fe' : c.th.a);
     if (mini) { ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք">${c.sc.slice(0, 2).join('')}</button><span class="ssn-h">${head}</span><button class="ssn-x" data-ssn="max" title="Բացել">⌄</button>`; return; }
     const vibe = c.quiet ? '' : dayVibe(d);
     ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք 🙂">${c.sc.map((e, i) => `<span style="animation-delay:${i * 0.4}s">${e}</span>`).join('')}</button>
       <div class="ssn-txt"><div class="ssn-h">${head}</div>
         <div class="ssn-s">${esc(WEEKDAY[d.getDay()])}, ${d.getDate()} ${esc(MON_GEN[d.getMonth()])}${vibe ? ' · ' + esc(vibe) : ''}</div>
-        ${c.quiet ? '' : `<div class="ssn-f">🌿 ${esc(c.fact)}</div>`}
+        ${c.quiet ? '' : `<div class="ssn-f">${c.sp ? '' : esc(c.th.line) + ' '}<span class="ssn-fact">🌿 ${esc(c.fact)}</span></div>`}
         ${M.on && M.cur ? `<div class="ssn-np">🎵 ${M.cur.day ? 'Այսօրվա երգը՝ ' : ''}<b>${esc(M.cur.name)}</b> <button data-ssn="next" title="Հաջորդը">⏭</button></div>` : ''}</div>
       <div class="ssn-gift">${c.quiet ? '' : opened ? `<div class="ssn-open">${esc(c.surprise)}</div>` : `<button data-ssn="gift" class="ssn-gb">🎁<span>Այսօրվա անակնկալը</span></button>`}</div>
-      <button class="ssn-x" data-ssn="min" title="Փոքրացնել այսօրվա համար">⌃</button>`;
+      <div class="ssn-ctl"><button class="ssn-x" data-ssn="min" title="Փոքրացնել այսօրվա համար">⌃</button><button class="ssn-x" data-ssn="off" title="Անջատել սեզոնային ձևավորումը (միացնել՝ վերևի 🍂 կոճակով)">✕</button></div>`;
   }
   function onClick(e) {
     const b = e.target.closest('[data-ssn]'); if (!b) return;
@@ -1713,6 +1902,7 @@ const NxChat = (function () {
     else if (a === 'next') musicNext();
     else if (a === 'min') { LS.set('nx_ssn_min', key); render(); }
     else if (a === 'max') { LS.set('nx_ssn_min', ''); render(); }
+    else if (a === 'off') { setDesign(false); if (TOAST) TOAST('Սեզոնային ձևավորումն անջատված է։ Նորից միացնելու համար սեղմեք վերևի 🍂 կոճակը։'); }
   }
   function init(opts) {
     opts = opts || {}; NAME = opts.name || ''; CALL = opts.call || CALL; TOAST = opts.toast || TOAST;
@@ -1723,19 +1913,26 @@ const NxChat = (function () {
     const key = ymdOf(CUR.d);
     if (LS.get('nx_fx_day', '') !== key) { LS.set('nx_fx_day', key); setTimeout(() => fxRun(CUR.fx, 14), 700); }
     else setTimeout(() => fxRun(CUR.fx, 5), 700);
-    paintBtn();
+    paintBtn(); paintDesign();
     // բրաուզերը թույլ է տալիս ձայն միայն օգտատիրոջ առաջին գործողությունից հետո
     if (musicWanted() && !M.on) {
-      const kick = ev => { if (ev && ev.target && ev.target.closest && ev.target.closest('#musBtn')) return; removeEventListener('pointerdown', kick, true); removeEventListener('keydown', kick, true); if (musicWanted()) musicStart(); };
+      const kick = ev => { if (ev && ev.target && ev.target.closest && ev.target.closest('#musBtn')) return; removeEventListener('pointerdown', kick, true); removeEventListener('keydown', kick, true); if (musicWanted()) musicStart(true); };
       addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
     }
     // կեսգիշերից հետո՝ նոր օր
     clearInterval(M.dayT); M.dayT = setInterval(() => { const n = new Date(); if (ymdOf(n) !== ymdOf(CUR.d)) { CUR = compute(n); M.list = null; render(); } }, 60000);
   }
+  function setDesign(on) {
+    LS.set('nx_season', on ? '1' : '0'); LS.set('nx_fx', on ? '1' : '0');
+    if (!on && FX) { FX.until = 0; FX.ps = []; }
+    render(); paintDesign();
+    if (on) fxRun(CUR.fx, 5);
+  }
+  function paintDesign() { const b = document.getElementById('ssnBtn'); if (!b) return; const on = LS.get('nx_season', '1') === '1'; b.classList.toggle('on', on); b.textContent = on ? (CUR.sc && CUR.sc[0] || '🍂') : '🍂'; b.style.opacity = on ? '1' : '.45'; b.title = on ? 'Սեզոնային ձևավորում՝ միացված (սեղմեք՝ անջատելու)' : 'Սեզոնային ձևավորում՝ անջատված (սեղմեք՝ միացնելու)'; }
   function toggleMusic() { if (M.on) { LS.set('nx_music', '0'); musicStop(); } else { LS.set('nx_music', '1'); musicStart(); } return M.on; }
   function setVol(v) { LS.set('nx_mvol', String(v)); if (M.audio) M.audio.volume = vol(); }
   function setOpt(k, on) { LS.set(k, on ? '1' : '0'); if (k === 'nx_season') render(); if (k === 'nx_music') { on ? musicStart() : musicStop(); } }
-  window.NxSeason = { init, toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.list = null; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
+  window.NxSeason = { init, setDesign, designOn: () => LS.get('nx_season', '1') === '1', toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.list = null; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
 })();
 
 /* NXSEASON:END */
@@ -3030,7 +3227,7 @@ async function editCompany(id) {
     const r = await call('saveCompany', payload);
     await refresh();
     setTimeout(() => showDiag(f.name, r), 0);
-  }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր</button>` : '' });
+  }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր</button>${inboxOk() ? `<button type="button" class="btn" data-act="coMail" data-id="${esc(c.id)}">✉️ Նամակներ</button>` : ''}` : '' });
   if (D) {
     bindAddrs(m);
     const missDraw = () => { const f = formData(m), d = {}; Object.keys(f).forEach(k => { if (k.startsWith('d_')) d[k.slice(2)] = f[k]; }); m.querySelector('#dirMiss').innerHTML = missBox(dirMissList(d)); };
@@ -3527,35 +3724,79 @@ function viewSent(tabs) {
     ${R.map(r => `<tr class="click" data-act="mailOpen" data-id="${esc(r.id)}"><td data-l="Ամսաթիվ" style="white-space:nowrap">${esc(fmtDT(r.at))}</td><td data-l="Ում">${esc(r.to)}${r.cc ? `<div class="muted" style="font-size:12px">Cc՝ ${esc(r.cc)}</div>` : ''}</td><td data-l="Թեմա"><b>${esc(r.subject)}</b>${r.taskId ? ` <span class="tag">${esc(r.taskId)}</span>` : ''}</td><td data-l="Կազմակերպություն">${esc(r.companyName || '—')}</td><td data-l="Ուղարկող">${esc(r.by)}</td><td data-l="Ֆայլեր">${r.files ? '📎 ' + r.files.split(', ').length : '—'}</td></tr>`).join('')}
   </tbody></table></div>` : '<div class="card" style="padding:22px;text-align:center"><div style="font-size:34px">✉️</div><p class="muted">Դեռ նամակներ չեն ուղարկվել</p><button class="btn primary" data-act="mailNew">Նոր նամակ</button></div>'}`;
 }
-function inboxLoad(more) {
-  const I = S.inbox || (S.inbox = { rows: null, q: '', cid: '' });
-  if (I.busy) return; I.busy = true; if (!more) I.err = '';
-  call('mailInbox', { q: I.q, companyId: I.cid, start: more ? (I.rows || []).length : 0 }, { silent: true })
-    .then(r => { I.rows = more ? (I.rows || []).concat(r.rows) : r.rows; I.more = r.more; I.account = r.account; if (r.unread != null && !I.cid && !I.q) setMailU(r.unread, true); })
+function inboxLoad() {
+  const I = S.inbox || (S.inbox = { rows: null, q: '', cid: 'all', f: '', sel: new Set(), cq: '' });
+  if (I.busy) return; I.busy = true; I.err = '';
+  call('mailInbox', { q: I.q }, { silent: true })
+    .then(r => { I.rows = r.rows; I.today = r.today; I.days = r.days; I.account = r.account; I.canDelete = r.canDelete; I.sel = new Set([...I.sel].filter(id => r.rows.some(x => x.id === id))); if (r.unread != null && !I.q) setMailU(r.unread, true); })
     .catch(e => { I.rows = I.rows || []; I.err = e.message; })
     .finally(() => { I.busy = false; if (S.view === 'mail') renderView(); });
 }
-function viewInbox(tabs) {
-  const I = S.inbox || (S.inbox = { rows: null, q: '', cid: '' });
-  if (I.rows == null && !I.busy) inboxLoad();
-  const comps = S.d.companies.filter(c => c.active !== 'Ոչ');
-  const R = I.rows;
-  return `<div class="toolbar" style="flex-wrap:wrap">${tabs}
-    <select class="inp" id="ibC" style="max-width:240px"><option value="">Բոլոր նամակները</option>${comps.map(c => `<option value="${esc(c.id)}" ${I.cid === c.id ? 'selected' : ''}>🏢 ${esc(c.name)}</option>`).join('')}</select>
-    <input class="inp" id="ibQ" value="${esc(I.q)}" placeholder="Որոնել (ումից, թեմա…)" style="max-width:220px">
-    <span class="sp"></span><button class="btn" data-act="inboxRefresh" title="Թարմացնել">↻</button><button class="btn primary" data-act="mailNew">${ico('mail')} Նոր նամակ</button></div>
-  ${I.account ? `<div class="hint" style="margin:-4px 0 10px">📬 ${esc(I.account)}${I.cid ? ' · միայն այս կազմակերպությանը կցված նամակները' : ''}</div>` : ''}
-  ${I.err ? `<div class="card" style="padding:16px;border-color:#fecaca;background:#fef2f2;color:#991b1b">⚠️ ${esc(I.err)}</div>` : ''}
-  ${R == null ? '<div class="card muted" style="padding:18px">⏳ Բեռնվում են նամակները…</div>' : R.length ? `<div class="ibl">${R.map(r => `<div class="ibr ${r.unread ? 'unr' : ''}" data-act="ibOpen" data-id="${esc(r.id)}">
-      <div class="ibf">${esc(r.from)}${r.n > 1 ? ` <span class="muted">(${r.n})</span>` : ''}</div>
-      <div class="ibs"><b>${esc(r.subject)}</b> <span class="muted">— ${esc(r.snippet)}</span></div>
-      <div class="ibm">${r.att ? '📎 ' : ''}${r.companyName ? `<span class="tag" style="background:#e0f2fe;color:#075985">🏢 ${esc(r.companyName)}</span>` : r.sugId ? `<button type="button" class="tag ibsug" data-act="ibQuick" data-id="${esc(r.id)}" data-cid="${esc(r.sugId)}" title="Կցել այս կազմակերպությանը">🔗 ${esc(r.sugName)}?</button>` : ''}<span class="muted" style="white-space:nowrap">${esc(fmtDT(r.date))}</span></div>
-    </div>`).join('')}</div>${I.more ? `<div style="text-align:center;margin-top:10px"><button class="btn" data-act="inboxMore" ${I.busy ? 'disabled' : ''}>Ավելին…</button></div>` : ''}` : '<div class="card muted" style="padding:22px;text-align:center">Նամակներ չկան</div>'}`;
+const mCat = (r, today) => r.unread ? ((r.inAt || r.date).slice(0, 10) >= today ? 'new' : 'unr') : 'rd';
+function mWait(r) {
+  if (r.replied || !r.inAt) return '';
+  const h = Math.max(0, (Date.now() - new Date(r.inAt.replace(' ', 'T')).getTime()) / 3600000);
+  return h < 24 ? `<span class="tag t-wait">⏳ ${Math.max(1, Math.round(h))} ժ</span>` : `<span class="tag t-late">⏳ ${Math.floor(h / 24)} օր</span>`;
 }
-document.addEventListener('change', e => { const so = e.target && e.target.dataset && e.target.dataset.ssnopt; if (so) { NxSeason.setOpt(so, e.target.checked);  } });
-document.addEventListener('input', e => { if (e.target && e.target.dataset && 'ssnvol' in e.target.dataset) NxSeason.setVol(+e.target.value); });
-document.addEventListener('change', e => { if (e.target && e.target.id === 'ibC') { S.inbox.cid = e.target.value; S.inbox.rows = null; renderView(); } });
-document.addEventListener('keydown', e => { if (e.target && e.target.id === 'ibQ' && e.key === 'Enter') { S.inbox.q = e.target.value.trim(); S.inbox.rows = null; renderView(); } });
+function viewInbox(tabs) {
+  const I = S.inbox || (S.inbox = { rows: null, q: '', cid: 'all', f: '', sel: new Set(), cq: '' });
+  if (I.rows == null && !I.busy) inboxLoad();
+  const R = I.rows || [], tdy = I.today || today();
+  const cnt = list => { const c = { new: 0, unr: 0, rd: 0 }; list.forEach(r => c[mCat(r, tdy)]++); return c; };
+  const by = {}; R.forEach(r => { const k = r.companyId || 'none'; (by[k] = by[k] || []).push(r); });
+  const comps = S.d.companies.filter(c => c.active !== 'Ոչ' || by[c.id]).slice().sort((a, b) => a.name.localeCompare(b.name, 'hy'));
+  const cell = (k, n) => `<span class="c ${k}"><b class="${n ? '' : 'z'}" data-act="ibCo" data-f="${k}">${n}</b></span>`;
+  const coRow = (id, name, list, cls) => { const c = cnt(list || []); return `<div class="mco ${cls || ''} ${I.cid === id ? 'on' : ''}" data-act="ibCo" data-co="${esc(id)}"><span class="nm" title="${esc(name)}">${esc(name)}</span>${cell('new', c.new)}${cell('unr', c.unr)}${cell('rd', c.rd)}</div>`; };
+  const cq = (I.cq || '').toLowerCase();
+  const left = `<div class="mcos"><div class="mcsr"><input class="inp" id="ibCq" value="${esc(I.cq || '')}" placeholder="Գտնել կազմակերպություն…"></div>
+    <div class="mcoh"><span>Կազմակերպություն</span><span>🆕 Նոր<small>այսօր</small></span><span>🔴 Չկարդ.<small>մինչև երեկ</small></span><span>✔ Կարդ.</span></div>
+    ${coRow('all', '📬 Բոլորը', R, 'tot')}
+    <div class="mcol">${comps.filter(c => !cq || c.name.toLowerCase().includes(cq)).map(c => coRow(c.id, c.name, by[c.id])).join('')}</div>
+    ${coRow('none', '❓ Կցված չեն', by.none, 'none')}</div>`;
+  let list = I.cid === 'all' ? R : (by[I.cid] || []);
+  const F = I.f || '';
+  list = list.filter(r => !F || (F === 'wait' ? !r.replied : mCat(r, tdy) === F));
+  const groups = F ? [F] : ['new', 'unr', 'rd'];
+  const GL = { new: '🆕 Նոր՝ այսօր', unr: '🔴 Չկարդացված՝ մինչև երեկ', rd: '✔ Կարդացված', wait: '⏳ Չպատասխանված' };
+  const coName = I.cid === 'all' ? '📬 Բոլորը' : I.cid === 'none' ? '❓ Կցված չեն' : '🏢 ' + ((company(I.cid) || {}).name || '');
+  const rowH = r => `<div class="ibr ${r.unread ? 'unr' : ''} ${I.sel.has(r.id) ? 'sel' : ''}" data-act="ibOpen" data-id="${esc(r.id)}">
+      <input type="checkbox" data-ibsel="${esc(r.id)}" ${I.sel.has(r.id) ? 'checked' : ''}>
+      <div class="ibf">${r.unread ? `<span class="dot" style="background:${mCat(r, tdy) === 'new' ? '#2457f5' : '#dc2626'}"></span>` : ''}${esc(r.from)}${r.n > 1 ? ` <span class="muted">(${r.n})</span>` : ''}</div>
+      <div class="ibs"><b>${esc(r.subject)}</b> <span class="muted">— ${esc(r.snippet)}</span></div>
+      <div class="ibm">${r.att ? '📎' : ''}${I.cid === 'all' && r.companyName ? `<span class="tag ${r.auto ? 'ibsug' : ''}" style="${r.auto ? '' : 'background:#e0f2fe;color:#075985'}" title="${r.auto ? 'Ճանաչված ըստ ուղարկողի հասցեի' : 'Կցված է'}">🏢 ${esc(r.companyName)}</span>` : ''}${r.replied ? '<span class="tag t-ok">↩ Պատասխանված</span>' : mWait(r)}<span class="muted" style="white-space:nowrap">${esc(fmtDT(r.date))}</span></div>
+    </div>`;
+  const body = groups.map(g => { const rr = list.filter(r => g === 'wait' ? true : (F === 'wait' ? true : mCat(r, tdy) === g)); return rr.length ? `<div class="ibg">${GL[g]} (${rr.length})</div>` + rr.map(rowH).join('') : ''; }).join('');
+  const n = I.sel.size;
+  const bulk = n ? `<div class="mbulk"><label class="chk"><input type="checkbox" data-act="ibAll" ${list.length && list.every(r => I.sel.has(r.id)) ? 'checked' : ''}></label><b>${n} նամակ ընտրված</b>
+      <select class="inp" id="ibLinkC" style="max-width:220px"><option value="">🔗 Կցել կազմակերպությանը…</option>${S.d.companies.slice().sort((a, b) => a.name.localeCompare(b.name, 'hy')).map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}<option value="-">✕ Հանել կցումը</option></select>
+      <button class="btn sm" data-act="ibBulk" data-a="read">✔ Կարդացված</button><button class="btn sm" data-act="ibBulk" data-a="unread">🔴 Չկարդացված</button><button class="btn sm" data-act="ibBulk" data-a="replied">↩ Պատասխանված</button>
+      ${I.canDelete ? '<button class="btn sm danger" data-act="ibBulk" data-a="trash">🗑 Ջնջել</button>' : ''}<span class="sp" style="flex:1"></span><button class="btn sm" data-act="ibClear">Չեղարկել</button></div>` : '';
+  return `<div class="toolbar" style="flex-wrap:wrap">${tabs}<span class="sp"></span>
+    <input class="inp" id="ibQ" value="${esc(I.q)}" placeholder="🔍 Որոնել նամակներում…" style="max-width:240px"><button class="btn" data-act="inboxRefresh" title="Թարմացնել">${I.busy ? '⏳' : '↻'}</button><button class="btn primary" data-act="mailNew">${ico('mail')} Նոր նամակ</button></div>
+  ${I.account ? `<div class="hint" style="margin:-4px 0 10px">📬 ${esc(I.account)} · վերջին ${I.days || 60} օրը</div>` : ''}
+  ${I.err ? `<div class="card" style="padding:16px;border-color:#fecaca;background:#fef2f2;color:#991b1b">⚠️ ${esc(I.err)}</div>` : ''}
+  ${I.rows == null ? '<div class="card muted" style="padding:18px">⏳ Բեռնվում են նամակները…</div>' : `<div class="mbx">${left}<div style="min-width:0">
+    <div class="toolbar" style="margin-bottom:8px"><h3 style="margin:0;font-size:16px">${esc(coName)}</h3><span class="sp"></span>
+      <div class="seg">${[['', 'Բոլորը'], ['new', '🆕 Նոր'], ['unr', '🔴 Չկարդացված'], ['rd', '✔ Կարդացված'], ['wait', '⏳ Չպատասխանված']].map(([k, l]) => `<button class="${F === k ? 'on' : ''}" data-act="ibF" data-k="${k}">${l}</button>`).join('')}</div></div>
+    ${bulk}<div class="ibl">${body || '<div class="muted" style="padding:22px;text-align:center">Նամակներ չկան</div>'}</div></div></div>`}`;
+}
+document.addEventListener('change', e => {
+  const t = e.target; if (!t) return;
+  if (t.dataset && t.dataset.ibsel) { const I = S.inbox; t.checked ? I.sel.add(t.dataset.ibsel) : I.sel.delete(t.dataset.ibsel); renderView(); }
+  if (t.id === 'ibLinkC' && t.value) { ibBulk('link', t.value === '-' ? '' : t.value); }
+});
+document.addEventListener('input', e => { if (e.target && e.target.id === 'ibCq') { S.inbox.cq = e.target.value; const v = e.target.value, pos = e.target.selectionStart; renderView(); const n = $('#ibCq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
+async function ibBulk(act, cid) {
+  const I = S.inbox, ids = [...I.sel]; if (!ids.length) return;
+  if (act === 'trash' && !(await NxDlg.confirm(`Ջնջե՞լ ${ids.length} նամակ\nԿտեղափոխվեն Gmail-ի աղբարկղ (30 օր վերականգնելի)։`, { ok: 'Ջնջել' }))) return;
+  try {
+    await call('mailBulk', { ids, act, companyId: cid || '' });
+    const L = { read: 'Նշվեց կարդացված', unread: 'Նշվեց չկարդացված', replied: 'Նշվեց պատասխանված', trash: 'Ջնջվեց', link: cid ? 'Կցվեց՝ ' + ((company(cid) || {}).name || '') : 'Կցումը հանվեց' };
+    toast(`✔ ${ids.length} նամակ · ${esc(L[act] || '')}`, 'ok');
+    I.sel = new Set(); I.rows = null; renderView();
+  } catch (e) { toast(esc(e.message), 'err'); }
+}
+document.addEventListener('keydown', e => { if (e.target && e.target.id === 'ibQ' && e.key === 'Enter') { S.inbox.q = e.target.value.trim(); S.inbox.rows = null; S.inbox.cid = 'all'; renderView(); } });
 function openMailNotif(n) {
   const id = String(n.taskId || '').split(':')[1];
   S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null;
@@ -3571,6 +3812,8 @@ function refreshBanner() {
   const old = v.querySelector(':scope > .mailban'), h = mailBanner();
   if (old) { if (h) old.outerHTML = h; else old.remove(); } else if (h) v.insertAdjacentHTML('afterbegin', h);
 }
+document.addEventListener('change', e => { const so = e.target && e.target.dataset && e.target.dataset.ssnopt; if (so) { if (so === 'nx_season') NxSeason.setDesign(e.target.checked); else NxSeason.setOpt(so, e.target.checked); } });
+document.addEventListener('input', e => { if (e.target && e.target.dataset && 'ssnvol' in e.target.dataset) NxSeason.setVol(+e.target.value); });
 function setMailU(n, quiet) {
   if (n == null || n < 0) return;
   const prev = S.mailU;
@@ -3579,7 +3822,7 @@ function setMailU(n, quiet) {
     chime();
     toast(`✉️ <b>Նոր էլ. նամակ</b> (${n} չկարդացված)`, 'nt', () => { S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null; ACT.go({ dataset: { v: 'mail' } }); });
     if (canDesktopNotify()) { try { const x = new Notification('Numetrix · Էլ. փոստ', { body: 'Նոր նամակ ընկերության փոստարկղում', tag: 'nx-mail' }); x.onclick = () => { window.focus(); x.close(); S.mailTab = 'in'; ACT.go({ dataset: { v: 'mail' } }); }; } catch (e) {} }
-    if (S.view === 'mail' && S.inbox && !S.inbox.cid && !S.inbox.q) { S.inbox.rows = null; }
+    if (S.inbox && !S.inbox.q) { S.inbox.rows = null; }
   }
   if (prev !== n) { renderShell(); if (S.view === 'mail') renderView(); else refreshBanner(); renderBadge(); }
 }
@@ -3589,7 +3832,7 @@ async function ibOpen(id) {
   const I = S.inbox; const row = I && I.rows && I.rows.find(x => x.id === id);
   if (row && row.unread) { row.unread = false; if (S.mailU > 0) setMailU(S.mailU - 1, true); }
   const comps = S.d.companies.filter(c => c.active !== 'Ոչ');
-  const sug = row && row.sugId;
+  const sug = row && row.auto && row.companyId;
   const last = T.msgs[T.msgs.length - 1];
   const m = openModal('✉️ ' + (T.subject || ''), `
     <div class="iblink"><span style="font-weight:600">🏢 Կազմակերպություն՝</span>
@@ -3618,7 +3861,7 @@ async function ibOpen(id) {
     try {
       const r = await call('mailLink', { id, companyId: cid, saveFiles: !!(sf && sf.checked) });
       m.querySelector('#tlSt').textContent = r.companyId ? '✔ Կցված է՝ ' + r.companyName + (r.saved ? ` · ${r.saved} ֆայլ պահվեց թղթապանակում` : '') : 'Կցումը հանված է';
-      if (row) { row.companyId = r.companyId; row.companyName = r.companyName; row.sugId = ''; }
+      if (row) { row.companyId = r.companyId; row.companyName = r.companyName; row.auto = false; }
       toast(r.companyId ? `🔗 Նամակը կցվեց՝ ${esc(r.companyName)}` : 'Կցումը հանված է', 'ok');
       if (S.view === 'mail') renderView();
     } catch (e) { toast(esc(e.message), 'err'); }
@@ -3659,7 +3902,7 @@ async function mailCompose(o) {
     <div class="full"><label class="f">Ում *</label><input class="inp" name="to" type="email" multiple value="${esc(o.to || '')}" placeholder="email@example.com (մի քանիսը՝ ստորակետով)" required autocomplete="email"><div id="mCts" class="mcts"></div></div>
     <div class="full"><label class="f">Պատճեն (Cc)</label><input class="inp" name="cc" value="${esc(o.cc || '')}" placeholder="ըստ ցանկության"></div>
     <div class="full"><label class="f">Թեմա *</label><input class="inp" name="subject" value="${esc(subj)}" required></div>
-    <div class="full"><label class="f">Տեքստ</label><textarea class="inp" name="body" rows="8" placeholder="Հարգելի գործընկեր, …">${esc(o.body || '')}</textarea><label class="chk" style="margin-top:6px"><input type="checkbox" name="sig" checked> Ավելացնել ստորագրություն՝ «${esc(me())} · <span id="mFirm"></span>»</label></div>
+    <div class="full"><label class="f">Տեքստ</label><textarea class="inp" name="body" rows="8" placeholder="Հարգելի գործընկեր, …">${esc(o.body || '')}</textarea><label class="chk" style="margin-top:6px"><input type="checkbox" name="sig" checked> ✍️ Ավելացնել ստորագրություն (լոգո, ${esc(me())}${(emp(me()) || {}).position ? ', ' + esc(emp(me()).position) : ''}, <span id="mFirm"></span>, հեռախոս, հասցե)</label></div>
     <div class="full" id="mTF"></div>
     <div class="full"><label class="f">Կցել ֆայլեր</label><label class="btn sm" style="cursor:pointer">${ico('clip')} Ընտրել ֆայլ<input type="file" id="mUp" multiple hidden></label><span class="hint" style="margin-left:8px">ընդհանուրը՝ մինչև 24 ՄԲ</span><div class="files" id="mUpL" style="margin-top:6px"></div></div>
   </div>`, async f => {
@@ -3733,6 +3976,7 @@ async function editEmp(name) {
   const m = openModal(name ? 'Խմբագրել աշխատակցին' : 'Նոր աշխատակից', `<div class="fgrid">
     <div class="full"><label class="f">Անուն Ազգանուն *</label><input class="inp" name="name" value="${esc(e.name || '')}" required>${name ? '<div class="hint">Անունը փոխելու դեպքում աշխատակիցը պետք է նոր PIN ստեղծի</div>' : ''}</div>
     ${S.d.me.owner ? `<div><label class="f">Դեր</label><select class="inp" name="role"><option ${e.role === 'Աշխատակից' ? 'selected' : ''}>Աշխատակից</option><option ${e.role === 'Ղեկավար' ? 'selected' : ''}>Ղեկավար</option></select></div>` : `<input type="hidden" name="role" value="${esc(e.role || 'Աշխատակից')}">`}
+    <div><label class="f">Պաշտոն <span class="muted" style="font-weight:400">(երևում է նամակների ստորագրությունում)</span></label><input class="inp" name="position" value="${esc(e.position || '')}" placeholder="օր.՝ Գլխավոր հաշվապահ"></div>
     <div><label class="f">Ակտիվ</label><select class="inp" name="active"><option ${e.active ? 'selected' : ''}>Այո</option><option ${!e.active ? 'selected' : ''}>Ոչ</option></select></div>
     <div class="full"><label class="f">Գույն</label><div class="swatches">${S.d.consts.COLORS.map(c => `<label style="background:${c}"><input type="radio" name="color" value="${c}" ${e.color === c ? 'checked' : ''}></label>`).join('')}</div></div>
     ${S.d.me.owner && e.role !== 'Ղեկավար' && name !== me() ? `<div class="full" id="tmBox" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px">
@@ -3751,7 +3995,7 @@ async function editEmp(name) {
       <div class="full hint">Այս տվյալները տեսանելի են միայն ղեկավարին։</div>
     </div></div>
   </div>`, async f => {
-    const base = { name: f.name, role: f.role, active: f.active, color: f.color };
+    const base = { name: f.name, role: f.role, active: f.active, color: f.color, position: f.position || '' };
     if (m.querySelector('#tmOn')) {
       const on = m.querySelector('#tmOn').checked;
       if (on && !f.mgrUntil) throw new Error('Նշեք, մինչև որ օրն է ժամանակավոր ղեկավար');
@@ -4110,6 +4354,11 @@ function viewSettings() {
         <div class="full"><label class="f">📥 Ցույց տալ միայն այս հասցեներին եկած նամակները</label><input class="inp" name="mailTo" value="${esc(s.mailTo || '')}" placeholder="info@numetrix.am, ceo@numetrix.am" ${dis}><div class="hint">Ստորակետով։ Դատարկ՝ Gmail-ի ամբողջ Inbox-ը</div></div>
         <div><label class="f">📤 Նամակներն ուղարկել այս հասցեից</label><input class="inp" name="mailFrom" value="${esc(s.mailFrom || '')}" placeholder="info@numetrix.am" ${dis}><div class="hint">Պետք է ավելացված լինի Gmail-ում՝ «Send mail as»</div></div>
         <div><label class="f">Ուղարկողի անուն</label><input class="inp" name="mailFromName" value="${esc(s.mailFromName || '')}" placeholder="NUMETRIX Accounting center" ${dis}></div>
+        <label class="chk full"><input type="checkbox" name="mailFromPerson" ${s.mailFromPerson ? 'checked' : ''} ${dis}> «Ումից» դաշտում ցույց տալ աշխատակցի անունը (օր.՝ «Անուն Ազգանուն | NUMETRIX»)</label>
+        <div class="full" style="font-weight:600;margin-top:4px">✍️ Նամակների ստորագրություն <span class="muted" style="font-weight:400">(անունն ու պաշտոնը՝ ըստ ուղարկող աշխատակցի)</span></div>
+        <div><label class="f">Հեռախոս</label><input class="inp" name="sigPhone" value="${esc(s.sigPhone || '')}" ${dis}></div>
+        <div><label class="f">Կայք</label><input class="inp" name="sigWeb" value="${esc(s.sigWeb || '')}" ${dis}></div>
+        <div class="full"><label class="f">Հասցե</label><input class="inp" name="sigAddr" value="${esc(s.sigAddr || '')}" ${dis}></div>
         <div class="full"><label class="f">📥 Ստացված էլ. նամակները (Gmail) տեսնում են</label><select class="inp" name="mailInbox" ${dis}>${['Բոլորը', 'Ղեկավարները', 'Անջատված'].map(v => `<option ${(s.mailInbox || 'Բոլորը') === v ? 'selected' : ''}>${v}</option>`).join('')}</select><div class="hint">«Էլ. նամակներ» բաժնում՝ ընկերության փոստարկղի ստացված նամակները և նոր նամակի ծանուցումը</div></div>
         <label class="chk full"><input type="checkbox" name="autoPriority" ${s.autoPriority ? 'checked' : ''} ${dis}> Հաշվետվության կարևորությունը ավտոմատ բարձրացնել ժամկետը մոտենալիս</label>
         ${mg ? '<div class="full"><button class="btn primary" type="button" data-act="saveSettings">Պահպանել</button></div>' : ''}
@@ -4482,6 +4731,7 @@ const ACT = {
   mailTab: el => { S.mailTab = el.dataset.k; renderView(); },
   music: () => { const on = NxSeason.toggleMusic(); if (!on) toast('🔇 Երաժշտությունն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   ssnBurst: () => NxSeason.burst(),
+  ssnToggle: () => { const on = !NxSeason.designOn(); NxSeason.setDesign(on); toast(on ? '🍂 Սեզոնային ձևավորումը միացված է' : 'Սեզոնային ձևավորումն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   musF: el => { S.mus.filter = el.dataset.k; renderView(); },
   musDel: async el => { const r = S.mus.rows.find(x => x.id === el.dataset.id); if (!r || !(await NxDlg.confirm('Ջնջե՞լ «' + r.name + '» երգը', { ok: 'Ջնջել' }))) return; try { await call('musicDelete', { id: r.id }); S.mus.rows = S.mus.rows.filter(x => x !== r); NxSeason.reload(); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
   musPlay: async el => {
@@ -4492,10 +4742,15 @@ const ACT = {
       const a = new Audio(URL.createObjectURL(new Blob([u8], { type: r.mime }))); a.volume = NxSeason.vol(); a.play(); MUS_PREV = { id: el.dataset.id, a }; el.textContent = '⏸'; a.onended = () => { el.textContent = '▶'; }; }
     catch (e) { toast(esc(e.message), 'err'); el.textContent = '▶'; }
   },
+  coMail: el => { closeModal(); S.mailTab = 'in'; S.inbox = Object.assign(S.inbox || { rows: null, q: '', f: '', sel: new Set(), cq: '' }, { cid: el.dataset.id, f: '' }); ACT.go({ dataset: { v: 'mail' } }); },
   mailBan: () => { S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null; ACT.go({ dataset: { v: 'mail' } }); },
   inboxRefresh: () => { if (S.inbox) S.inbox.rows = null; renderView(); },
-  inboxMore: () => inboxLoad(true),
-  ibOpen: el => ibOpen(el.dataset.id),
+  ibCo: (el, e) => { const I = S.inbox; const row = el.closest('[data-co]'); if (!row) return; I.cid = row.dataset.co; I.f = el.dataset.f || ''; I.sel = new Set(); renderView(); },
+  ibF: el => { S.inbox.f = el.dataset.k; renderView(); },
+  ibAll: el => { const I = S.inbox; const boxes = [...document.querySelectorAll('[data-ibsel]')].map(x => x.dataset.ibsel); if (boxes.every(id => I.sel.has(id))) boxes.forEach(id => I.sel.delete(id)); else boxes.forEach(id => I.sel.add(id)); renderView(); },
+  ibClear: () => { S.inbox.sel = new Set(); renderView(); },
+  ibBulk: el => ibBulk(el.dataset.a),
+  ibOpen: (el, e) => { if (e && e.target && e.target.closest('[data-ibsel]')) return; ibOpen(el.dataset.id); },
   ibQuick: async (el, e) => { e.stopPropagation(); el.disabled = true; try { const r = await call('mailLink', { id: el.dataset.id, companyId: el.dataset.cid, saveFiles: false }); const row = S.inbox.rows.find(x => x.id === el.dataset.id); if (row) { row.companyId = r.companyId; row.companyName = r.companyName; } toast('🔗 Կցվեց՝ ' + esc(r.companyName), 'ok'); renderView(); } catch (err) { toast(esc(err.message), 'err'); el.disabled = false; } },
   mailOpen: el => mailShow(el.dataset.id),
   srcGo: (el, e) => { e.stopPropagation(); srcGo(el.dataset.id, el.dataset.p); },
@@ -4661,7 +4916,7 @@ const ACT = {
   genReports: async () => { const r = await call('generateReportsNow', {}); toast(r.generated ? `Ստեղծվեց ${r.generated} հաշվետվություն` : 'Բոլոր հաշվետվություններն արդեն ստեղծված են', 'ok'); await refresh(); },
   saveSettings: async () => {
     const f = formData($('#setForm'));
-    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, mailInbox: f.mailInbox, mailTo: f.mailTo, mailFrom: f.mailFrom, mailFromName: f.mailFromName, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
+    try { await call('saveSettings', { companyName: f.companyName, regimes: splitList(f.regimes), pollSeconds: f.pollSeconds, holidays: f.holidays, defaultStart: f.defaultStart, overdueGrace: f.overdueGrace, autoPriority: f.autoPriority, hrLabel: f.hrLabel, hrUrl: f.hrUrl, mailInbox: f.mailInbox, mailTo: f.mailTo, mailFrom: f.mailFrom, mailFromName: f.mailFromName, mailFromPerson: !!f.mailFromPerson, sigPhone: f.sigPhone, sigAddr: f.sigAddr, sigWeb: f.sigWeb, clientAppUrl: f.clientAppUrl }); toast('Պահպանված է', 'ok'); await refresh(); }
     catch (e) { toast(esc(e.message), 'err'); }
   }
 };
