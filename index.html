@@ -941,7 +941,7 @@ const NxChat = (function () {
 /* NXCHAT:END */
 
 /* Առանձին հոսթինգի դեպքում (GitHub Pages) լրացրեք Apps Script-ի …/exec հղումը */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxyhILiybrXvxAo4G-yEYuFhWRXLeQEPge7yJHV-Bb0MTO_XhAZ_RLz_e9GIi293mk-/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxhnbJNu7f-mJ_fW8R4Kv4lPisT2db44diob8YvTT2F_Fbnv3f2mWRCrRwbkSDAT6lx/exec';
 const TOKEN = (function () { try { return JSON.parse(document.getElementById('tokj').textContent) || ''; } catch (e) { return ''; } })() || new URLSearchParams(location.search).get('p') || '';
 const IS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
 const ST_COLORS = { 'Նոր': '#2563eb', 'Դիտված': '#0ea5e9', 'Թասք է դարձել': '#7c3aed', 'Կատարված': '#16a34a', 'Մերժված': '#dc2626' };
