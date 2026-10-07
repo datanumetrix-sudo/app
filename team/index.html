@@ -115,6 +115,9 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ssn-fx{position:fixed;inset:0;pointer-events:none;z-index:60}
 @media (max-width:860px){#season.ssn{margin:10px 12px 0;flex-wrap:wrap;gap:10px;padding:10px 12px}.ssn-sc{font-size:20px}.ssn-gift{max-width:none;flex-basis:100%}.ssn-f{display:none}.ssn-ctl{position:absolute;right:6px;top:4px;flex-direction:row}}
 @media (prefers-reduced-motion:reduce){.ssn-sc span,.ssn-gb{animation:none}}
+.muspop{position:fixed;z-index:70;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;width:260px;display:flex;flex-direction:column;gap:8px}
+.muspop .mpn{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.muspop .mpv{display:flex;align-items:center;gap:6px}.muspop .mpv input{flex:1;accent-color:var(--brand)}
 .mailban{display:flex;gap:10px;align-items:center;padding:10px 14px;margin-bottom:14px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;cursor:pointer;animation:mbp 2.4s ease-in-out infinite}
 @keyframes mbp{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.0)}50%{box-shadow:0 0 0 4px rgba(249,115,22,.18)}}
 .mbx{display:grid;grid-template-columns:400px minmax(0,1fr);gap:14px;align-items:start}
@@ -533,6 +536,18 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 .chr{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .chh{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line2)}
 .chback{display:none}
+.chdock{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100vw;z-index:35;background:var(--panel);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(15,23,42,.12);display:flex;flex-direction:column;animation:dkIn .18s ease-out}
+@keyframes dkIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.chdock .dkh{display:flex;align-items:center;gap:6px;padding:10px 10px 10px 14px;border-bottom:1px solid var(--line2);background:var(--panel2)}
+.chdock .dkh b{flex:1;font-size:15px}
+.chdock .dkh .iconbtn{width:32px;height:32px}
+.chdock .chats{grid-template-columns:1fr;height:auto;flex:1;min-height:0;gap:0}
+.chdock .chl,.chdock .chr{border-radius:0;box-shadow:none}
+.chdock .chats.has .chl{display:none}.chdock .chats:not(.has) .chr{display:none}.chdock .chback{display:inline-flex}
+.chdock .chl-top .seg{flex:1;min-width:0;overflow-x:auto}
+body.dockon .toasts{right:420px}
+@media (max-width:1279px){.chdock{width:370px}body.dockon .toasts{right:390px}}
+@media (min-width:1280px){body.dockon .main{margin-right:400px}}
 @media (max-width:860px){.chats{grid-template-columns:1fr;height:calc(100vh - 150px)}.chats.has .chl{display:none}.chats:not(.has) .chr{display:none}.chback{display:inline-flex}}
 
 /* ---------- responsive ---------- */
@@ -1455,7 +1470,7 @@ const NxChat = (function () {
       if (!S.alive || !r) return;
       if (r.typing) { S.gasTy = r.typing; drawTyping(); }
       if (r.same) return;
-      if (!fromCache) cacheSave(r);
+      if (!fromCache) { cacheSave(r); if (S.loadErr) { S.loadErr = 0; S.err = ''; drawComposer(); } }
       S.info = r; S.v = fromCache ? '' : r.v; S.gas = r.msgs || [];
       setMsgs(own);
       if (o.onInfo) o.onInfo(r);
@@ -1476,7 +1491,7 @@ const NxChat = (function () {
         if (!S.alive) return;
         if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.raw || e.message)) { try { localStorage.removeItem(CK); } catch (x) {} list.innerHTML = `<div class="nxc-empty">⚠ ${esc(e.message)}</div>`; return; }
         tries++;
-        if (S.info) { S.timer = setTimeout(first, Math.min(15000, 2000 * tries)); return; }   // պահված տարբերակը ցույց է տրված
+        if (S.info) { S.loadErr = 1; S.err = '⚠ ' + _t('Չհաջողվեց բեռնել հաղորդագրությունները') + ': ' + e.message; drawComposer(); S.timer = setTimeout(first, Math.min(15000, 2000 * tries)); return; }   // պահված տարբերակը ցույց է տրված, սխալը՝ տեսանելի
         list.innerHTML = `<div class="nxc-empty">⚠ ${_t('Կապի խնդիր')} (${esc(e.message)})<br><small>${_t('Կրկին փորձում ենք…')} (${tries})</small><br><button data-a="retry" style="margin-top:10px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer">🔄 ${_t('Կրկին փորձել')}</button></div>`;
         S.timer = setTimeout(first, Math.min(15000, 2000 * tries));
       });
@@ -1926,7 +1941,7 @@ const NxChat = (function () {
       <div class="ssn-txt"><div class="ssn-h">${head}</div>
         <div class="ssn-s">${esc(WEEKDAY[d.getDay()])}, ${d.getDate()} ${esc(MON_GEN[d.getMonth()])}${vibe ? ' · ' + esc(vibe) : ''}</div>
         ${c.quiet ? '' : `<div class="ssn-f">${c.sp ? '' : esc(c.th.line) + ' '}<span class="ssn-fact">🌿 ${esc(c.fact)}</span></div>`}
-        ${M.on && M.cur ? `<div class="ssn-np">🎵 ${M.cur.day ? 'Այսօրվա երգը՝ ' : ''}<b>${esc(M.cur.name)}</b> <button data-ssn="next" title="Հաջորդը">⏭</button></div>` : ''}</div>
+        ${M.on && M.cur ? `<div class="ssn-np">🎵 ${M.cur.day ? 'Այսօրվա երգը՝ ' : ''}<b>${esc(M.cur.name)}</b> <button data-ssn="next" title="Հաջորդ երգը">⏭</button><span title="Ձայնի ուժգնություն" style="display:inline-flex;align-items:center;gap:4px">🔉<input type="range" min="0" max="1" step="0.05" value="${vol()}" data-ssnvol style="width:90px;accent-color:currentColor"></span></div>` : ''}</div>
       <div class="ssn-gift">${c.quiet ? '' : opened ? `<div class="ssn-open">${esc(c.surprise)}</div>` : `<button data-ssn="gift" class="ssn-gb">🎁<span>Այսօրվա անակնկալը</span></button>`}</div>
       <div class="ssn-ctl"><button class="ssn-x" data-ssn="min" title="Փոքրացնել այսօրվա համար">⌃</button><button class="ssn-x" data-ssn="off" title="Անջատել սեզոնային ձևավորումը (միացնել՝ վերևի 🍂 կոճակով)">✕</button></div>`;
   }
@@ -2234,7 +2249,7 @@ async function pollOnce() {
     if (r.notifs) { S.d.nv = r.nv; handleNotifs(r.notifs); }
     if (r.dv !== S.d.dv) await refresh(true);
     if (r.mailU != null) setMailU(r.mailU);
-    if (r.cv && r.cv !== S.ch.cv) { S.ch.cv = r.cv; loadChatUnread(); if (S.view === 'chats') loadChats(); }
+    if (r.cv && r.cv !== S.ch.cv) { S.ch.cv = r.cv; loadChatUnread(); if (chatsShown()) loadChats(); }
   } catch (e) { /* ցանցի խափանում — կփորձենք նորից */ }
 }
 /* Firebase՝ հաճախորդի նոր հաղորդագրության մասին ազդանշանը գալիս է ակնթարթորեն */
@@ -2246,7 +2261,7 @@ function fbStart() {
     if (!ok || !S.token) { FBSIG = null; return; }
     const offSig = NxFb.onSig('team', () => {
       FBSIG_T.forEach(clearTimeout);
-      const go = () => { loadChatUnread(); if (S.view === 'chats') loadChats(); };
+      const go = () => { loadChatUnread(); if (chatsShown()) loadChats(); };
       FBSIG_T = [setTimeout(go, 2500), setTimeout(go, 7000)];
     });
     // ուրիշի փոփոխությունը՝ ազդանշանով, տվյալները բեռնվում են ֆոնային ռեժիմում
@@ -2361,7 +2376,7 @@ async function showLogin(msg) {
   render();
 }
 function logoutLocal(msg) {
-  stopPolling(); fbStop(); lsDel(bootKey()); S.token = null; S.d = null; lsDel('nx_token'); closeDrawer(); closeModal();
+  stopPolling(); fbStop(); lsDel(bootKey()); S.token = null; S.d = null; lsDel('nx_token'); closeDrawer(); closeModal(); if (S.ch.dock) closeDock(true);
   showLogin(msg);
 }
 async function logout() {
@@ -2389,8 +2404,10 @@ function showApp() {
   S.view = lsGet('nx_view', 'tasks');
   S.rf.scope = isMgr() ? 'all' : 'mine';
   if (S.view === 'stats' && !isMgr()) S.view = 'tasks';
+  if (S.view === 'chats' && dockable()) { S.view = 'tasks'; S.ch.dock = true; }
   handleNotifs(S.d.notifs, true);
   renderShell(); renderView(); updateNotifCta();
+  if (dockable() && (S.ch.dock || lsGet('nx_dock', '') === '1')) openDock();
   try { NxSeason.init({ name: me(), call: (a, p) => call(a, p, { silent: true }), toast: m => toast(esc(m), 'nt', null, 8000) }); } catch (e) { console.warn('season', e); }
   startPolling();
 }
@@ -2473,7 +2490,7 @@ document.addEventListener('click', e => {
   }
   if (S.msOpen && !e.target.closest('#mspop') && !e.target.closest('.ms-btn')) closeMs();
 }, true);
-window.addEventListener('resize', () => { if (S.msOpen) placeMs(); });
+window.addEventListener('resize', () => { if (S.msOpen) placeMs(); if (S.ch && S.ch.dock && !dockable()) { const th = S.ch.thread; closeDock(true); S.ch.thread = th; ACT.go({ dataset: { v: 'chats' } }); } });
 document.addEventListener('scroll', () => { if (S.msOpen) placeMs(); }, true);
 
 /* ---- կազմակերպությունների այբբենական դասավորություն ---- */
@@ -2526,7 +2543,7 @@ function navItemHtml(it) {
   if (it.sep) return '<div class="sep"></div>';
   if (it.ext === 'src') return `<button class="ext src" data-act="srcPick" title="ՊԵԿ, ԱՎԾ, ԱԱԱՄՊ և այլ կայքեր՝ ընտրել կազմակերպությունը և բացել կայքը">${ico('gov')}<span>Ուղարկել հաշվետվություն</span><span class="arr">${ico('ext')}</span></button>`;
   if (it.ext === 'hr') return `<a class="ext" href="${esc(S.d.settings.hrUrl)}" target="_blank" rel="noopener" title="Բացել նոր թաբում">${ico('hr')}<span>${esc(it.l)}</span><span class="arr">${ico('ext')}</span></a>`;
-  return `<button class="${S.view === it.k ? 'on' : ''}" data-act="go" data-v="${it.k}">${ico(it.i)}<span>${it.l}</span>${it.c !== '' ? `<span class="cnt">${it.c}</span>` : ''}</button>`;
+  return `<button class="${S.view === it.k || (it.k === 'chats' && S.ch.dock) ? 'on' : ''}" data-act="go" data-v="${it.k}">${ico(it.i)}<span>${it.l}</span>${it.c !== '' ? `<span class="cnt">${it.c}</span>` : ''}</button>`;
 }
 function renderShell() {
   $('#sCompany').textContent = S.d.settings.companyName;
@@ -2747,7 +2764,7 @@ function renderView() {
   if (S.view === 'stats' && !S.stats) loadStats();
   if (S.view === 'requests' && !S.reqs) loadRequests();
   if (S.view === 'clients' && !S.ext) loadExt();
-  if (S.view === 'chats') { if (!S.ch.list) loadChats(); mountChatPane(); } else unmountChatPane();
+  if (S.view === 'chats') { if (S.ch.dock) closeDock(true); if (!S.ch.list) loadChats(); mountChatPane(); } else if (!S.ch.dock) unmountChatPane();
   mobTables(); renderBnav();
 }
 function matchQ(t) {
@@ -3444,7 +3461,7 @@ function reqChatModal(id) { openChat(id, true); }
 /** Չաթը բացել. modal=true՝ պատուհանով (հարցումներից/թասքից), այլապես «Չաթեր» բաժնում */
 function openChat(thread, modal) {
   if (!thread) return;
-  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (S.ch.scope === 'int') S.ch.scope = isMgr() ? 'all' : 'mine'; if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
+  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (S.ch.scope === 'int') S.ch.scope = isMgr() ? 'all' : 'mine'; if (dockable()) { openDock(); return; } if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
   const m = openModal('Զրույց հաճախորդի հետ', '<div id="mchat" style="height:min(70vh,640px);margin:-4px -4px 0;border-radius:12px;overflow:hidden;border:1px solid var(--line)"></div>', null, { okOnly: true, wide: true });
   if (MODALCHAT) MODALCHAT.destroy();
   MODALCHAT = NxChat.mount(m.querySelector('#mchat'), teamChatOpts(thread));
@@ -3453,7 +3470,7 @@ function openChat(thread, modal) {
 }
 async function loadChats() {
   try { const r = await call('chatList', {}, { silent: true }); S.ch.list = (r && r.rows) || []; } catch (e) { S.ch.list = S.ch.list || []; }
-  if (S.view === 'chats') drawChatList();
+  if (chatsShown()) drawChatList();
 }
 async function loadChatUnread() {
   try { const r = await call('chatUnread', {}, { silent: true }); if (r.total !== S.ch.unread) { S.ch.unread = r.total; renderShell(); } } catch (e) {}
@@ -3496,6 +3513,27 @@ function mountChatPane() {
   TEAMCHAT.thread = S.ch.thread;
 }
 function unmountChatPane() { if (TEAMCHAT) { TEAMCHAT.destroy(); TEAMCHAT = null; } }
+/* ---- Չաթը աջ կողմի վահանակում (ինչպես Messenger-ում). հիմնական էջը մնում է աշխատելու ---- */
+function dockable() { return innerWidth > 860; }
+function chatsShown() { return S.view === 'chats' || !!S.ch.dock; }
+function chatRefresh() { if (S.ch.dock) renderDock(); else renderView(); }
+function openDock() {
+  if (S.view === 'chats') { S.view = 'tasks'; lsSet('nx_view', 'tasks'); renderView(); }
+  S.ch.dock = true; lsSet('nx_dock', '1'); document.body.classList.add('dockon');
+  let d = $('#chdock');
+  if (!d) { d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.innerHTML = '<div class="dkh"><b>💬 Չաթեր</b><button class="iconbtn" data-act="dockClose" title="Փակել">✕</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>'; document.body.appendChild(d); }
+  renderDock(); renderShell(); loadChats();
+}
+function renderDock() {
+  const b = $('#dkbody'); if (!b) return;
+  if (TEAMCHAT && TEAMCHAT.thread === S.ch.thread && S.ch.thread && b.querySelector('.nxc')) { drawChatList(); return; }
+  b.innerHTML = viewChats(); mountChatPane();
+}
+function closeDock(silent) {
+  S.ch.dock = false; lsSet('nx_dock', ''); unmountChatPane();
+  const d = $('#chdock'); if (d) d.remove(); document.body.classList.remove('dockon');
+  if (!silent) renderShell();
+}
 function chatSearchModal() {
   const m = openModal('Որոնում զրույցներում', `<input class="inp" id="csq" placeholder="Բառ, գումար, ֆայլի անուն…" autofocus><div id="csr" style="margin-top:10px;max-height:55vh;overflow:auto"></div>`, null, { okOnly: true, wide: true });
   let t = null; const q = m.querySelector('#csq');
@@ -3852,6 +3890,24 @@ function refreshBanner() {
 }
 document.addEventListener('change', e => { const so = e.target && e.target.dataset && e.target.dataset.ssnopt; if (so) { if (so === 'nx_season') NxSeason.setDesign(e.target.checked); else NxSeason.setOpt(so, e.target.checked); } });
 document.addEventListener('input', e => { if (e.target && e.target.dataset && 'ssnvol' in e.target.dataset) NxSeason.setVol(+e.target.value); });
+/* ---- Նվագարկչի փոքր պատուհան (🎵 կոճակի տակ) ---- */
+function closeMusPop() { const p = document.getElementById('musPop'); if (p) p.remove(); }
+function musPopFill() {
+  const p = document.getElementById('musPop'); if (!p) return;
+  const n = NxSeason.now();
+  p.querySelector('.mpn').textContent = n ? n.name : '⏳ Բեռնվում է…';
+}
+function musPop() {
+  if (document.getElementById('musPop')) { closeMusPop(); return; }
+  const b = document.getElementById('musBtn'), r = b.getBoundingClientRect();
+  const p = document.createElement('div'); p.id = 'musPop'; p.className = 'muspop';
+  p.style.top = (r.bottom + 8) + 'px'; p.style.right = Math.max(8, innerWidth - r.right - 60) + 'px';
+  p.innerHTML = `<div class="muted" style="font-size:11.5px">🎵 Հիմա նվագում է</div><div class="mpn"></div>
+    <div class="mpv">🔈<input type="range" min="0" max="1" step="0.05" value="${NxSeason.vol()}" data-ssnvol>🔊</div>
+    <div style="display:flex;gap:6px"><button class="btn sm" data-act="musNext">⏭ Հաջորդը</button><button class="btn sm" data-act="musPause">⏸ Անջատել</button></div>`;
+  document.body.appendChild(p); musPopFill();
+  setTimeout(() => { const off = e => { if (!e.target.closest('#musPop') && !e.target.closest('#musBtn')) { closeMusPop(); document.removeEventListener('pointerdown', off, true); } }; document.addEventListener('pointerdown', off, true); }, 0);
+}
 function setMailU(n, quiet) {
   if (n == null || n < 0) return;
   const prev = S.mailU;
@@ -4760,14 +4816,16 @@ function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTM
 
 /* ====================== EVENTS ====================== */
 const ACT = {
-  go: el => { closeMs(); const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
+  go: el => { if (el.dataset.v === 'chats' && dockable()) { $('#side').classList.remove('on'); if (S.ch.dock) closeDock(); else openDock(); return; } closeMs(); const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => { const on = $('#side').classList.toggle('on'); if (on && innerWidth <= 860) histPush({ nxs: 1, nxv: S.view }); },
   installApp: () => { $('#side').classList.remove('on'); installApp(); },
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
   mailNew: (el, e) => { if (e) e.stopPropagation(); mailCompose({ companyId: el.dataset.cid || '', taskId: el.dataset.task || '' }); },
   mailRefresh: () => { S.mail = null; renderView(); },
   mailTab: el => { S.mailTab = el.dataset.k; renderView(); },
-  music: () => { const on = NxSeason.toggleMusic(); if (!on) toast('🔇 Երաժշտությունն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
+  music: () => { if (NxSeason.playing()) { musPop(); return; } NxSeason.toggleMusic(); if (S.view === 'settings') renderView(); },
+  musPause: () => { closeMusPop(); NxSeason.toggleMusic(); toast('🔇 Երաժշտությունն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
+  musNext: () => { NxSeason.next(); setTimeout(musPopFill, 400); },
   ssnBurst: () => NxSeason.burst(),
   ssnToggle: () => { const on = !NxSeason.designOn(); NxSeason.setDesign(on); toast(on ? '🍂 Սեզոնային ձևավորումը միացված է' : 'Սեզոնային ձևավորումն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   musFolder: async () => { try { const r = await call('musicFolder', {}); window.open(r.url, '_blank', 'noopener'); } catch (e) { toast(esc(e.message), 'err'); } },
@@ -4836,9 +4894,10 @@ const ACT = {
     saveLayout(L); S.navEdit = null; renderShell(); toast('Մենյուի դասավորությունը պահպանված է', 'ok');
   },
   reqChat: (el, e) => { e.stopPropagation(); reqChatModal(el.dataset.id); },
-  chOpen: el => { S.ch.thread = el.dataset.id; renderView(); },
+  chOpen: el => { S.ch.thread = el.dataset.id; chatRefresh(); },
+  dockClose: () => closeDock(),
   chOpenM: el => { closeModal(); openChat(el.dataset.id); },
-  chBack: () => { S.ch.thread = null; unmountChatPane(); renderView(); },
+  chBack: () => { S.ch.thread = null; unmountChatPane(); chatRefresh(); },
   chClear: async () => {
     const th = S.ch.thread; if (!th) return;
     const x = (S.ch.list || []).find(r => r.thread === th);
