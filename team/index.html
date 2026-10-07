@@ -2090,10 +2090,25 @@ function call(action, payload, opts) {
       google.script.run.withSuccessHandler(done).withFailureHandler(fail).api(action, S.token, payload || {});
     } else {
       if (!API_URL) return fail(new Error('API_URL-ը լրացված չէ'));
-      fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: S.token, payload: payload || {} }) })
-        .then(r => r.json()).then(done).catch(fail);
+      const body = JSON.stringify({ action, token: S.token, payload: payload || {} });
+      // Google-ը երբեմն JSON-ի փոխարեն վերադարձնում է HTML էջ (ժամանակավոր խափանում, ժամանակի սահման, շատ միաժամանակ հարցումներ)
+      const once = () => fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body })
+        .then(r => r.text()).then(txt => { try { return JSON.parse(txt); } catch (e) { const er = new Error(gErrText(txt)); er.html = true; throw er; } });
+      const safe = READ_ACT.test(action);
+      const go = i => once().then(done).catch(e => {
+        if (safe && i < 2 && (e.html || e instanceof TypeError)) return new Promise(r => setTimeout(r, 1200 * (i + 1))).then(() => go(i + 1));
+        fail(e.html ? new Error(e.message + ' [' + action + ']') : e);
+      });
+      go(0);
     }
   });
+}
+/** Միայն կարդացող գործողություններ (կրկնելը անվտանգ է) */
+const READ_ACT = /^(bootstrap|poll|getTask|getHistory|getStats|getRequests|getExtUsers|portalInfo|publicInfo|clientInfo|chat(Get|File|List|Unread|Search|Typing)|fbToken|doc(Get|List|Files|Log|SentLog|Preview)|authGet|reqThread|clientFile|extLookup|mail(Inbox|Thread|Att|Init)|music(Today|Get|List))$/;
+/** Google-ի HTML սխալի էջից հանել ընթեռնելի տեքստը */
+function gErrText(html) {
+  const t = String(html || '').replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim().replace(/^Google (Drive|Docs) ?/i, '');
+  return 'Google-ի սերվերը ժամանակավորապես չպատասխանեց, փորձեք մի քիչ հետո' + (t ? ' (' + t.slice(0, 160) + ')' : '');
 }
 function busy(d) { S.busy = Math.max(0, S.busy + d); const b = $('#bar'); if (S.busy) { b.classList.add('on'); } else { b.classList.remove('on'); } }
 
