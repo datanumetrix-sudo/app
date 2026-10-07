@@ -1328,9 +1328,9 @@ const NxChat = (function () {
       d.innerHTML = `<div class="rx">${(S.info.reactions || []).map(e => `<button data-e="${e}">${e}</button>`).join('')}</div>
         <button class="it" data-a="reply">↩️ ${_t('Պատասխանել')}</button>
         ${m.text ? '<button class="it" data-a="copy">📋 ' + _t('Պատճենել') + '</button>' : ''}
-        ${m.mine && m.text ? '<button class="it" data-a="edit">✏️ ' + _t('Խմբագրել') + '</button>' : ''}
+        ${m.mine && m.text && S.info.kind !== 'W' ? '<button class="it" data-a="edit">✏️ ' + _t('Խմբագրել') + '</button>' : ''}
         ${conv ? `<button class="it" data-a="conv">${o.convertLabel || '➕ Թասք'}</button>` : ''}
-        ${m.mine ? '<button class="it d" data-a="del">🗑 ' + _t('Ջնջել բոլորի մոտ') + '</button>' : ''}`;
+        ${m.mine ? '<button class="it d" data-a="del">🗑 ' + (S.info.kind === 'W' ? 'Ջնջել միայն այստեղ (WhatsApp-ում կմնա)' : _t('Ջնջել բոլորի մոտ')) + '</button>' : ''}`;
       document.body.appendChild(d);
       const r = btn.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight;
       d.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left - w / 2)) + 'px';
@@ -1480,7 +1480,7 @@ const NxChat = (function () {
       if (!S.alive) return;
       if (!document.hidden && !S.busy) { try { apply(await call('chatGet', { thread: o.thread, since: S.v })); } catch (e) { if (/AUTH|հասանելի չէ|չի գտնվել/.test(e.raw || e.message)) { S.alive = false; return; } } }
       // Firebase-ի դեպքում հաղորդագրությունները գալիս են ակնթարթորեն, իսկ այս հարցումը միայն ապահովության համար է
-      S.timer = setTimeout(tick, S.fbPath ? (document.hidden ? 60000 : 20000) : (document.hidden ? 15000 : 3000));
+      S.timer = setTimeout(tick, S.fbPath ? (document.hidden ? 60000 : 20000) : S.info && S.info.kind === 'W' ? (document.hidden ? 60000 : 8000) : (document.hidden ? 15000 : 3000));
     }
     drawTop(); drawComposer();
     try { const c = JSON.parse(localStorage.getItem(CK) || 'null'); if (c && c.thread === o.thread) apply(c, false, true); } catch (e) {}
@@ -2264,7 +2264,7 @@ async function pollOnce() {
     if (r.notifs) { S.d.nv = r.nv; handleNotifs(r.notifs); }
     if (r.dv !== S.d.dv) await refresh(true);
     if (r.mailU != null) setMailU(r.mailU);
-    if (r.cv && r.cv !== S.ch.cv) { S.ch.cv = r.cv; loadChatUnread(); if (chatsShown()) loadChats(); }
+    if (r.cv && r.cv !== S.ch.cv) { S.ch.cv = r.cv; chatSync(); }
   } catch (e) { /* ցանցի խափանում — կփորձենք նորից */ }
 }
 /* Firebase՝ հաճախորդի նոր հաղորդագրության մասին ազդանշանը գալիս է ակնթարթորեն */
@@ -2276,7 +2276,7 @@ function fbStart() {
     if (!ok || !S.token) { FBSIG = null; return; }
     const offSig = NxFb.onSig('team', () => {
       FBSIG_T.forEach(clearTimeout);
-      const go = () => { loadChatUnread(); if (chatsShown()) loadChats(); };
+      const go = () => chatSync();
       FBSIG_T = [setTimeout(go, 2500), setTimeout(go, 7000)];
     });
     // ուրիշի փոփոխությունը՝ ազդանշանով, տվյալները բեռնվում են ֆոնային ռեժիմում
@@ -2295,7 +2295,7 @@ function fbStop() { if (typeof FBSIG === 'function') try { FBSIG(); } catch (e) 
 function startPolling() {
   stopPolling();
   fbStart();
-  loadChatUnread();
+  chatSync();
   const ms = S.snapLive ? 60000 : Math.max(10, (S.d && S.d.settings.pollSeconds) || 20) * 1000;
   S.pollTimer = setTimeout(async function tick() {
     if (!S.token || !S.d) return;
@@ -3458,33 +3458,51 @@ async function portalLinkModal(companyId, reset) {
 function teamChatOpts(thread) {
   return {
     thread, side: 'team', meName: me(), call: (a, p) => call(a, p, { silent: true }),
-    emptyText: /^I-/.test(thread) ? (thread === 'I-ALL' ? 'Թիմի ընդհանուր չաթ։ Գրածը տեսնում են բոլոր աշխատակիցները (հաճախորդները՝ ոչ)։' : 'Անձնական չաթ։ Գրածը տեսնում եք միայն դուք երկուսով։') : 'Հաղորդագրություններ դեռ չկան։ Գրածը կտեսնի հաճախորդը իր հավելվածում։',
-    topText: i => i ? (i.kind === 'I' ? '🔒 Ներքին · հաճախորդները չեն տեսնում' : i.req ? `<span class="pill" style="--c:${REQ_COLORS[i.req.status] || '#64748b'}">${esc(i.req.status)}</span> ${i.req.taskId ? `<a href="#" data-act="open" data-id="${esc(i.req.taskId)}" style="font-size:12.5px">Թասք ${esc(i.req.taskId)} →</a>` : ''}` : `🏢 ${esc(i.companyName)}`) : '',
+    emptyText: /^WA-/.test(thread) ? 'WhatsApp զրույց։ Գրածը կհասնի հաճախորդի WhatsApp-ին։' : /^I-/.test(thread) ? (thread === 'I-ALL' ? 'Թիմի ընդհանուր չաթ։ Գրածը տեսնում են բոլոր աշխատակիցները (հաճախորդները՝ ոչ)։' : 'Անձնական չաթ։ Գրածը տեսնում եք միայն դուք երկուսով։') : 'Հաղորդագրություններ դեռ չկան։ Գրածը կտեսնի հաճախորդը իր հավելվածում։',
+    topText: i => i ? (i.kind === 'W' ? waTop(i) : i.kind === 'I' ? '🔒 Ներքին · հաճախորդները չեն տեսնում' : i.req ? `<span class="pill" style="--c:${REQ_COLORS[i.req.status] || '#64748b'}">${esc(i.req.status)}</span> ${i.req.taskId ? `<a href="#" data-act="open" data-id="${esc(i.req.taskId)}" style="font-size:12.5px">Թասք ${esc(i.req.taskId)} →</a>` : ''}` : `🏢 ${esc(i.companyName)}`) : '',
     canConvert: (m, i) => !m.deleted && m.side !== 'sys',
     convertLabel: '➕ Ստեղծել թասք',
     onConvert: (m, i) => {
       const c = company(i.companyId);
       const title = (m.text || (m.files[0] ? m.files[0].name : 'Թասք')).split('\n')[0].slice(0, 200);
       const desc = [m.text, `— ${m.author}${m.side === 'client' ? ' (հաճախորդ)' : ''}, ${fmtDT(m.at)}, չաթից`].filter(Boolean).join('\n\n');
-      newTask({ companyId: i.kind === 'I' ? '' : i.companyId, title, description: desc, msgId: m.id, fromClient: m.side === 'client' && i.kind === 'G', assignee: c && c.responsible, nFiles: m.files.length });
+      newTask({ companyId: i.kind === 'I' || (i.kind === 'W' && !(i.wa && i.wa.linked)) ? '' : i.companyId, title, description: desc, msgId: m.id, fromClient: m.side === 'client' && i.kind === 'G', assignee: c && c.responsible, nFiles: m.files.length });
     },
-    onInfo: () => { setTimeout(loadChatUnread, 300); }
+    onInfo: r => { const k = thread + '|' + (r && r.v) + '|' + (r && r.msgs ? r.msgs.length : 0); if (S.chInfoK === k) return; const first = !S.chInfoK || S.chInfoK.split('|')[0] !== thread; S.chInfoK = k; if (first) return; clearTimeout(S.chInfoT); S.chInfoT = setTimeout(chatSync, 600); }
   };
+}
+/** WhatsApp զրույցի վերևի տողը՝ 24 ժամվա պատուհանը */
+function waTop(i) {
+  const w = i.wa || {};
+  if (!w.on) return '🟢 WhatsApp · <b style="color:#b91c1c">WhatsApp-ը միացված չէ (Կարգավորումներ)</b>';
+  if (w.open) { const u = String(w.until || ''); return '🟢 WhatsApp · ⏱ պատասխանել կարող եք' + (u ? ' մինչև ' + esc((u.slice(0, 10) === today() ? 'այսօր ' : fmtD(u.slice(0, 10)) + ' ') + u.slice(11, 16)) : ''); }
+  return '🟢 WhatsApp · <b style="color:#b45309">⚠ 24 ժամն անցել է՝ WhatsApp-ը թույլ կտա գրել, երբ հաճախորդը նորից գրի</b>';
 }
 let TEAMCHAT = null, MODALCHAT = null;
 function reqChatModal(id) { openChat(id, true); }
 /** Չաթը բացել. modal=true՝ պատուհանով (հարցումներից/թասքից), այլապես «Չաթեր» բաժնում */
 function openChat(thread, modal) {
   if (!thread) return;
-  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (S.ch.scope === 'int') S.ch.scope = isMgr() ? 'all' : 'mine'; if (dockable()) { openDock(); return; } if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
+  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (/^WA-/.test(thread)) S.ch.scope = 'wa'; else if (S.ch.scope === 'int' || S.ch.scope === 'wa') S.ch.scope = isMgr() ? 'all' : 'mine'; if (dockable()) { openDock(); return; } if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
   const m = openModal('Զրույց հաճախորդի հետ', '<div id="mchat" style="height:min(70vh,640px);margin:-4px -4px 0;border-radius:12px;overflow:hidden;border:1px solid var(--line)"></div>', null, { okOnly: true, wide: true });
   if (MODALCHAT) MODALCHAT.destroy();
   MODALCHAT = NxChat.mount(m.querySelector('#mchat'), teamChatOpts(thread));
   const obs = new MutationObserver(() => { if (!document.body.contains(m.querySelector('#mchat'))) { if (MODALCHAT) MODALCHAT.destroy(); MODALCHAT = null; obs.disconnect(); S.reqs = null; if (S.view === 'requests') loadRequests(); } });
   obs.observe($('#modal'), { childList: true });
 }
+/** Չաթերի թարմացում՝ մեկ հարցումով (ցանկը բաց է՝ ցանկը, որից հաշվվում է նաև նշանը, այլապես՝ միայն նշանը) */
+function chatSync() { if (chatsShown()) loadChats(); else loadChatUnread(); }
+let CHL_BUSY = null;
 async function loadChats() {
-  try { const r = await call('chatList', {}, { silent: true }); S.ch.list = (r && r.rows) || []; } catch (e) { S.ch.list = S.ch.list || []; }
+  if (CHL_BUSY) return CHL_BUSY;
+  CHL_BUSY = (async () => {
+    try {
+      const r = await call('chatList', {}, { silent: true }); S.ch.list = (r && r.rows) || [];
+      const u = S.ch.list.filter(x => isMgr() || x.responsible === me() || (x.kind === 'W' && !x.linked)).reduce((a, x) => a + (x.unread || 0), 0);
+      if (u !== S.ch.unread) { S.ch.unread = u; renderShell(); }
+    } catch (e) { S.ch.list = S.ch.list || []; }
+  })();
+  try { await CHL_BUSY; } finally { CHL_BUSY = null; }
   if (chatsShown()) drawChatList();
 }
 async function loadChatUnread() {
@@ -3492,14 +3510,14 @@ async function loadChatUnread() {
 }
 function chatRows() {
   const q = (S.q || '').trim().toLowerCase();
-  return (S.ch.list || []).filter(x => (S.ch.scope === 'int' ? x.kind === 'I' : x.kind !== 'I' && (S.ch.scope === 'all' || !isMgr() || x.responsible === me()))
+  return (S.ch.list || []).filter(x => (S.ch.scope === 'int' ? x.kind === 'I' : S.ch.scope === 'wa' ? x.kind === 'W' : x.kind !== 'I' && x.kind !== 'W' && (S.ch.scope === 'all' || !isMgr() || x.responsible === me()))
     && (!q || (x.companyName + ' ' + x.title + ' ' + x.lastText).toLowerCase().includes(q)));
 }
 function viewChats() {
   if (!S.ch.scope) S.ch.scope = isMgr() ? 'all' : 'mine';
   return `<div class="chats ${S.ch.thread ? 'has' : ''}">
     <div class="chl">
-      <div class="chl-top"><div class="seg">${(isMgr() ? [['mine', 'Իմ կազմ.'], ['all', 'Բոլորը'], ['int', '👥 Թիմ']] : [['mine', 'Հաճախորդներ'], ['int', '👥 Թիմ']]).map(([k, l]) => { const u = k === 'int' ? (S.ch.list || []).filter(x => x.kind === 'I').reduce((a, x) => a + x.unread, 0) : 0; return `<button class="${S.ch.scope === k ? 'on' : ''}" data-act="chScope" data-k="${k}" ${k === 'int' ? 'title="Ներքին չաթ աշխատակիցների միջև"' : ''}>${l}${u ? ` <span class="cu" style="position:static;display:inline-block;margin-left:4px">${u}</span>` : ''}</button>`; }).join('')}</div>
+      <div class="chl-top"><div class="seg">${(isMgr() ? [['mine', 'Իմ կազմ.'], ['all', 'Բոլորը'], ['wa', '🟢 WhatsApp'], ['int', '👥 Թիմ']] : [['mine', 'Հաճախորդներ'], ['wa', '🟢 WhatsApp'], ['int', '👥 Թիմ']]).map(([k, l]) => { const u = k === 'int' || k === 'wa' ? (S.ch.list || []).filter(x => x.kind === (k === 'wa' ? 'W' : 'I')).reduce((a, x) => a + x.unread, 0) : 0; return `<button class="${S.ch.scope === k ? 'on' : ''}" data-act="chScope" data-k="${k}" ${k === 'int' ? 'title="Ներքին չաթ աշխատակիցների միջև"' : ''}>${l}${u ? ` <span class="cu" style="position:static;display:inline-block;margin-left:4px">${u}</span>` : ''}</button>`; }).join('')}</div>
         <button class="btn sm" data-act="chSearch" title="Որոնել բոլոր զրույցներում">🔍</button></div>
       <div id="chl"></div>
     </div>
@@ -3510,9 +3528,9 @@ function drawChatList() {
   const box = $('#chl'); if (!box) return;
   const rows = chatRows();
   box.innerHTML = rows.length ? rows.map(x => `<div class="chi ${S.ch.thread === x.thread ? 'on' : ''}" data-act="chOpen" data-id="${esc(x.thread)}">
-      <div class="cav ${x.kind === 'R' ? 'r' : ''}" ${x.kind === 'I' && x.who ? `style="background:${esc((emp(x.who) || {}).color || '#64748b')};color:#fff"` : ''}>${x.kind === 'R' ? '📋' : x.kind === 'I' ? (x.who ? esc(cInit(x.who)) : '👥') : esc(cInit(x.companyName))}</div>
+      <div class="cav ${x.kind === 'R' ? 'r' : ''}" ${x.kind === 'I' && x.who ? `style="background:${esc((emp(x.who) || {}).color || '#64748b')};color:#fff"` : x.kind === 'W' ? 'style="background:#25d366;color:#fff"' : ''}>${x.kind === 'R' ? '📋' : x.kind === 'I' ? (x.who ? esc(cInit(x.who)) : '👥') : x.kind === 'W' ? (x.who ? esc(cInit(x.who)) : '📱') : esc(cInit(x.companyName))}</div>
       <div style="flex:1;min-width:0"><div class="cn">${esc(x.title)}</div>
-        <div class="cl">${x.kind === 'R' ? esc(x.companyName) + ' · ' : ''}${x.lastText ? (x.lastSide === 'client' || (x.kind === 'I' && x.who && x.lastBy !== me()) ? '' : esc(x.lastBy === me() ? 'Դուք' : x.lastBy) + '՝ ') + esc(x.lastText) : '<i>դեռ չեն գրել</i>'}</div></div>
+        <div class="cl">${x.kind === 'R' ? esc(x.companyName) + ' · ' : ''}${x.kind === 'W' && !x.linked ? '<b style="color:#b45309">❗ չկցված</b> · ' : ''}${x.lastText ? (x.lastSide === 'client' || (x.kind === 'I' && x.who && x.lastBy !== me()) ? '' : esc(x.lastBy === me() ? 'Դուք' : x.lastBy) + '՝ ') + esc(x.lastText) : '<i>դեռ չեն գրել</i>'}</div></div>
       <div style="text-align:right;flex:none"><div class="ct">${esc(x.lastAt ? (x.lastAt.slice(0, 10) === today() ? x.lastAt.slice(11, 16) : fmtD(x.lastAt)) : '')}</div>${x.unread ? `<span class="cu">${x.unread}</span>` : ''}</div>
     </div>`).join('') : `<div class="empty" style="padding:30px 10px">${S.ch.list ? 'Զրույցներ չկան։ Զրույցը հասանելի է այն կազմակերպությունների համար, որոնք ունեն արտաքին օգտագործող («Հաճախորդների մուտքեր»)։' : 'Բեռնվում է…'}</div>`;
 }
@@ -3523,7 +3541,7 @@ function mountChatPane() {
   if (TEAMCHAT && TEAMCHAT.thread === S.ch.thread && pane.querySelector('.nxc')) return;
   if (TEAMCHAT) TEAMCHAT.destroy();
   const x = (S.ch.list || []).find(r => r.thread === S.ch.thread);
-  pane.innerHTML = `<div class="chh"><button class="btn sm chback" data-act="chBack">←</button><div style="flex:1;min-width:0"><b>${esc(x ? x.title : S.ch.thread)}</b><div class="muted" style="font-size:12px">${x ? (x.kind === 'I' ? (x.who ? '🔒 Անձնական ներքին չաթ' : '🔒 Ներքին՝ ամբողջ թիմը') : x.kind === 'R' ? esc(x.companyName) + ' · ' + esc(x.thread) : 'Անձնական չաթ' + (x.responsible ? ' · պատասխանատու՝ ' + esc(x.responsible) : '')) : ''}</div></div>${isMgr() ? `<button class="btn sm" data-act="chClear" title="Ջնջել այս զրույցի բոլոր հաղորդագրությունները">🧹 Մաքրել</button>` : ''}</div><div id="chbody" style="flex:1;min-height:0"></div>`;
+  pane.innerHTML = `<div class="chh"><button class="btn sm chback" data-act="chBack">←</button><div style="flex:1;min-width:0"><b>${esc(x ? x.title : S.ch.thread)}</b><div class="muted" style="font-size:12px">${x ? (x.kind === 'W' ? '🟢 WhatsApp · +' + esc(x.phone) + (x.linked ? ' · ' + esc(x.companyName) + (x.responsible ? ' · պատ.՝ ' + esc(x.responsible) : '') : ' · <b style="color:#b45309">կցված չէ կազմակերպության</b>') : x.kind === 'I' ? (x.who ? '🔒 Անձնական ներքին չաթ' : '🔒 Ներքին՝ ամբողջ թիմը') : x.kind === 'R' ? esc(x.companyName) + ' · ' + esc(x.thread) : 'Անձնական չաթ' + (x.responsible ? ' · պատասխանատու՝ ' + esc(x.responsible) : '')) : ''}</div></div>${x && x.kind === 'W' ? `<button class="btn sm" data-act="waLink" title="Կցել կազմակերպության">🏢 ${x.linked ? 'Փոխել' : 'Կցել'}</button>` : ''}${isMgr() ? `<button class="btn sm" data-act="chClear" title="Ջնջել այս զրույցի բոլոր հաղորդագրությունները">🧹 Մաքրել</button>` : ''}</div><div id="chbody" style="flex:1;min-height:0"></div>`;
   TEAMCHAT = NxChat.mount($('#chbody'), teamChatOpts(S.ch.thread));
   TEAMCHAT.thread = S.ch.thread;
 }
@@ -3720,6 +3738,35 @@ function taskPortalBtn(t) {
 /* ---- Կարգավորումներ՝ երաժշտության գրադարան (օրվա երգեր) ---- */
 const MON_HY = ['Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս', 'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'];
 function musSlotLabel(sl) { if (!sl || sl === '*') return 'Ընդհանուր'; if (sl[0] === 'm') return 'Ամբողջ ' + MON_HY[+sl.slice(1) - 1]; const [m, d] = sl.split('-'); return (+d) + ' ' + MON_HY[+m - 1]; }
+/** WhatsApp-ի միացում (ղեկավար) */
+function waCard() {
+  if (!S.wa) { S.wa = { loading: 1 }; call('waSettings', {}, { silent: true }).then(r => { S.wa = r; }).catch(e => { S.wa = { err: e.message }; }).finally(() => { if (S.view === 'settings') renderView(); }); }
+  const w = S.wa, t = w.test;
+  const cp = (l, v) => `<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span class="muted" style="min-width:150px;font-size:12.5px">${l}</span><code style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--panel2);padding:4px 8px;border-radius:6px;font-size:12px">${esc(v || '—')}</code>${v ? `<button type="button" class="btn sm" data-act="waCopy" data-v="${esc(v)}">📋</button>` : ''}</div>`;
+  return `<div class="card" style="grid-column:1 / -1"><h3>🟢 WhatsApp</h3>
+    ${w.loading ? '<div class="hint">⏳ Բեռնվում է…</div>' : w.err ? `<div class="lerr">${esc(w.err)}</div>` : `
+    <p class="muted" style="font-size:13px;margin:8px 0 10px">Հաճախորդների WhatsApp հաղորդագրությունները երևում են «Չաթեր → 🟢 WhatsApp» ներդիրում, իսկ պատասխանները գնում են նրանց WhatsApp-ին։ Կարգավիճակ՝ <b>${w.on ? '✅ միացված' : '⚪ միացված չէ'}</b>${t ? (t.ok ? ` · ստուգումը անցավ՝ ${esc(t.name)} ${esc(t.phone)}${t.quality ? ' · որակ՝ ' + esc(t.quality) : ''}` : ` · <span style="color:#b91c1c">⚠ ${esc(t.error)}</span>`) : ''}</p>
+    <div class="grid2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px">
+      <div><label class="f">Phone number ID</label><input class="inp" id="waPid" value="${esc(w.phoneId || '')}" placeholder="օր.՝ 123456789012345" inputmode="numeric"></div>
+      <div><label class="f">Access token</label><input class="inp" id="waTok" type="password" autocomplete="off" placeholder="${w.hasToken ? '•••••••• (պահված է, լրացրեք միայն փոխելու համար)' : 'System user-ի մշտական token'}"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><button type="button" class="btn primary" data-act="waSave">Պահպանել և ստուգել</button>${w.on ? '<button type="button" class="btn" data-act="waTest">🔎 Ստուգել</button><button type="button" class="btn danger" data-act="waOff">Անջատել</button>' : ''}</div>
+    <details style="margin-top:6px"><summary style="cursor:pointer;font-weight:600">🔗 Միջնորդի (Cloud Run) կարգավորման արժեքները</summary>
+      <div class="hint" style="margin:6px 0">Այս երկու արժեքը տեղադրվում են միջնորդ ֆունկցիայի «Variables» բաժնում (GAS_URL և RELAY_KEY)։</div>
+      ${cp('GAS_URL', w.url)}${cp('RELAY_KEY', w.key)}
+      <button type="button" class="btn sm" data-act="waNewKey" style="margin-top:6px">🔄 Նոր բանալի</button></details>
+    <div class="hint" style="margin-top:8px">🔒 Token-ը պահվում է միայն Apps Script-ի գաղտնի կարգավորումներում և այլևս ոչ մի տեղ չի ցուցադրվում։</div>`}</div>`;
+}
+/** WhatsApp զրույցը կցել կազմակերպության */
+function waLinkModal(thread) {
+  const x = (S.ch.list || []).find(r => r.thread === thread); if (!x) return;
+  const opts = S.d.companies.filter(c => c.active !== 'Ոչ').map(c => `<option value="${esc(c.id)}" ${x.linked && c.id === x.companyId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  openModal('Կցել կազմակերպության', `<p class="muted" style="margin:0 0 10px">${esc(x.who || '')} · +${esc(x.phone)}</p><label class="f">Կազմակերպություն</label><select class="inp" name="companyId"><option value="">— չկցված —</option>${opts}</select><div class="hint" style="margin-top:8px">Կցելուց հետո զրույցը կտեսնեն կազմակերպության պատասխանատուն և ղեկավարները, իսկ նոր հաղորդագրությունների մասին ծանուցում կստանա պատասխանատուն։</div>`, async d => {
+    await call('waLink', { thread, companyId: d.companyId || '' });
+    toast(d.companyId ? '🏢 Կցվեց՝ ' + esc((company(d.companyId) || {}).name || '') : 'Կցումը հանվեց', 'ok');
+    unmountChatPane(); await loadChats(); mountChatPane();
+  });
+}
 function musicCard() {
   if (!S.mus) { const Mu = S.mus = { rows: null }; call('musicList', {}, { silent: true }).then(r => { Mu.rows = r; }).catch(e => { Mu.rows = []; Mu.err = e.message; }).finally(() => { if (S.view === 'settings') renderView(); }); }
   const R = S.mus.rows || [];
@@ -4446,6 +4493,7 @@ function viewSettings() {
     </div>
     ${mg ? `<div class="card"><h3>📄 Փաստաթղթեր</h3><p class="muted" style="font-size:13px;margin:8px 0 12px">Լիազորագրերի, դիմումների, պայմանագրի և թերթիկների համար։ Ձևանմուշները՝ Drive-ի «Ձևանմուշներ» թղթապանակում։</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="firmOpen">🏢 Numetrix-ի տվյալներ</button><button class="btn" data-act="hvsvOpen">🏛 ՀՎՍՎ-ների ցանկ</button></div></div>` : ''}
+    ${mg ? waCard() : ''}
     ${mg ? musicCard() : ''}
     ${mg ? portalsCard() : ''}
     ${mg ? `    <div class="card"><h3>⚙️ Ընդհանուր</h3>
@@ -4910,6 +4958,12 @@ const ACT = {
   },
   reqChat: (el, e) => { e.stopPropagation(); reqChatModal(el.dataset.id); },
   chOpen: el => { S.ch.thread = el.dataset.id; chatRefresh(); },
+  waLink: () => waLinkModal(S.ch.thread),
+  waSave: async () => { const pid = $('#waPid').value.trim(), tok = $('#waTok').value.trim(); try { S.wa = await call('waSettings', { save: 1, phoneId: pid, token: tok, test: 1 }); toast(S.wa.test && S.wa.test.ok ? '✅ WhatsApp-ը միացված է' : '⚠ Պահպանվեց, բայց ստուգումը չանցավ', S.wa.test && S.wa.test.ok ? 'ok' : 'err'); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
+  waTest: async () => { try { S.wa = await call('waSettings', { test: 1 }); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
+  waOff: async () => { if (!await NxDlg.confirm('Անջատե՞լ WhatsApp-ը\nԲանալին (token) կջնջվի, հաղորդագրությունները կմնան։', { ok: 'Անջատել' })) return; S.wa = await call('waSettings', { save: 1, off: 1 }); renderView(); },
+  waNewKey: async () => { if (!await NxDlg.confirm('Ստեղծե՞լ նոր գաղտնի բանալի\nՀինը կդադարի աշխատել. նորը պետք է տեղադրել նաև միջնորդ ֆունկցիայում (RELAY_KEY)։', { ok: 'Ստեղծել' })) return; S.wa = await call('waSettings', { newKey: 1 }); renderView(); },
+  waCopy: el => { toast(copyText(el.dataset.v) ? '📋 Պատճենված է' : 'Չհաջողվեց պատճենել', 'ok'); },
   dockClose: () => closeDock(),
   chOpenM: el => { closeModal(); openChat(el.dataset.id); },
   chBack: () => { S.ch.thread = null; unmountChatPane(); chatRefresh(); },
@@ -4981,7 +5035,7 @@ const ACT = {
     const n = S.d.notifs.find(x => String(x.id) === el.dataset.id); if (!n) return;
     if (!n.read) { n.read = true; renderBadge(); call('markNotifs', { ids: [n.id] }, { silent: true }).catch(() => {}); }
     if (n.type === 'mail' || /^M:/.test(n.taskId || '')) { closeNotifs(); openMailNotif(n); return; }
-    if (n.type === 'chat' || /^(G-|R-)/.test(n.taskId || '')) { closeNotifs(); openChat(n.taskId); return; }
+    if (n.type === 'chat' || /^(G-|R-|WA-)/.test(n.taskId || '')) { closeNotifs(); openChat(n.taskId); return; }
     if (n.taskId) openTask(n.taskId);
     else { closeNotifs(); if (n.type === 'reports') ACT.go({ dataset: { v: 'reports' } }); else if (n.type === 'request') ACT.go({ dataset: { v: 'requests' } }); }
   },
