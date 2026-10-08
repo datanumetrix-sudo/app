@@ -2092,17 +2092,27 @@ function call(action, payload, opts) {
       if (!API_URL) return fail(new Error('API_URL-ը լրացված չէ'));
       const body = JSON.stringify({ action, token: S.token, payload: payload || {} });
       // Google-ը երբեմն JSON-ի փոխարեն վերադարձնում է HTML էջ (ժամանակավոր խափանում, ժամանակի սահման, շատ միաժամանակ հարցումներ)
-      const once = () => fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body })
-        .then(r => r.text()).then(txt => { try { return JSON.parse(txt); } catch (e) { const er = new Error(gErrText(txt)); er.html = true; throw er; } });
-      const safe = READ_ACT.test(action);
+      const once = () => netRun(() => fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body })
+        .then(r => r.text()).then(txt => { try { return JSON.parse(txt); } catch (e) { const er = new Error(gErrText(txt)); er.html = true; throw er; } }));
+      const safe = READ_ACT.test(action) || IDEMP_ACT.test(action);
       const go = i => once().then(done).catch(e => {
         if (safe && i < 2 && (e.html || e instanceof TypeError)) return new Promise(r => setTimeout(r, 1200 * (i + 1))).then(() => go(i + 1));
-        fail(e.html ? new Error(e.message + ' [' + action + ']') : e);
+        fail(e.html ? new Error(e.message + ' [' + action + ']') : e instanceof TypeError ? new Error('Google-ի սերվերը չընդունեց հարցումը, փորձեք մի քանի վայրկյանից (' + e.message + ') [' + action + ']') : e);
       });
       go(0);
     }
   });
 }
+/** Միաժամանակ ոչ ավելի, քան 4 հարցում (Google-ը սահմանափակում է միաժամանակյա կատարումները. ավելցուկը մերժվում է «Failed to fetch»-ով) */
+const NET = { n: 0, q: [] };
+function netRun(fn) {
+  return new Promise((res, rej) => {
+    const go = () => { NET.n++; fn().then(res, rej).finally(() => { NET.n--; const nx = NET.q.shift(); if (nx) nx(); }); };
+    if (NET.n < 4) go(); else NET.q.push(go);
+  });
+}
+/** Կրկնելու դեպքում արդյունքը նույնն է (նույն տվյալները նորից են պահպանվում) */
+const IDEMP_ACT = /^(saveSettings|saveCompany|docSave|saveEmployee|savePortals|saveLayout|saveReportType|waSettings|markNotifs|hvsvSave|authSave|musicSlot|mailLink|waLink|syncResolve)$/;
 /** Միայն կարդացող գործողություններ (կրկնելը անվտանգ է) */
 const READ_ACT = /^(bootstrap|poll|getTask|getHistory|getStats|getRequests|getExtUsers|portalInfo|publicInfo|clientInfo|chat(Get|File|List|Unread|Search|Typing)|fbToken|doc(Get|List|Files|Log|SentLog|Preview)|authGet|reqThread|clientFile|extLookup|mail(Inbox|Thread|Att|Init)|music(Today|Get|List))$/;
 /** Google-ի HTML սխալի էջից հանել ընթեռնելի տեքստը */
