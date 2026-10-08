@@ -2534,7 +2534,8 @@ function navDefs() {
     { k: 'team', i: 'users', l: 'Թիմ', c: S.d.employees.filter(e => e.active).length },
     { k: 'settings', i: 'gear', l: 'Կարգավորումներ', c: '', req: true },
     livePortals().length ? { k: 'src', i: 'gov', l: 'Ուղարկել հաշվետվություն', ext: 'src' } : null,
-    S.d.settings.hrUrl ? { k: 'hr', i: 'hr', l: S.d.settings.hrLabel || 'Գնալ Numetrix HR', ext: 'hr' } : null
+    S.d.settings.hrUrl ? { k: 'hr', i: 'hr', l: S.d.settings.hrLabel || 'Գնալ Numetrix HR', ext: 'hr' } : null,
+    S.d.settings.contractsOn ? { k: 'contracts', i: 'file', l: 'Պայմանագրեր և ակտեր', ext: 'contracts' } : null
   ];
   return d.filter(Boolean);
 }
@@ -2557,6 +2558,7 @@ function navItems() {
 function navItemHtml(it) {
   if (it.sep) return '<div class="sep"></div>';
   if (it.ext === 'src') return `<button class="ext src" data-act="srcPick" title="ՊԵԿ, ԱՎԾ, ԱԱԱՄՊ և այլ կայքեր՝ ընտրել կազմակերպությունը և բացել կայքը">${ico('gov')}<span>Ուղարկել հաշվետվություն</span><span class="arr">${ico('ext')}</span></button>`;
+  if (it.ext === 'contracts') return `<button class="ext" data-act="contractsGo" title="Բացել «Պայմանագրեր և ակտեր» ծրագիրը նոր թաբում (առանց կրկին մուտքի)">${ico('file')}<span>Պայմանագրեր և ակտեր</span><span class="arr">${ico('ext')}</span></button>`;
   if (it.ext === 'hr') return `<a class="ext" href="${esc(S.d.settings.hrUrl)}" target="_blank" rel="noopener" title="Բացել նոր թաբում">${ico('hr')}<span>${esc(it.l)}</span><span class="arr">${ico('ext')}</span></a>`;
   return `<button class="${S.view === it.k || (it.k === 'chats' && S.ch.dock) ? 'on' : ''}" data-act="go" data-v="${it.k}">${ico(it.i)}<span>${it.l}</span>${it.c !== '' ? `<span class="cnt">${it.c}</span>` : ''}</button>`;
 }
@@ -3208,7 +3210,7 @@ function viewCompanies() {
     .sort((a, b) => (a.active === 'Ոչ') - (b.active === 'Ոչ') || compCmp(a, b));
   const types = S.d.reportTypes.filter(r => r.active !== 'Ոչ');
   const cols = visCols('companies');
-  return `<div class="toolbar"><span class="muted">${list.length} կազմակերպություն</span><span class="sp"></span>${colBtn('companies')}${isMgr() ? `<button class="btn primary" data-act="editCompany">${ico('plus')} Կազմակերպություն</button>` : ''}</div>
+  return `${isMgr() ? syncBanner() : ''}<div class="toolbar"><span class="muted">${list.length} կազմակերպություն</span><span class="sp"></span>${colBtn('companies')}${isMgr() ? `<button class="btn" data-act="syncOpen" title="Համեմատել պայմանագրերի բազայի հետ (ըստ ՀՎՀՀ-ի)">🔄 Համաժամեցում</button>` : ''}${isMgr() ? `<button class="btn primary" data-act="editCompany">${ico('plus')} Կազմակերպություն</button>` : ''}</div>
   ${list.length ? `<table class="tbl">${colHead('companies', cols)}<tbody>
   ${list.map(c => {
     const open = S.d.tasks.filter(t => t.companyId === c.id).length;
@@ -3240,12 +3242,14 @@ function compDocFields(D) {
     ${fSel('d_hvsv', 'Սպասարկող ՀՎՍՎ', d.hvsv, hv)}
     ${fIn('d_legalAddr', 'Իրավաբանական հասցե', d.legalAddr, { full: true })}
     ${fIn('d_bank', 'Բանկ', d.bank)}${fIn('d_account', 'Հաշվեհամար', d.account)}
+    ${fIn('d_phone', 'Հեռախոս', d.phone, { ph: '+374XXXXXXXX' })}${fIn('d_email', 'Էլ. փոստ', d.email, { ph: 'info@…' })}
+    <div><label class="chk" style="margin-top:22px"><input type="checkbox" name="d_vat" value="Այո" ${d.vat === 'Այո' ? 'checked' : ''}><span>ԱԱՀ վճարող</span></label></div>
     ${fIn('d_fee', 'Ամսական վճար (դրամ)', d.fee, { ph: 'օր. 50000' })}${fIn('d_contractDate', 'Պայմանագրի կնքման ամսաթիվ', isoD(d.contractDate), { type: 'date' })}
     ${fSel('d_authEmp', 'Լիազորվող աշխատակից', d.authEmp, au)}
     <div class="full hint">Լիազորագրերում կգրվի ընտրված աշխատակիցը (դատարկ՝ կազմակերպության պատասխանատու հաշվապահը)։ Նրա անձնագրային տվյալները լրացվում են «Թիմ» բաժնում՝ աշխատակցի քարտում։</div>
-    ${fH('👤 Տնօրեն')}
+    <div class="full" id="dirHead">${fH('👤 Տնօրեն')}</div>
     <div class="full" id="dirMiss"></div>
-    ${fIn('d_dirName', 'Անուն Ազգանուն', d.dirName)}${fIn('d_dirPos', 'Պաշտոն', d.dirPos, { ph: 'տնօրեն' })}
+    ${(() => { let f = d.dirFirst || '', l = d.dirLast || '', m = d.dirMiddle || ''; if (!f && !l && d.dirName) { const w = d.dirName.trim().split(/\s+/); if (w.length === 2) { f = w[0]; l = w[1]; } } return fIn('d_dirFirst', 'Անուն', f) + fIn('d_dirLast', 'Ազգանուն', l) + fIn('d_dirMiddle', 'Հայրանուն', m); })()}<div id="dirPosWrap">${fIn('d_dirPos', 'Պաշտոն', d.dirPos, { ph: 'տնօրեն' })}</div>
     ${fSel('d_dirDocType', 'Փաստաթուղթ', d.dirDocType, ['Անձնագիր', 'Նույնականացման քարտ'])}${fIn('d_dirDocNo', 'Համար', d.dirDocNo)}
     ${fIn('d_dirDocDate', 'Տրման ամսաթիվ', isoD(d.dirDocDate), { type: 'date' })}${fIn('d_dirDocBy', 'Ում կողմից', d.dirDocBy, { ph: 'օր. 001' })}
     ${fIn('d_dirSsn', 'ՀԾՀ', d.dirSsn)}${fIn('d_dirPhone', 'Հեռախոս', d.dirPhone)}
@@ -3253,7 +3257,7 @@ function compDocFields(D) {
     ${fH('📍 Գործունեության հասցեներ <span class="muted" style="font-weight:400;font-size:12px">(տեղեկատվական թերթիկը կստեղծվի յուրաքանչյուրի համար)</span>')}
     <div class="full"><div id="addrBox">${addrRows(d.addrs || [])}</div><button type="button" class="btn sm" data-addaddr>+ Ավելացնել հասցե</button></div>`;
 }
-const DIRF = { d_dirName: 'տնօրենի անուն', d_dirDocNo: 'փաստաթղթի համար', d_dirDocDate: 'տրման ամսաթիվ', d_dirDocBy: 'ում կողմից', d_dirSsn: 'ՀԾՀ', d_dirAddr: 'հաշվառման հասցե', d_dirPhone: 'հեռախոս' };
+const DIRF = { d_dirFirst: 'անուն', d_dirLast: 'ազգանուն', d_dirDocNo: 'փաստաթղթի համար', d_dirDocDate: 'տրման ամսաթիվ', d_dirDocBy: 'ում կողմից', d_dirSsn: 'ՀԾՀ', d_dirAddr: 'հաշվառման հասցե', d_dirPhone: 'հեռախոս' };
 const dirMissList = d => Object.keys(DIRF).filter(k => !String(d[k.slice(2)] || '').trim()).map(k => DIRF[k]);
 const missBox = miss => miss.length ? `<div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:8px 12px;font-size:13px">👤 Տնօրենի տվյալներից լրացված չէ՝ ${esc(miss.join(', '))}</div>` : '';
 function companyForm(c, D) {
@@ -3262,8 +3266,10 @@ function companyForm(c, D) {
   const emps = S.d.employees.filter(e => e.active);
   const types = S.d.reportTypes.filter(r => r.active !== 'Ոչ' || sel.includes(r.code));
   return `<div class="fgrid">
-    <div class="full"><label class="f">Անվանում *</label><input class="inp" name="name" value="${esc(c.name || '')}" required></div>
-    <div><label class="f">ՀՎՀՀ</label><div style="display:flex;gap:6px"><input class="inp" name="tin" value="${esc(c.tin || '')}" style="flex:1"><button type="button" class="btn sm" id="tinLook" title="Բեռնել տվյալները մյուս պլատֆորմից ըստ ՀՎՀՀ">🔄 Բեռնել</button></div><div class="hint" id="tinHint"></div></div>
+    ${(() => { const pc = c.type ? { type: c.type, base: c.baseName || '' } : parseCompName(c.name); return `<div><label class="f">Տեսակ *</label><select class="inp" name="type"><option value="">— ընտրեք —</option>${XS_TYPES.map(t => `<option ${pc.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+    <div id="baseWrap" ${pc.type === 'ԱՁ' ? 'style="display:none"' : ''}><label class="f">Անվանում (առանց չակերտների և ձևի) *</label><input class="inp" name="baseName" value="${esc(pc.base || '')}" placeholder="օր.՝ Ալֆա"></div>
+    <div class="full"><input type="hidden" name="name" value="${esc(c.name || '')}"><div class="hint" id="namePrev"></div></div>`; })()}
+    <div><label class="f">ՀՎՀՀ</label><div style="display:flex;gap:6px"><input class="inp" name="tin" value="${esc(c.tin || '')}" style="flex:1"><button type="button" class="btn sm" id="tinLook" title="Բեռնել տվյալները «Պայմանագրեր և ակտեր»-ից ըստ ՀՎՀՀ">🔄 Բեռնել</button></div><div class="hint" id="tinHint"></div></div>
     ${loginPortals().map(pt => `<div><label class="f">${esc(pt.icon)} ${esc(pt.name)} մուտքանուն</label><input class="inp" name="pl_${esc(pt.id)}" value="${esc(portalLogin(c, pt.id))}" placeholder="${esc(pt.full || pt.name)}" autocomplete="off"><div class="hint">Գաղտնաբառը այստեղ չի պահվում</div></div>`).join('')}
     <div><label class="f">Հարկման ռեժիմ (տեղեկատվական)</label><select class="inp" name="regime">${S.d.settings.regimes.map(r => `<option ${c.regime === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></div>
     <div><label class="f">Պատասխանատու հաշվապահ</label><select class="inp" name="responsible"><option value="">—</option>${emps.map(e => `<option ${c.responsible === e.name ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
@@ -3280,7 +3286,80 @@ function companyForm(c, D) {
     ${D ? compDocFields(D) : ''}
   </div>`;
 }
-async function editCompany(id) {
+/* ====================== ՀԱՄԱԺԱՄԵՑՈՒՄ ՊԱՅՄԱՆԱԳՐԵՐԻ ԲԱԶԱՅԻ ՀԵՏ (ՀՎՀՀ-ով) ====================== */
+/* ====================== ՀԱՄԱԺԱՄԵՑՈՒՄ «ՊԱՅՄԱՆԱԳՐԵՐ ԵՎ ԱԿՏԵՐ»-Ի ՀԵՏ (ՀՎՀՀ-ով, ձևաչափ v1) ====================== */
+const XS_TYPES = ['ՍՊԸ', 'ՓԲԸ', 'ԲԲԸ', 'ԱՁ', 'ՀԿ', 'Հիմնադրամ', 'Մասնաճյուղ', 'Այլ'];
+const XS_LBL = { type: 'Տեսակ', baseName: 'Անվանում', vat: 'ԱԱՀ վճարող', regNo: 'Պետռեգիստրի №', legalAddr: 'Իրավ. հասցե', addrs: 'Գործ. հասցեներ', bank: 'Բանկ', account: 'Հաշվեհամար', email: 'Էլ. փոստ', phone: 'Հեռախոս', dirPos: 'Ղեկավարի պաշտոն', dirFirst: 'Ղեկավարի անուն', dirLast: 'Ղեկավարի ազգանուն', dirMiddle: 'Ղեկավարի հայրանուն', dirDocType: 'Փաստաթղթի տեսակ', dirDocNo: 'Փաստաթղթի №', dirDocDate: 'Տրման ամսաթիվ', dirDocBy: 'Ում կողմից', dirSsn: 'ՀԾՀ', dirAddr: 'Հաշվառման հասցե', dirPhone: 'Ղեկավարի հեռախոս' };
+/** Ցուցադրվող անվանումը (նույն կանոնը, ինչ սերվերում և Պայմանագրերում) */
+function compName(type, base, first, last) {
+  base = String(base || '').trim().replace(/\s+/g, ' ');
+  if (type === 'ԱՁ') { const n = [first, last].map(x => String(x || '').trim()).filter(Boolean).join(' '); return n ? 'ԱՁ ' + n : ''; }
+  if (!base) return '';
+  const q = /[«»]/.test(base) ? base : '«' + base + '»';
+  if (['ՍՊԸ', 'ՓԲԸ', 'ԲԲԸ', 'ՀԿ'].includes(type)) return q + ' ' + type;
+  if (type === 'Հիմնադրամ') return q + ' հիմնադրամ';
+  return base;
+}
+function parseCompName(name) {
+  const s = String(name || '').trim().replace(/\s+/g, ' '), uq = x => String(x).replace(/^[«"“„']+|[»"”']+$/g, '').trim();
+  let m;
+  if ((m = s.match(/^ԱՁ\s+(.+)$/))) return { type: 'ԱՁ', base: '', person: m[1] };
+  if ((m = s.match(/^(.+?)\s+(ՍՊԸ|ՓԲԸ|ԲԲԸ|ՀԿ)$/))) return { type: m[2], base: uq(m[1]) };
+  if ((m = s.match(/^(ՍՊԸ|ՓԲԸ|ԲԲԸ|ՀԿ)\s+(.+)$/))) return { type: m[1], base: uq(m[2]) };
+  if ((m = s.match(/^(.+?)\s+հիմնադրամ$/i))) return { type: 'Հիմնադրամ', base: uq(m[1]) };
+  return { type: '', base: s };
+}
+function fmtIso(s) { if (!s) return ''; const d = new Date(s); return isNaN(d) ? s : fmtD(d.toISOString().slice(0, 10)) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+async function loadSyncStatus() {
+  if (S.xsBusy) return; S.xsBusy = 1;
+  try { S.xsSt = await call('syncStatus', {}, { silent: true }); S.xsSt.at = Date.now(); } catch (e) { S.xsSt = { err: e.message, at: Date.now() }; }
+  finally { S.xsBusy = 0; }
+  if (S.view === 'companies') renderView();
+  if ($('#syncBox')) $('#syncBox').innerHTML = syncBody();
+}
+function syncBanner() {
+  if (!S.d.settings.contractsOn) return '';
+  if (!S.xsSt || Date.now() - S.xsSt.at > 300000) setTimeout(() => loadSyncStatus(), 0);
+  const x = S.xsSt; if (!x || x.err) return '';
+  const msg = !x.last ? '🔄 Պայմանագրերի հետ համաժամեցումը դեռ չի կատարվել՝ սեղմեք «Համաժամեցնել հիմա»' : x.pending.length ? `⚠ <b>${x.pending.length}</b> կազմակերպություն դեռ չի ուղարկվել Պայմանագրերին` : !x.trigger ? '⚠ Ավտոմատ համաժամեցումը միացված չէ (installContractsSync)' : '';
+  return msg ? `<div class="card" style="display:flex;gap:10px;align-items:center;margin-bottom:12px;padding:10px 14px;border-left:4px solid #2457f5;cursor:pointer" data-act="syncOpen"><span style="flex:1">${msg}</span><button class="btn sm primary" data-act="syncOpen">Դիտել</button></div>` : '';
+}
+function xsShow(k, v) { if (k === 'addrs') return (v || []).map(a => a.a + (a.t ? ' (' + a.t + ')' : '')).join('; ') || '—'; if (k === 'vat') return v ? 'Այո' : 'Ոչ'; return String(v == null || v === '' ? '—' : v); }
+function syncBody() {
+  const x = S.xsSt, R = S.xsRep;
+  const row = (l, r) => `<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line2)"><div style="flex:1;min-width:0">${l}</div><div style="display:flex;gap:6px;flex:none">${r || ''}</div></div>`;
+  const sec = (t, body) => `<div style="margin:14px 0 6px"><b>${t}</b></div>${body}`;
+  if (S.xsRunning) return '<div class="hint">⏳ Համաժամեցնում եմ Պայմանագրերի հետ… (կարող է տևել մինչև րոպե)</div>';
+  let h = '';
+  if (!x) h += '<div class="hint">⏳ Բեռնվում է…</div>';
+  else if (x.err) h += `<div class="lerr">${esc(x.err)}</div>`;
+  else {
+    h += `<div class="hint" style="margin-top:0">Վերջին լրիվ համաժամեցում՝ <b>${x.last ? esc(x.last.at + ' · ' + x.last.by) : 'դեռ չի եղել'}</b> · Ավտոմատ (15 րոպեն մեկ)՝ <b>${x.trigger ? '✅ միացված' : '⚪ միացված չէ'}</b></div>`;
+    if (x.pending.length) h += sec(`⏳ Չուղարկված (${x.pending.length})`, x.pending.map(r => row(`<b>${esc(r.name)}</b><div class="hint">${esc(r.why)}</div>`, `<button type="button" class="btn sm" data-act="syncEdit" data-id="${esc(r.id)}">Խմբագրել</button>`)).join(''));
+  }
+  if (R) {
+    if (R.err) h += `<div class="lerr" style="margin-top:10px">${esc(R.err)}</div>`;
+    else {
+      const li = (a, f) => a.length ? a.map(f).join('') : '<div class="muted">—</div>';
+      h += `<div class="card" style="margin-top:12px;padding:10px 14px;background:var(--panel2)">✔ Արդյունք՝ Tasks-ում ստեղծվեց <b>${R.createdHere.length}</b> · Պայմանագրերին ուղարկվեց <b>${R.pushed.length}</b> · Պայմանագրերից լրացվեց <b>${R.pulled.length}</b> · անփոփոխ <b>${R.unchanged}</b></div>`;
+      if (R.createdHere.length) h += sec('🆕 Ստեղծվեց Tasks-ում (Պայմանագրերում «Սպասարկում ենք»)՝ նշանակեք պատասխանատու', li(R.createdHere, r => row(esc(r.name))));
+      if (R.pulled.length) h += sec('⬇ Լրացվեց Պայմանագրերից', li(R.pulled, r => row(`${esc(r.name)} <span class="muted" style="font-size:12px">${esc(r.fields.map(k => XS_LBL[k] || k).join(', '))}</span>`)));
+      if (R.conflicts.length) h += sec(`⚖ Տարբեր արժեքներ՝ ընտրեք ճիշտը (${R.conflicts.length})`, R.conflicts.map((c, i) => `<div class="card" style="padding:10px 12px;margin-bottom:8px" data-xsc="${i}"><b>${esc(c.name)}</b> <span class="muted" style="font-size:12px">ՀՎՀՀ ${esc(c.tin)}</span>
+        <table class="tbl" style="margin-top:6px"><thead><tr><th>Դաշտ</th><th>Tasks</th><th>Պայմանագրեր</th></tr></thead><tbody>${c.fields.map(f => `<tr><td>${esc(XS_LBL[f.k] || f.k)}</td>
+          <td><label class="chk"><input type="radio" name="xs_${i}_${esc(f.k)}" value="t" checked><span>${esc(xsShow(f.k, f.t))}</span></label></td>
+          <td><label class="chk"><input type="radio" name="xs_${i}_${esc(f.k)}" value="c"><span>${esc(xsShow(f.k, f.c))}</span></label></td></tr>`).join('')}</tbody></table>
+        <div style="margin-top:6px"><button type="button" class="btn sm primary" data-act="syncResolve" data-i="${i}">Կիրառել ընտրածը երկու ծրագրում</button></div></div>`).join(''));
+      const probs = R.problems.concat(R.errors.map(e => ({ name: e.name, why: e.error })));
+      if (probs.length) h += sec(`⚠ Պետք է ուղղել (${probs.length})`, probs.map(r => row(`<b>${esc(r.name)}</b><div class="hint">${esc(r.why)}</div>`, r.id ? `<button type="button" class="btn sm" data-act="syncEdit" data-id="${esc(r.id)}">Խմբագրել</button>` : '')).join(''));
+    }
+  }
+  return h;
+}
+function syncModal() {
+  S.xsRep = null;
+  openModal('🔄 Համաժամեցում «Պայմանագրեր և ակտեր»-ի հետ', `<div class="hint" style="margin-top:0">Կազմակերպությունները համեմատվում են <b>ՀՎՀՀ-ով</b>։ Ռեկվիզիտների փոփոխությունը որ ծրագրում էլ արվի, փոխանցվում է մյուսին. «☑ Սպասարկում ենք» նշումը համապատասխանում է Tasks-ի «Ակտիվ»-ին։ Պատասխանատուն, ռեժիմը և հաշվետվությունները միայն Tasks-ում են։</div><div id="syncBox">${syncBody()}</div>`, null, { okOnly: true, wide: true, extra: '<button type="button" class="btn primary" data-act="syncRun" style="margin-right:auto">🔄 Համաժամեցնել հիմա</button>' });
+}
+async function editCompany(id, preset) {
   const c = id ? company(id) : null;
   let D = null;
   try { D = await call('docGet', { id: c ? c.id : '' }, { silent: true }); } catch (e) { D = null; }
@@ -3290,8 +3369,9 @@ async function editCompany(id) {
     Object.keys(f).forEach(k => { if (k.startsWith('ra_') && f[k]) reportAssignees[k.slice(3)] = f[k]; });
     const portalLogins = {};
     loginPortals().forEach(pt => { portalLogins[pt.id] = f['pl_' + pt.id] || ''; });
-    const payload = { id: c ? c.id : '', name: f.name, tin: f.tin, portalLogins, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
-    if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); payload.docs = docs; }
+    const payload = { id: c ? c.id : '', name: f.name, type: f.type, baseName: f.baseName, tin: f.tin, portalLogins, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
+    if (!f.type) throw new Error('Ընտրեք կազմակերպության տեսակը');
+    if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); docs.vat = f.d_vat ? 'Այո' : 'Ոչ'; if (f.type === 'ԱՁ') docs.dirPos = ''; payload.docs = docs; }
     const r = await call('saveCompany', payload);
     await refresh();
     setTimeout(() => showDiag(f.name, r), 0);
@@ -3302,6 +3382,16 @@ async function editCompany(id) {
     missDraw(); m.addEventListener('input', missDraw);
     m.__missDraw = missDraw;
   }
+  const nameDraw = () => {
+    const g = k => (m.querySelector(`[name=${k}]`) || {}).value || '';
+    const t = g('type'), nm = compName(t, g('baseName'), g('d_dirFirst'), g('d_dirLast'));
+    const bw = m.querySelector('#baseWrap'); if (bw) bw.style.display = t === 'ԱՁ' ? 'none' : '';
+    const pw = m.querySelector('#dirPosWrap'); if (pw) pw.style.display = t === 'ԱՁ' ? 'none' : '';
+    const dh = m.querySelector('#dirHead'); if (dh) dh.innerHTML = fH(t === 'ԱՁ' ? '👤 Անհատ ձեռնարկատեր (անձ)' : '👤 Տնօրեն');
+    m.querySelector('[name=name]').value = nm || (t ? '' : g('name'));
+    m.querySelector('#namePrev').innerHTML = nm ? `Անվանումը փաստաթղթերում և ցուցակներում՝ <b>${esc(nm)}</b>` : `<span style="color:#b45309">${t === 'ԱՁ' ? 'Լրացրեք ԱՁ-ի անունը և ազգանունը ներքևում' : 'Ընտրեք տեսակը և լրացրեք անվանումը'}</span>`;
+  };
+  m.__nameDraw = nameDraw; nameDraw(); m.addEventListener('input', nameDraw); m.addEventListener('change', nameDraw);
   const tl = m.querySelector('#tinLook');
   if (tl) tl.onclick = async () => {
     const tin = m.querySelector('[name=tin]').value, hint = m.querySelector('#tinHint');
@@ -3309,9 +3399,10 @@ async function editCompany(id) {
     tl.disabled = true; hint.textContent = '⏳ Որոնում…';
     try {
       const x = await call('extLookup', { tin }, { silent: true });
-      if (!x.found) { hint.textContent = 'Մյուս պլատֆորմում չի գտնվել'; return; }
+      if (!x.found) { hint.textContent = '«Պայմանագրեր և ակտեր»-ում չի գտնվել'; return; }
       m.querySelector('[name=tin]').value = x.tin;
-      const map = { name: x.name, d_regNo: x.regNo, d_bank: x.bank, d_account: x.account, d_legalAddr: x.legalAddr, d_dirName: x.dirName, d_dirPos: x.dirPos, d_dirPhone: x.phone };
+      const map = { type: x.type, baseName: x.baseName, d_regNo: x.regNo, d_bank: x.bank, d_account: x.account, d_legalAddr: x.legalAddr, d_phone: x.phone, d_email: x.email, d_dirFirst: x.dirFirst, d_dirLast: x.dirLast, d_dirMiddle: x.dirMiddle, d_dirPos: x.dirPos, d_dirPhone: x.dirPhone, d_dirDocType: x.dirDocType, d_dirDocNo: x.dirDocNo, d_dirDocDate: x.dirDocDate, d_dirDocBy: x.dirDocBy, d_dirSsn: x.dirSsn, d_dirAddr: x.dirAddr };
+      if (m.querySelector('[name=d_vat]')) m.querySelector('[name=d_vat]').checked = !!x.vat;
       const el = k => m.querySelector(`[name=${k}]`);
       const keys = Object.keys(map).filter(k => map[k] && el(k));
       const filled = keys.filter(k => el(k).value.trim() && el(k).value.trim() !== map[k]);
@@ -3321,10 +3412,12 @@ async function editCompany(id) {
       keys.forEach(k => { if (!el(k).value.trim() || over) { if (el(k).value !== map[k]) n++; el(k).value = map[k]; } });
       if (D && x.addrs.length && (!hasAddr || over)) { m.querySelector('#addrBox').innerHTML = addrRows(x.addrs); n++; }
       if (m.__missDraw) m.__missDraw();
+      if (m.__nameDraw) m.__nameDraw();
       hint.innerHTML = `✔ Գտնվեց, լրացվեց ${n} դաշտ։ Ստուգեք, լրացրեք տնօրենի անձնագրային տվյալները և սեղմեք «Պահպանել»։` + (x.accountWarn ? '<br><span style="color:#b45309">⚠ Հաշվեհամարի վերջին թվանշանները կարող են սխալ լինել՝ ստուգեք։</span>' : '');
     } catch (e) { hint.textContent = '⚠ ' + e.message; }
     finally { tl.disabled = false; }
   };
+  if (!c && preset && preset.tin && tl) { m.querySelector('[name=tin]').value = preset.tin; setTimeout(() => tl.click(), 50); }
   const prev = () => {
     const fd = formData(m), codes = [].concat(fd.reports || []);
     m.querySelectorAll('.ritem').forEach(it => it.classList.toggle('on', it.querySelector('input').checked));
@@ -4504,6 +4597,7 @@ function viewSettings() {
         <div><label class="f">Կադրային պլատֆորմի կոճակ</label><input class="inp" name="hrLabel" value="${esc(s.hrLabel || '')}" ${dis}></div>
         <div><label class="f">Կադրային պլատֆորմի հղում</label><input class="inp" name="hrUrl" value="${esc(s.hrUrl || '')}" placeholder="https:\/\/…" ${dis}></div>
         <div class="full"><label class="f">Հաճախորդների հավելվածի հասցե</label><input class="inp" name="clientAppUrl" value="${esc(s.clientAppUrl || '')}" placeholder="https:\/\/….github.io/app/" ${dis}><div class="hint">Հրավերներում ուղարկվող հասցեն (GitHub Pages)։ Դատարկ՝ Google-ի հասցեն։</div></div>
+
         <div class="full"><label class="f">Կցված ֆայլերի թղթապանակ (Google Drive)</label><button type="button" class="btn sm" data-act="openFilesFolder">📁 Բացել թղթապանակը</button><div class="hint">Բոլոր կցված ֆայլերը պահվում են այս թղթապանակում՝ ենթաթղթապանակով ամեն կազմակերպության համար։</div></div>
         <div class="full"><label class="f">Հաշվետվությունների սկիզբ (լռելյայն)</label><input class="inp" type="date" name="defaultStart" value="${esc(s.defaultStart || '')}" ${dis}><div class="hint">Այն կազմակերպությունների համար, որոնց «Սկսած» դաշտը դատարկ է</div></div>
         <div class="full"><label class="f">Ժամկետն անցած հաշվետվություններ ստեղծել՝ մինչև (օր)</label><input class="inp" type="number" min="0" max="365" name="overdueGrace" value="${esc(s.overdueGrace || 0)}" ${dis}><div class="hint">0՝ ստեղծվում են միայն այն հաշվետվությունները, որոնց ժամկետը դեռ չի անցել։ Հին ամսաթվով կազմակերպություն գրանցելիս անցյալի հաշվետվությունները համարվում են ուղարկված։</div></div>
@@ -4958,6 +5052,30 @@ const ACT = {
   },
   reqChat: (el, e) => { e.stopPropagation(); reqChatModal(el.dataset.id); },
   chOpen: el => { S.ch.thread = el.dataset.id; chatRefresh(); },
+  syncOpen: () => { syncModal(); loadSyncStatus(); },
+  syncRun: async () => {
+    S.xsRunning = 1; S.xsRep = null; if ($('#syncBox')) $('#syncBox').innerHTML = syncBody();
+    try { S.xsRep = await call('syncNow', {}, { silent: true }); } catch (e) { S.xsRep = { err: e.message }; }
+    S.xsRunning = 0; await loadSyncStatus(); if (!S.xsRep.err) await refresh(true);
+    if ($('#syncBox')) $('#syncBox').innerHTML = syncBody();
+  },
+  syncResolve: async el => {
+    const i = +el.dataset.i, c = S.xsRep.conflicts[i], picks = {};
+    c.fields.forEach(f => { const r = document.querySelector(`input[name="xs_${i}_${f.k}"]:checked`); picks[f.k] = r ? r.value : 't'; });
+    el.disabled = true;
+    try { await call('syncResolve', { tin: c.tin, picks }); S.xsRep.conflicts.splice(i, 1); toast('✔ «' + esc(c.name) + '»՝ համաժամեցված', 'ok'); await refresh(true); }
+    catch (e) { toast(esc(e.message), 'err'); el.disabled = false; }
+    if ($('#syncBox')) $('#syncBox').innerHTML = syncBody();
+  },
+  syncEdit: el => { closeModal(); editCompany(el.dataset.id); },
+  contractsGo: async () => {
+    // պատուհանը բացվում է անմիջապես (սեղմման պահին), որ բրաուզերը չարգելափակի, հղումը՝ հետո
+    let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:#64748b">Բեռնվում է «Պայմանագրեր և ակտեր»…</p>'); } catch (e) {}
+    try {
+      const r = await call('contractsLink', {});
+      if (w && !w.closed) w.location.href = r.url; else location.href = r.url;
+    } catch (e) { if (w && !w.closed) w.close(); toast(esc(e.message), 'err'); }
+  },
   waLink: () => waLinkModal(S.ch.thread),
   waSave: async () => { const pid = $('#waPid').value.trim(), tok = $('#waTok').value.trim(); try { S.wa = await call('waSettings', { save: 1, phoneId: pid, token: tok, test: 1 }); toast(S.wa.test && S.wa.test.ok ? '✅ WhatsApp-ը միացված է' : '⚠ Պահպանվեց, բայց ստուգումը չանցավ', S.wa.test && S.wa.test.ok ? 'ok' : 'err'); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
   waTest: async () => { try { S.wa = await call('waSettings', { test: 1 }); renderView(); } catch (e) { toast(esc(e.message), 'err'); } },
@@ -5037,7 +5155,7 @@ const ACT = {
     if (n.type === 'mail' || /^M:/.test(n.taskId || '')) { closeNotifs(); openMailNotif(n); return; }
     if (n.type === 'chat' || /^(G-|R-|WA-)/.test(n.taskId || '')) { closeNotifs(); openChat(n.taskId); return; }
     if (n.taskId) openTask(n.taskId);
-    else { closeNotifs(); if (n.type === 'reports') ACT.go({ dataset: { v: 'reports' } }); else if (n.type === 'request') ACT.go({ dataset: { v: 'requests' } }); }
+    else { closeNotifs(); if (n.type === 'reports') ACT.go({ dataset: { v: 'reports' } }); else if (n.type === 'request') ACT.go({ dataset: { v: 'requests' } }); else if (n.type === 'company') ACT.go({ dataset: { v: 'companies' } }); }
   },
   setStatus: el => stageEdit('status', el.dataset.s),
   saveTask: () => saveTask(),
