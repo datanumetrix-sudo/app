@@ -1420,6 +1420,11 @@ const NxChat = (function () {
     function setMsgs(own) {
       const wasBottom = S.atBottom, prevN = S.msgs.length;
       S.msgs = merged();
+      // մյուս կողմի նոր հաղորդագրությունները (նաև եթե զրույցը բաց է)՝ ազդանշանի համար
+      const fresh = [];
+      if (!S.seenIds) S.seenIds = new Set(S.msgs.map(m => m.id));
+      else S.msgs.forEach(m => { if (!S.seenIds.has(m.id)) { S.seenIds.add(m.id); if (!m.mine && !m.deleted && m.side !== 'sys' && !m.pending) fresh.push(m); } });
+      if (fresh.length && o.onIncoming) { try { o.onIncoming(fresh, S.info); } catch (e) {} }
       drawTop(); drawList(); if (S.tab === 'files') drawFiles();
       const grew = S.msgs.length > prevN;
       if (S.firstLoad || own || (grew && wasBottom)) { requestAnimationFrame(() => scrollEnd(!S.firstLoad)); S.firstLoad = false; }
@@ -2153,6 +2158,24 @@ function chime() {
     });
   } catch (e) {}
 }
+/** Չաթի ձայնը (տարբեր թասքերի ծանուցումից). երկու կարճ «բլուպ», ինչպես մեսենջերներում */
+function chatChime() {
+  if (lsGet('nx_sound', '1') !== '1') return;
+  try {
+    unlockAudio();
+    const ctx = S.audio; if (!ctx) return;
+    const t0 = ctx.currentTime;
+    [[520, 0, 0.13], [780, 0.12, 0.2]].forEach(([f, dt, len]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(f * 0.8, t0 + dt); o.frequency.exponentialRampToValueAtTime(f * 1.25, t0 + dt + len);
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.45, t0 + dt + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + len);
+      o.connect(g); g.connect(ctx.destination); o.start(t0 + dt); o.stop(t0 + dt + len + 0.02);
+    });
+  } catch (e) {}
+}
 /* ======================= ՀԵՌԱԽՈՍԻ ՀԱՎԵԼՎԱԾ (PWA) ======================= */
 const STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -2238,7 +2261,7 @@ function desktopNotify(n) {
   if (!canDesktopNotify()) return;
   try {
     const x = new Notification('Numetrix · ' + (n.from || ''), { body: n.text, tag: 'nx-' + n.id, requireInteraction: true });
-    x.onclick = () => { window.focus(); x.close(); if (/^M:/.test(n.taskId || '')) openMailNotif(n); else if (n.taskId) openTask(n.taskId); };
+    x.onclick = () => { window.focus(); x.close(); if (/^M:/.test(n.taskId || '')) openMailNotif(n); else if (n.type === 'chat' || /^(G-|R-|I-|WA-)/.test(n.taskId || '')) openChat(n.taskId); else if (n.taskId) openTask(n.taskId); };
   } catch (e) {}
 }
 function handleNotifs(list, initial) {
@@ -2248,9 +2271,11 @@ function handleNotifs(list, initial) {
   const key = 'nx_lastnotif_' + me();
   const last = +lsGet(key, '0');
   const maxId = list.reduce((m, n) => Math.max(m, n.id), 0);
-  const fresh = list.filter(n => !n.read && n.id > last).sort((a, b) => a.id - b.id);
+  let fresh = list.filter(n => !n.read && n.id > last).sort((a, b) => a.id - b.id);
   if (maxId > last) lsSet(key, String(maxId));
   if (initial && !last) return; // առաջին անգամ այս սարքում — չենք աղմկում
+  // չաթի հաղորդագրությունների մասին ազդանշանը տալիս է chatAlert-ը (որ չկրկնվի)
+  fresh = fresh.filter(n => !(n.type === 'chat' || /^(G-|R-|I-|WA-)/.test(n.taskId || '')));
   if (!fresh.length) return;
   chime();
   fresh.slice(-4).forEach(n => {
@@ -2262,8 +2287,9 @@ function handleNotifs(list, initial) {
 function renderBadge() {
   const u = S.d.notifs.filter(n => !n.read).length;
   const b = $('#nBadge'); b.textContent = u > 99 ? '99+' : u; b.classList.toggle('hidden', !u);
-  document.title = (u ? `(${u}) ` : '') + 'Numetrix Tasks';
-  try { const ab = u + (S.mailU > 0 && inboxOk() ? S.mailU : 0); if (navigator.setAppBadge) { ab ? navigator.setAppBadge(ab) : navigator.clearAppBadge(); } } catch (e) {}
+  const cu = S.ch && S.ch.unread || 0;
+  document.title = (cu ? `💬${cu} ` : '') + (u ? `(${u}) ` : '') + 'Numetrix Tasks';
+  try { const ab = u + cu + (S.mailU > 0 && inboxOk() ? S.mailU : 0); if (navigator.setAppBadge) { ab ? navigator.setAppBadge(ab) : navigator.clearAppBadge(); } } catch (e) {}
 }
 
 /* ====================== polling ====================== */
@@ -3571,6 +3597,8 @@ function teamChatOpts(thread) {
       const desc = [m.text, `— ${m.author}${m.side === 'client' ? ' (հաճախորդ)' : ''}, ${fmtDT(m.at)}, չաթից`].filter(Boolean).join('\n\n');
       newTask({ companyId: i.kind === 'I' || (i.kind === 'W' && !(i.wa && i.wa.linked)) ? '' : i.companyId, title, description: desc, msgId: m.id, fromClient: m.side === 'client' && i.kind === 'G', assignee: c && c.responsible, nFiles: m.files.length });
     },
+    // զրույցը բաց է. ձայն (եթե էկրանը թաքնված է, ազդանշանը տալիս է chatAlert-ը)
+    onIncoming: () => { if (!document.hidden) chatChime(); },
     onInfo: r => { const k = thread + '|' + (r && r.v) + '|' + (r && r.msgs ? r.msgs.length : 0); if (S.chInfoK === k) return; const first = !S.chInfoK || S.chInfoK.split('|')[0] !== thread; S.chInfoK = k; if (first) return; clearTimeout(S.chInfoT); S.chInfoT = setTimeout(chatSync, 600); }
   };
 }
@@ -3601,15 +3629,41 @@ async function loadChats() {
   CHL_BUSY = (async () => {
     try {
       const r = await call('chatList', {}, { silent: true }); S.ch.list = (r && r.rows) || [];
-      const u = S.ch.list.filter(x => isMgr() || x.responsible === me() || (x.kind === 'W' && !x.linked)).reduce((a, x) => a + (x.unread || 0), 0);
-      if (u !== S.ch.unread) { S.ch.unread = u; renderShell(); }
+      const mineRows = S.ch.list.filter(x => isMgr() || x.responsible === me() || (x.kind === 'W' && !x.linked));
+      const u = mineRows.reduce((a, x) => a + (x.unread || 0), 0);
+      chatAlert(mineRows);
+      if (u !== S.ch.unread) { S.ch.unread = u; renderShell(); renderBadge(); }
     } catch (e) { S.ch.list = S.ch.list || []; }
   })();
   try { await CHL_BUSY; } finally { CHL_BUSY = null; }
   if (chatsShown()) drawChatList();
 }
 async function loadChatUnread() {
-  try { const r = await call('chatUnread', {}, { silent: true }); if (r.total !== S.ch.unread) { S.ch.unread = r.total; renderShell(); } } catch (e) {}
+  try {
+    const r = await call('chatUnread', {}, { silent: true });
+    // նոր չկարդացված կա՝ բեռնել ցանկը, որ իմանանք ով է գրել (ազդանշանը տալիս է chatAlert-ը)
+    if (r.total > (S.ch.unread || 0) && S.ch.seenU) { loadChats(); return; }
+    if (r.total !== S.ch.unread) { S.ch.unread = r.total; renderShell(); renderBadge(); }
+    if (!S.ch.seenU) { if (r.total) loadChats(); else S.ch.seenU = {}; }   // ելակետ՝ ոչ մի չկարդացված
+  } catch (e) {}
+}
+/** Նոր հաղորդագրություն չաթում → ձայն, հաղորդագրություն էկրանին, համակարգչի/հեռախոսի ծանուցում */
+function chatAlert(rows) {
+  const prev = S.ch.seenU, cur = {};
+  rows.forEach(x => { cur[x.thread] = x.unread || 0; });
+  S.ch.seenU = cur;
+  if (!prev) return;   // առաջին բեռնում՝ չենք աղմկում
+  const openNow = th => !document.hidden && S.ch.thread === th && (S.ch.dock || S.view === 'chats');
+  const fresh = rows.filter(x => (x.unread || 0) > (prev[x.thread] || 0) && !openNow(x.thread));
+  if (!fresh.length) return;
+  chatChime();
+  fresh.slice(0, 3).forEach(x => {
+    const who = x.kind === 'I' ? (x.who ? x.who : x.lastBy + ' · 👥 Թիմ') : x.kind === 'W' ? '🟢 ' + (x.who || '+' + x.phone) : (x.who || x.lastBy) + ' · ' + x.companyName;
+    const txt = String(x.lastText || '📎 ֆայլ').slice(0, 140);
+    toast(`💬 <b>${esc(who)}</b><br>${esc(txt)}`, 'nt', () => openChat(x.thread), 20000);
+    if (canDesktopNotify()) { try { const n = new Notification('💬 ' + who, { body: txt, tag: 'nx-chat-' + x.thread, renotify: true }); n.onclick = () => { window.focus(); n.close(); openChat(x.thread); }; } catch (e) {} }
+  });
+  if (fresh.length > 3) toast(`💬 Եվս ${fresh.length - 3} զրույցում նոր հաղորդագրություն`, 'nt', () => ACT.go({ dataset: { v: 'chats' } }));
 }
 function chatRows() {
   const q = (S.q || '').trim().toLowerCase();
