@@ -548,7 +548,9 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 .chdock .chl-top .seg{flex:1;min-width:0;overflow-x:auto}
 body.dockon .toasts{right:420px}
 @media (max-width:1279px){.chdock{width:370px}body.dockon .toasts{right:390px}}
-@media (min-width:1280px){body.dockon .main{margin-right:400px}}
+@media (min-width:1200px){.chdock{width:820px}.chdock .chats{grid-template-columns:300px minmax(0,1fr)}.chdock .chats.has .chl,.chdock .chats .chl{display:flex;border-right:1px solid var(--line2)}.chdock .chats:not(.has) .chr,.chdock .chats .chr{display:flex}.chdock .chback{display:none}body.dockon .toasts{right:840px}}
+@media (min-width:1700px){body.dockon .main{margin-right:820px}}
+.chdock .chr,.chats .chr{background:#efeae2}.chdock .chh,.chats .chh{background:var(--panel)}
 @media (max-width:860px){.chats{grid-template-columns:1fr;height:calc(100vh - 150px)}.chats.has .chl{display:none}.chats:not(.has) .chr{display:none}.chback{display:inline-flex}}
 
 /* ---------- responsive ---------- */
@@ -3645,7 +3647,7 @@ function reqChatModal(id) { openChat(id, true); }
 /** Չաթը բացել. modal=true՝ պատուհանով (հարցումներից/թասքից), այլապես «Չաթեր» բաժնում */
 function openChat(thread, modal) {
   if (!thread) return;
-  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (/^WA-/.test(thread)) S.ch.scope = 'wa'; else if (S.ch.scope === 'int' || S.ch.scope === 'wa') S.ch.scope = isMgr() ? 'all' : 'mine'; if (dockable()) { openDock(); return; } if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
+  if (!modal) { S.ch.thread = thread; if (/^I-/.test(thread)) S.ch.scope = 'int'; else if (/^WA-/.test(thread)) S.ch.scope = 'wa'; else if (S.ch.scope === 'int' || S.ch.scope === 'wa') S.ch.scope = isMgr() ? 'all' : 'mine'; if (S.view === 'chats') { renderView(); return; } if (dockable()) { openDock(); return; } if (S.view !== 'chats') ACT.go({ dataset: { v: 'chats' } }); else { renderView(); } return; }
   const m = openModal('Զրույց հաճախորդի հետ', '<div id="mchat" style="height:min(70vh,640px);margin:-4px -4px 0;border-radius:12px;overflow:hidden;border:1px solid var(--line)"></div>', null, { okOnly: true, wide: true });
   if (MODALCHAT) MODALCHAT.destroy();
   MODALCHAT = NxChat.mount(m.querySelector('#mchat'), teamChatOpts(thread));
@@ -3742,7 +3744,7 @@ function openDock() {
   if (S.view === 'chats') { S.view = 'tasks'; lsSet('nx_view', 'tasks'); renderView(); }
   S.ch.dock = true; lsSet('nx_dock', '1'); document.body.classList.add('dockon');
   let d = $('#chdock');
-  if (!d) { d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.innerHTML = '<div class="dkh"><b>💬 Չաթեր</b><button class="iconbtn" data-act="dockClose" title="Փակել">✕</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>'; document.body.appendChild(d); }
+  if (!d) { d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.innerHTML = '<div class="dkh"><b>💬 Չաթեր</b><button class="iconbtn" data-act="dockFull" title="Բացել ամբողջ էկրանով">⤢</button><button class="iconbtn" data-act="dockClose" title="Փակել">✕</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>'; document.body.appendChild(d); }
   renderDock(); renderShell(); loadChats();
 }
 function renderDock() {
@@ -4380,8 +4382,8 @@ async function docsOpen(companyId, sel) {
   docsPick(companyId, D, D.data.authEmp, D.data.addrs || [], sel);
 }
 /* «Փաստաթղթեր» բաժին՝ ցանկացած կազմակերպության համար ցանկացած փաստաթուղթ */
-const DOC_ICO = { 1: '🏛️', 2: '📝', 3: '🛃', 4: '📊', 5: '🤝', 6: '📍' };
-const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար առանձին' };
+const DOC_ICO = { 1: '🏛️', 2: '📝', 3: '🛃', 4: '📊', 5: '🤝', 6: '📍', 7: '🏦' };
+const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար առանձին', 7: 'Կազմակերպության տվյալներ (ՀՎՀՀ, բանկ, հաշիվ)' };
 const docTabs = () => `<div class="seg" style="margin-bottom:14px;max-width:100%;overflow-x:auto;white-space:nowrap">${[['make', '📄 Ստեղծել'], ['tax', '💰 Հարկերի թերթիկներ'], ['log', '📒 Մատյան']].map(([k, l]) => `<button class="${(S.docTab || 'make') === k ? 'on' : ''}" data-act="docTab" data-k="${k}">${l}</button>`).join('')}</div>`;
 function viewDocs() {
   if (S.docTab === 'log') return docTabs() + viewDocLog();
@@ -4740,9 +4742,9 @@ function viewDocsMake() {
       ${isMgr() ? `<button class="btn" data-act="docCompEdit" ${cid ? '' : 'disabled'}>✏️ Կազմակերպության տվյալները</button>` : ''}
       <button class="btn" data-act="reqFirm" title="Numetrix-ի ռեկվիզիտները՝ պատճենել, PDF, ուղարկել">🏢 Մեր ռեկվիզիտները</button>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:14px">Փաստաթղթեր</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="docSelAll">${S.docSel.length === 6 ? 'Հանել բոլորը' : 'Նշել բոլորը'}</button></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:14px">Փաստաթղթեր</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="docSelAll">${S.docSel.length === 7 ? 'Հանել բոլորը' : 'Նշել բոլորը'}</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
-      ${[1, 2, 3, 4, 5, 6].map(n => { const on = S.docSel.includes(n); return `<div class="click" data-act="docTog" data-n="${n}" style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;cursor:pointer;border:1.5px solid ${on ? 'var(--accent,#4f46e5)' : 'var(--line)'};background:${on ? 'var(--panel2)' : 'transparent'}">
+      ${[1, 2, 3, 4, 5, 6, 7].map(n => { const on = S.docSel.includes(n); return `<div class="click" data-act="docTog" data-n="${n}" style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;cursor:pointer;border:1.5px solid ${on ? 'var(--accent,#4f46e5)' : 'var(--line)'};background:${on ? 'var(--panel2)' : 'transparent'}">
         <span style="font-size:24px">${DOC_ICO[n]}</span><span style="flex:1;min-width:0"><b style="font-size:14px">${n}. ${esc(DOC_LBL[n].replace(/ \(.*\)$/, ''))}</b><br><span class="muted" style="font-size:12px">${esc(DOC_SUB[n])}</span></span>
         <input type="checkbox" ${on ? 'checked' : ''} style="pointer-events:none;width:18px;height:18px"></div>`; }).join('')}
     </div>
@@ -4795,6 +4797,13 @@ function reqCard(cid) {
     <h3 style="margin:0 0 10px">🏦 Կազմակերպության տվյալներ <span class="muted" style="font-weight:400;font-size:13px">(ռեկվիզիտներ)</span></h3>
     ${reqBody(cid)}</div>`;
 }
+/** Միայն ռեկվիզիտներ (առանց ձևանմուշների)՝ ստեղծել և բացել «պատրաստ է» պատուհանը */
+async function reqOnly(id) {
+  toast('⏳ Ստեղծվում են ռեկվիզիտները…', '', null, 40000);
+  try { const r = await call('reqCard', { id, about: !!(S.reqAbout || {})[id] }); if (S.docList) delete S.docList[id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; } docsDone(r, id); if (S.view === 'docs') setTimeout(renderView, 0); }
+  catch (e) { toast(esc(e.message), 'err'); }
+  finally { document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են ռեկվիզիտները/.test(t.textContent)) t.remove(); }); }
+}
 async function reqMake(id, how) {
   toast('⏳ Պատրաստվում է ռեկվիզիտների PDF-ը…', '', null, 40000);
   let r;
@@ -4826,7 +4835,7 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
   authEmp = authEmp || D.company.responsible || (D.auth[0] || {}).emp || '';
   const m = openModal('📄 Ստեղծել փաստաթղթեր — ' + D.company.name, `<div class="fgrid">
     <div class="full">${missBox(dirMissList(D.data))}${!D.data.regNo || !D.data.hvsv ? '<div class="hint" style="color:#b45309">Լրացված չէ՝ ' + esc([!D.data.regNo && 'գրանցման համար', !D.data.hvsv && 'ՀՎՍՎ'].filter(Boolean).join(', ')) + '</div>' : ''}</div>
-    <div class="full"><label class="f">Որ փաստաթղթերը</label><div class="cbox" style="max-height:none">${D.types.map(t => `<label><input type="checkbox" name="doc" value="${t.n}" ${!sel || !sel.length || sel.includes(t.n) ? 'checked' : ''}> ${t.n}. ${esc(DOC_LBL[t.n] || t.name)}</label>`).join('')}</div>
+    <div class="full"><label class="f">Որ փաստաթղթերը</label><div class="cbox" style="max-height:none">${D.types.map(t => `<label><input type="checkbox" name="doc" value="${t.n}" ${!sel || !sel.length || sel.includes(t.n) ? 'checked' : ''}> ${t.n}. ${esc(DOC_LBL[t.n] || t.name)}</label>`).join('')}<label><input type="checkbox" name="doc" value="7" ${sel && sel.includes(7) ? 'checked' : ''}> 7. 🏦 Կազմակերպության տվյալներ (ռեկվիզիտներ)</label></div>
       ${addrs.length ? '' : '<div class="hint" style="color:#b45309">Գործունեության հասցե նշված չէ. տեղեկատվական թերթիկը կստեղծվի առանց հասցեի։</div>'}</div>
     ${fSel('authEmp', 'Լիազորվող աշխատակից', authEmp, au)}
     <div class="full" id="authWarn"></div>
@@ -4836,10 +4845,12 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
     ${fIn('until', 'Գործում է մինչև (դատարկ՝ ավտոմատ)', '', { type: 'date' })}
     ${fIn('place', 'Տրման վայր', 'ք. Երևան')}
   </div>`, async f => {
-    const docs = [...m.querySelectorAll('[name=doc]:checked')].map(x => +x.value);
+    let docs = [...m.querySelectorAll('[name=doc]:checked')].map(x => +x.value);
     if (!docs.length) throw new Error('Նշեք առնվազն մեկ փաստաթուղթ');
+    const withReq = docs.includes(7); docs = docs.filter(n => n !== 7);
+    if (!docs.length) { setTimeout(() => reqOnly(companyId), 0); return; }
     if (docs.includes(5) && !f.contractDate) throw new Error('Նշեք պայմանագրի կնքման ամսաթիվը');
-    const opts = { id: companyId, docs, authEmp: f.authEmp, date: f.date, contractDate: docs.includes(5) ? f.contractDate : '', years: f.years, until: f.until, place: f.place };
+    const opts = { id: companyId, docs, withReq, authEmp: f.authEmp, date: f.date, contractDate: docs.includes(5) ? f.contractDate : '', years: f.years, until: f.until, place: f.place };
     const P = await call('docPreview', opts);
     setTimeout(() => docsReview(opts, P, addrs), 0);
   }, { wide: true, submit: 'Շարունակել →', extra: isMgr() ? `<button type="button" class="btn" id="docEdit" style="margin-right:auto">✏️ Խմբագրել տվյալները</button>` : '' });
@@ -4863,6 +4874,7 @@ function docsReview(opts, P, addrs) {
     const tags = {}; m.querySelectorAll('[data-tag]').forEach(i => { tags[i.dataset.tag] = i.value; });
     toast('⏳ Ստեղծվում են փաստաթղթերը… (մինչև 1 րոպե)', '', null, 60000);
     const r = await call('docGenerate', Object.assign({}, opts, { tags, addrs }));
+    if (opts.withReq) { try { const q = await call('reqCard', { id: opts.id, about: !!(S.reqAbout || {})[opts.id] }); r.files = r.files.concat(q.files); } catch (e) { toast('Ռեկվիզիտներ՝ ' + esc(e.message), 'err'); } }
     document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են/.test(t.textContent)) t.remove(); });
     if (S.docList) delete S.docList[opts.id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; }
     setTimeout(() => { docsDone(r, opts.id); if (S.view === 'docs') renderView(); }, 0);
@@ -5456,7 +5468,7 @@ const ACT = {
   dmOpen: el => { const k = (S.ch.list || []).find(x => x.kind === 'I' && x.who === el.dataset.n); if (k) openChat(k.thread); else { call('chatList', {}, { silent: true }).then(r => { S.ch.list = r.rows || []; const x = S.ch.list.find(y => y.kind === 'I' && y.who === el.dataset.n); if (x) openChat(x.thread); }); } },
   docsOpen: (el, e) => { if (e) e.stopPropagation(); docsOpen(el.dataset.id); },
   docTog: el => { const n = +el.dataset.n; S.docSel = S.docSel.includes(n) ? S.docSel.filter(x => x !== n) : S.docSel.concat(n).sort(); renderView(); },
-  docSelAll: () => { S.docSel = S.docSel.length === 6 ? [] : [1, 2, 3, 4, 5, 6]; renderView(); },
+  docSelAll: () => { S.docSel = S.docSel.length === 7 ? [] : [1, 2, 3, 4, 5, 6, 7]; renderView(); },
   docCompEdit: () => { if (S.docComp) editCompany(S.docComp); },
   docTab: el => { S.docTab = el.dataset.k; if (S.docTab === 'log') { const F = docLogF(); F.rows = null; F.busy = false; } renderView(); },
   docLogRe: () => { const F = docLogF(); F.rows = null; F.busy = false; renderView(); },
@@ -5488,7 +5500,7 @@ const ACT = {
   docListRe: () => { if (S.docList) delete S.docList[S.docComp]; renderView(); },
   docDlSel: el => { const L = (S.docList || {})[S.docComp]; if (L) docsDownload(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => f.fid), el.dataset.f); },
   docSendSel: () => { const L = (S.docList || {})[S.docComp]; if (L) docsSend(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => ({ fid: f.fid, name: f.name }))); },
-  docGoView: () => { if (S.docComp && S.docSel.length) docsOpen(S.docComp, S.docSel.slice()); },
+  docGoView: () => { if (!S.docComp || !S.docSel.length) return; if (S.docSel.length === 1 && S.docSel[0] === 7) reqOnly(S.docComp); else docsOpen(S.docComp, S.docSel.slice()); },
   firmOpen: () => firmOpen(),
   hvsvOpen: () => hvsvOpen(),
   reqTask: el => reqTask(el.dataset.id),
@@ -5534,6 +5546,7 @@ const ACT = {
   waNewKey: async () => { if (!await NxDlg.confirm('Ստեղծե՞լ նոր գաղտնի բանալի\nՀինը կդադարի աշխատել. նորը պետք է տեղադրել նաև միջնորդ ֆունկցիայում (RELAY_KEY)։', { ok: 'Ստեղծել' })) return; S.wa = await call('waSettings', { newKey: 1 }); renderView(); },
   waCopy: el => { toast(copyText(el.dataset.v) ? '📋 Պատճենված է' : 'Չհաջողվեց պատճենել', 'ok'); },
   dockClose: () => closeDock(),
+  dockFull: () => { closeDock(true); S.view = 'chats'; lsSet('nx_view', 'chats'); renderShell(); renderView(); },
   chOpenM: el => { closeModal(); openChat(el.dataset.id); },
   chBack: () => { S.ch.thread = null; unmountChatPane(); chatRefresh(); },
   chClear: async () => {
