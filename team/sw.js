@@ -1,7 +1,7 @@
 /* Numetrix Team (թիմի հավելված) — service worker
    Պահում է միայն հավելվածի «կմախքը» (էջ, պատկերակներ), որ արագ բացվի։
    Տվյալները (API) միշտ վերցվում են ցանցից։ */
-const CACHE = 'nx-team-v30';
+const CACHE = 'nx-team-v34';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -14,8 +14,10 @@ self.addEventListener('fetch', e => {
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const go = e.notification.data && e.notification.data.go;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
-    const c = cs.find(x => 'focus' in x); if (c) { c.postMessage({ open: e.notification.data && e.notification.data.id }); return c.focus(); }
-    return self.clients.openWindow('./' + (e.notification.data && e.notification.data.id ? '#' + e.notification.data.id : ''));
+    const c = cs.find(x => 'focus' in x);
+    if (c) { c.postMessage({ go: go }); return c.focus(); }
+    return self.clients.openWindow('./');
   }));
 });

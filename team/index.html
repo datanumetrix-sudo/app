@@ -196,6 +196,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .inp,select.inp,textarea.inp{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);outline:none;transition:border .15s,box-shadow .15s}
 .inp:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brandSoft)}
 textarea.inp{resize:vertical;min-height:80px}
+@media(max-width:760px){.taxm{grid-template-columns:1fr!important}}
 label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:0 0 6px}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .fgrid .full{grid-column:1/-1}
@@ -481,7 +482,7 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 .toast.err{background:#7f1d1d}
 .toast.ok{background:#14532d}
 .toast.nt{background:var(--panel);color:var(--text);border:1px solid var(--line);border-left:4px solid var(--brand)}
-.toast .x{margin-left:auto;opacity:.6}
+.toast .x{margin-left:auto;opacity:.6;padding:2px 7px;margin-right:-4px;border-radius:6px;cursor:pointer;flex:none;align-self:flex-start}.toast .x:hover{opacity:1;background:rgba(15,23,42,.08)}
 
 /* ---------- անձնական դասավորություն ---------- */
 .nav .navedit{margin-top:8px;border:0;background:transparent;color:#8ea0d6;font-size:12px;padding:6px 10px;border-radius:8px;display:flex;gap:6px;align-items:center;width:100%}
@@ -2119,7 +2120,7 @@ function netRun(fn) {
 /** Կրկնելու դեպքում արդյունքը նույնն է (նույն տվյալները նորից են պահպանվում) */
 const IDEMP_ACT = /^(saveSettings|saveCompany|docSave|saveEmployee|savePortals|saveLayout|saveReportType|waSettings|markNotifs|hvsvSave|authSave|musicSlot|mailLink|waLink|syncResolve)$/;
 /** Միայն կարդացող գործողություններ (կրկնելը անվտանգ է) */
-const READ_ACT = /^(bootstrap|poll|getTask|getHistory|getStats|getRequests|getExtUsers|portalInfo|publicInfo|clientInfo|chat(Get|File|List|Unread|Search|Typing)|fbToken|doc(Get|List|Files|Log|SentLog|Preview)|authGet|reqThread|clientFile|extLookup|mail(Inbox|Thread|Att|Init)|music(Today|Get|List))$/;
+const READ_ACT = /^(bootstrap|poll|getTask|getHistory|getStats|getRequests|getExtUsers|portalInfo|publicInfo|clientInfo|chat(Get|File|List|Unread|Search|Typing)|fbToken|doc(Get|List|Files|Log|SentLog|Preview)|reqInfo|authGet|reqThread|clientFile|extLookup|mail(Inbox|Thread|Att|Init)|music(Today|Get|List))$/;
 /** Google-ի HTML սխալի էջից հանել ընթեռնելի տեքստը */
 function gErrText(html) {
   const t = String(html || '').replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim().replace(/^Google (Drive|Docs) ?/i, '');
@@ -2131,10 +2132,11 @@ function busy(d) { S.busy = Math.max(0, S.busy + d); const b = $('#bar'); if (S.
 function toast(msg, type, onClick, ms) {
   const el = document.createElement('div');
   el.className = 'toast ' + (type || '');
-  el.innerHTML = `<div>${msg}</div><span class="x">✕</span>`;
-  el.onclick = () => { el.remove(); if (onClick) onClick(); };
+  el.innerHTML = `<div>${msg}</div><span class="x" title="Փակել">✕</span>`;
+  // ✕՝ միայն փակում է, մնացած մասը՝ բացում է համապատասխան բաժինը
+  el.onclick = e => { el.remove(); if (onClick && !(e.target && e.target.closest('.x'))) onClick(); };
   $('#toasts').appendChild(el);
-  setTimeout(() => el.remove(), ms || (type === 'nt' ? 12000 : 4000));
+  setTimeout(() => el.remove(), Math.max(5000, ms || (type === 'nt' ? 12000 : 5000)));
 }
 function unlockAudio() {
   try {
@@ -2243,7 +2245,7 @@ function enableNotif() {
   let doneOnce = false;
   function after(r) {
     if (doneOnce) return; doneOnce = true;
-    if (r === 'granted') { toast('🔔 Ծանուցումները միացված են', 'ok'); new Notification('Numetrix Tasks', { body: 'Ծանուցումները աշխատում են ✔' }); }
+    if (r === 'granted') { toast('🔔 Ծանուցումները միացված են', 'ok'); sysNotify('Numetrix Tasks', { body: 'Ծանուցումները աշխատում են ✔' }); }
     else notifHelp();
     updateNotifCta();
   }
@@ -2257,12 +2259,29 @@ function notifHelp() {
       <li>Windows-ում ստուգեք Settings → System → Notifications՝ որ Chrome-ի ծանուցումները միացված լինեն։</li>
     </ul>`, null, { okOnly: true });
 }
+/** Համակարգի ծանուցում. Android-ում «new Notification»-ը արգելված է, ուստի օգտագործվում է service worker-ը։
+   go = {t:'chat'|'task'|'mail'|'nav', id} — ինչ բացել սեղմելիս */
+function sysNotify(title, opt, go) {
+  if (!canDesktopNotify()) return;
+  opt = Object.assign({ icon: 'icon-192.png', badge: 'icon-192.png' }, opt || {}, { data: { go: go || null } });
+  const fallback = () => { try { const x = new Notification(title, opt); x.onclick = () => { window.focus(); x.close(); notifGo(go); }; } catch (e) {} };
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) navigator.serviceWorker.ready.then(r => r.showNotification(title, opt)).catch(fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+}
+function notifGo(go) {
+  if (!go || !S.d) return;
+  if (go.t === 'chat') openChat(go.id);
+  else if (go.t === 'mail') { if (go.n) openMailNotif(go.n); else { S.mailTab = 'in'; ACT.go({ dataset: { v: 'mail' } }); } }
+  else if (go.t === 'task') openTask(go.id);
+  else if (go.t === 'nav') ACT.go({ dataset: { v: go.id } });
+}
+if ('serviceWorker' in navigator) { try { navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.go) notifGo(e.data.go); }); } catch (e) {} }
 function desktopNotify(n) {
   if (!canDesktopNotify()) return;
-  try {
-    const x = new Notification('Numetrix · ' + (n.from || ''), { body: n.text, tag: 'nx-' + n.id, requireInteraction: true });
-    x.onclick = () => { window.focus(); x.close(); if (/^M:/.test(n.taskId || '')) openMailNotif(n); else if (n.type === 'chat' || /^(G-|R-|I-|WA-)/.test(n.taskId || '')) openChat(n.taskId); else if (n.taskId) openTask(n.taskId); };
-  } catch (e) {}
+  const go = /^M:/.test(n.taskId || '') ? { t: 'mail', n: { taskId: n.taskId } } : (n.type === 'chat' || /^(G-|R-|I-|WA-)/.test(n.taskId || '')) ? { t: 'chat', id: n.taskId } : n.taskId ? { t: 'task', id: n.taskId } : n.type === 'company' ? { t: 'nav', id: 'companies' } : null;
+  sysNotify('Numetrix · ' + (n.from || ''), { body: n.text, tag: 'nx-' + n.id, requireInteraction: true }, go);
 }
 function handleNotifs(list, initial) {
   S.d.notifs = list;
@@ -3273,7 +3292,10 @@ function compDocFields(D) {
   const d = D.data;
   const hv = [['', '— ընտրեք —']].concat(D.hvsv.map(h => [h.id, h.name + (h.head ? ' · ' + h.head : '')]));
   const au = [['', '— պատասխանատու հաշվապահը —']].concat(D.auth.map(a => [a.emp, a.emp + (a.has ? '' : ' ⚠ անձն. տվյալներ չկան')]));
-  return `${fH('📄 Փաստաթղթերի տվյալներ <span class="muted" style="font-weight:400;font-size:12px">(լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ)</span>')}
+  return `${fH('📝 Կազմակերպության նկարագիր')}
+    <div class="full"><textarea class="inp" name="d_about" rows="4" maxlength="5000" placeholder="Օր.՝ «…» ՍՊԸ-ն հիմնադրվել է 2015 թ․ … կողմից՝ նպատակ ունենալով …։ Գործունեության հիմնական ուղղություններն են …">${esc(d.about || '')}</textarea>
+      <div class="hint">Ազատ տեքստ՝ երբ և ում կողմից է հիմնադրվել, ինչով է զբաղվում, նպատակներ։ Կարող եք ավելացնել ռեկվիզիտների PDF-ում («Ստեղծել փաստաթղթեր» → «Կազմակերպության տվյալներ»)։</div></div>
+    ${fH('📄 Փաստաթղթերի տվյալներ <span class="muted" style="font-weight:400;font-size:12px">(լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ)</span>')}
     ${fIn('d_regNo', 'Պետռեգիստրի գրանցման համար', d.regNo)}
     ${fSel('d_hvsv', 'Սպասարկող ՀՎՍՎ', d.hvsv, hv)}
     ${fIn('d_legalAddr', 'Իրավաբանական հասցե', d.legalAddr, { full: true })}
@@ -3315,6 +3337,7 @@ function companyForm(c, D) {
         <label class="chk"><input type="checkbox" name="reports" value="${esc(r.code)}" ${sel.includes(r.code) ? 'checked' : ''}><span><b>${esc(r.code)}</b> · ${esc(r.name)} <span class="muted">(${esc(r.period)})</span></span></label>
         <select class="inp" name="ra_${esc(r.code)}" title="Կատարող"><option value="">Պատասխանատու</option>${emps.map(e => `<option ${ra[r.code] === e.name ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>
       </div>`).join('') : '<div class="muted">Նախ ավելացրեք հաշվետվությունների տեսակներ (Կարգավորումներ)</div>'}</div></div>
+    ${compTaxFields(c)}
     <div><label class="f">Կոնտակտ</label><input class="inp" name="contact" value="${esc(c.contact || '')}" placeholder="Հեռ., email"></div>
     <div><label class="f">Ակտիվ</label><select class="inp" name="active"><option ${c.active !== 'Ոչ' ? 'selected' : ''}>Այո</option><option ${c.active === 'Ոչ' ? 'selected' : ''}>Ոչ</option></select></div>
     <div class="full"><label class="f">Նշումներ</label><input class="inp" name="notes" value="${esc(c.notes || '')}"></div>
@@ -3406,9 +3429,11 @@ async function editCompany(id, preset) {
     const portalLogins = {};
     loginPortals().forEach(pt => { portalLogins[pt.id] = f['pl_' + pt.id] || ''; });
     const payload = { id: c ? c.id : '', name: f.name, type: f.type, baseName: f.baseName, tin: f.tin, portalLogins, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
+    if (m.querySelector('[name=taxLang]')) { payload.taxes = [].concat(f.taxes || []); payload.taxLang = f.taxLang; }
     if (!f.type) throw new Error('Ընտրեք կազմակերպության տեսակը');
     if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); docs.vat = f.d_vat ? 'Այո' : 'Ոչ'; if (f.type === 'ԱՁ') docs.dirPos = ''; payload.docs = docs; }
     const r = await call('saveCompany', payload);
+    if (S.req) delete S.req[r.id || (c && c.id)];
     await refresh();
     setTimeout(() => showDiag(f.name, r), 0);
   }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր</button>${inboxOk() ? `<button type="button" class="btn" data-act="coMail" data-id="${esc(c.id)}">✉️ Նամակներ</button>` : ''}` : '' });
@@ -3428,6 +3453,12 @@ async function editCompany(id, preset) {
     m.querySelector('#namePrev').innerHTML = nm ? `Անվանումը փաստաթղթերում և ցուցակներում՝ <b>${esc(nm)}</b>` : `<span style="color:#b45309">${t === 'ԱՁ' ? 'Լրացրեք ԱՁ-ի անունը և ազգանունը ներքևում' : 'Ընտրեք տեսակը և լրացրեք անվանումը'}</span>`;
   };
   m.__nameDraw = nameDraw; nameDraw(); m.addEventListener('input', nameDraw); m.addEventListener('change', nameDraw);
+  const ts = m.querySelector('#taxSug');
+  if (ts) ts.onclick = () => {
+    const reg = m.querySelector('[name=regime]').value; let n = 0;
+    m.querySelectorAll('[name=taxes]').forEach(x => { if (x.dataset.reg.split(',').includes(reg)) { if (!x.checked) n++; x.checked = true; } });
+    toast(n ? '✨ Նշվեց ' + n + ' հարկ ըստ «' + esc(reg) + '» ռեժիմի. ստուգեք' : 'Նոր առաջարկ չկա «' + esc(reg) + '» ռեժիմի համար', 'ok');
+  };
   const tl = m.querySelector('#tinLook');
   if (tl) tl.onclick = async () => {
     const tin = m.querySelector('[name=tin]').value, hint = m.querySelector('#tinHint');
@@ -3661,7 +3692,7 @@ function chatAlert(rows) {
     const who = x.kind === 'I' ? (x.who ? x.who : x.lastBy + ' · 👥 Թիմ') : x.kind === 'W' ? '🟢 ' + (x.who || '+' + x.phone) : (x.who || x.lastBy) + ' · ' + x.companyName;
     const txt = String(x.lastText || '📎 ֆայլ').slice(0, 140);
     toast(`💬 <b>${esc(who)}</b><br>${esc(txt)}`, 'nt', () => openChat(x.thread), 20000);
-    if (canDesktopNotify()) { try { const n = new Notification('💬 ' + who, { body: txt, tag: 'nx-chat-' + x.thread, renotify: true }); n.onclick = () => { window.focus(); n.close(); openChat(x.thread); }; } catch (e) {} }
+    sysNotify('💬 ' + who, { body: txt, tag: 'nx-chat-' + x.thread, renotify: true }, { t: 'chat', id: x.thread });
   });
   if (fresh.length > 3) toast(`💬 Եվս ${fresh.length - 3} զրույցում նոր հաղորդագրություն`, 'nt', () => ACT.go({ dataset: { v: 'chats' } }));
 }
@@ -4134,7 +4165,7 @@ function setMailU(n, quiet) {
   if (prev != null && n > prev && !quiet) {
     chime();
     toast(`✉️ <b>Նոր էլ. նամակ</b> (${n} չկարդացված)`, 'nt', () => { S.mailTab = 'in'; if (S.inbox) S.inbox.rows = null; ACT.go({ dataset: { v: 'mail' } }); });
-    if (canDesktopNotify()) { try { const x = new Notification('Numetrix · Էլ. փոստ', { body: 'Նոր նամակ ընկերության փոստարկղում', tag: 'nx-mail' }); x.onclick = () => { window.focus(); x.close(); S.mailTab = 'in'; ACT.go({ dataset: { v: 'mail' } }); }; } catch (e) {} }
+    sysNotify('Numetrix · Էլ. փոստ', { body: 'Նոր նամակ ընկերության փոստարկղում', tag: 'nx-mail' }, { t: 'mail' });
     if (S.inbox && !S.inbox.q) { S.inbox.rows = null; }
   }
   if (prev !== n) { renderShell(); if (S.view === 'mail') renderView(); else refreshBanner(); renderBadge(); }
@@ -4326,7 +4357,7 @@ async function editEmp(name) {
 }
 
 /* ====================== ՓԱՍՏԱԹՂԹԵՐ (լիազորագրեր, դիմումներ, պայմանագիր, թերթիկներ) ====================== */
-const DOC_LBL = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ (ամեն հասցեի համար)' };
+const DOC_LBL = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ (ամեն հասցեի համար)', 7: 'Ռեկվիզիտներ', 8: 'Հարկերի թերթիկ' };
 const fIn = (name, label, v, o) => { o = o || {}; return `<div class="${o.full ? 'full' : ''}"><label class="f">${esc(label)}</label><input class="inp" name="${name}" type="${o.type || 'text'}" value="${esc(v || '')}" placeholder="${esc(o.ph || '')}"></div>`; };
 const fSel = (name, label, v, opts, o) => { o = o || {}; return `<div class="${o.full ? 'full' : ''}"><label class="f">${esc(label)}</label><select class="inp" name="${name}">${opts.map(x => { const [val, l] = Array.isArray(x) ? x : [x, x]; return `<option value="${esc(val)}" ${String(v) === String(val) ? 'selected' : ''}>${esc(l)}</option>`; }).join('')}</select></div>`; };
 const fH = t => `<div class="full" style="margin-top:6px;font-weight:700;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px">${t}</div>`;
@@ -4351,13 +4382,290 @@ async function docsOpen(companyId, sel) {
 /* «Փաստաթղթեր» բաժին՝ ցանկացած կազմակերպության համար ցանկացած փաստաթուղթ */
 const DOC_ICO = { 1: '🏛️', 2: '📝', 3: '🛃', 4: '📊', 5: '🤝', 6: '📍' };
 const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար առանձին' };
-const docTabs = () => `<div class="seg" style="margin-bottom:14px">${[['make', '📄 Ստեղծել'], ['log', '📒 Մատյան']].map(([k, l]) => `<button class="${(S.docTab || 'make') === k ? 'on' : ''}" data-act="docTab" data-k="${k}">${l}</button>`).join('')}</div>`;
+const docTabs = () => `<div class="seg" style="margin-bottom:14px;max-width:100%;overflow-x:auto;white-space:nowrap">${[['make', '📄 Ստեղծել'], ['tax', '💰 Հարկերի թերթիկներ'], ['log', '📒 Մատյան']].map(([k, l]) => `<button class="${(S.docTab || 'make') === k ? 'on' : ''}" data-act="docTab" data-k="${k}">${l}</button>`).join('')}</div>`;
 function viewDocs() {
   if (S.docTab === 'log') return docTabs() + viewDocLog();
+  if (S.docTab === 'tax') return docTabs() + viewTax();
   return docTabs() + viewDocsMake();
 }
+/* ====================== 💰 ՀԱՐԿԵՐԻ ԹԵՐԹԻԿՆԵՐ (ամեն ամիս՝ մինչև 10-ը) ====================== */
+const TAX_LANG = [['hy', 'Հայերեն'], ['ru', 'Русский'], ['en', 'English']];
+const HY_MON = ['Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս', 'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'];
+const TAX_I18N = {
+  hy: { title: 'ՀԱՐԿԵՐ ԵՎ ՊԱՐՏԱԴԻՐ ՎՃԱՐՆԵՐ', c1: 'Հարկ / վճար', c2: 'Գումար (դրամ)', c3: 'Վճարել մինչև', total: ['ԸՆԴԱՄԵՆԸ', 'ՎՃԱՐԵԼ'], acct: 'Հաշիվ՝ ', prep: 'Պատրաստեց՝ ', acc: 'հաշվապահ', call: 'Հարցերի դեպքում զանգահարեք', callNo: 'Հարցերի դեպքում զանգահարեք մեզ',
+    mon: HY_MON, gen: ['հունվարի', 'փետրվարի', 'մարտի', 'ապրիլի', 'մայիսի', 'հունիսի', 'հուլիսի', 'օգոստոսի', 'սեպտեմբերի', 'հոկտեմբերի', 'նոյեմբերի', 'դեկտեմբերի'],
+    pay: (d, g) => '⏰ Խնդրում ենք վճարել մինչև ' + (+d.slice(8)) + ' ' + g[+d.slice(5, 7) - 1],
+    msg: (n, m, t, d) => n + ' — ' + m + '\nՀարկեր և պարտադիր վճարներ՝ ընդամենը ' + t + ' դրամ։\nԽնդրում ենք վճարել մինչև ' + d + '։' },
+  ru: { title: 'НАЛОГИ И ОБЯЗАТЕЛЬНЫЕ ПЛАТЕЖИ', c1: 'Налог / платёж', c2: 'Сумма (драм)', c3: 'Оплатить до', total: ['ИТОГО', 'К ОПЛАТЕ'], acct: 'Счёт: ', prep: 'Подготовил: ', acc: 'бухгалтер', call: 'По вопросам звоните', callNo: 'По вопросам звоните нам',
+    mon: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], gen: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
+    pay: (d, g) => '⏰ Просим оплатить до ' + (+d.slice(8)) + ' ' + g[+d.slice(5, 7) - 1],
+    msg: (n, m, t, d) => n + ' — ' + m + '\nНалоги и обязательные платежи: итого ' + t + ' драм.\nПросим оплатить до ' + d + '.' },
+  en: { title: 'TAXES AND MANDATORY PAYMENTS', c1: 'Tax / payment', c2: 'Amount (AMD)', c3: 'Pay by', total: ['TOTAL', 'TO PAY'], acct: 'Account: ', prep: 'Prepared by ', acc: 'accountant', call: 'For questions call', callNo: 'For any questions, please call us',
+    mon: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], gen: null,
+    pay: d => '⏰ Please pay by ' + (+d.slice(8)) + ' ' + TAX_I18N.en.mon[+d.slice(5, 7) - 1],
+    msg: (n, m, t, d) => n + ' — ' + m + '\nTaxes and mandatory payments: total AMD ' + t + '.\nPlease pay by ' + d + '.' }
+};
+/* Հայերեն անունները՝ լատինատառ / կիրիլիցա (ռուսերեն և անգլերեն թերթիկի համար, կարելի է ուղղել) */
+const TR_EN = { 'ա': 'a', 'բ': 'b', 'գ': 'g', 'դ': 'd', 'ե': 'e', 'զ': 'z', 'է': 'e', 'ը': 'y', 'թ': 't', 'ժ': 'zh', 'ի': 'i', 'լ': 'l', 'խ': 'kh', 'ծ': 'ts', 'կ': 'k', 'հ': 'h', 'ձ': 'dz', 'ղ': 'gh', 'ճ': 'ch', 'մ': 'm', 'յ': 'y', 'ն': 'n', 'շ': 'sh', 'ո': 'o', 'չ': 'ch', 'պ': 'p', 'ջ': 'j', 'ռ': 'r', 'ս': 's', 'վ': 'v', 'տ': 't', 'ր': 'r', 'ց': 'ts', 'ւ': 'v', 'փ': 'p', 'ք': 'k', 'օ': 'o', 'ֆ': 'f', 'և': 'ev' };
+const TR_RU = { 'ա': 'а', 'բ': 'б', 'գ': 'г', 'դ': 'д', 'ե': 'е', 'զ': 'з', 'է': 'э', 'ը': 'ы', 'թ': 'т', 'ժ': 'ж', 'ի': 'и', 'լ': 'л', 'խ': 'х', 'ծ': 'ц', 'կ': 'к', 'հ': 'а', 'ձ': 'дз', 'ղ': 'г', 'ճ': 'ч', 'մ': 'м', 'յ': 'й', 'ն': 'н', 'շ': 'ш', 'ո': 'о', 'չ': 'ч', 'պ': 'п', 'ջ': 'дж', 'ռ': 'р', 'ս': 'с', 'վ': 'в', 'տ': 'т', 'ր': 'р', 'ց': 'ц', 'ւ': 'в', 'փ': 'п', 'ք': 'к', 'օ': 'о', 'ֆ': 'ф', 'և': 'ев' };
+function hyTr(s, lang) {
+  if (lang === 'hy') return String(s || '');
+  const M = lang === 'ru' ? TR_RU : TR_EN;
+  return String(s || '').split(/(\s+)/).map(w => {
+    let o = w.replace(/ու/g, '\u0001').replace(/Ու|ՈՒ/g, '\u0002');
+    o = o.replace(/^ե/, lang === 'ru' ? 'е' : 'ye').replace(/^Ե/, lang === 'ru' ? 'Е' : 'Ye').replace(/^ո(?!\u0001)/, lang === 'ru' ? 'во' : 'vo').replace(/^Ո(?!\u0002)/, lang === 'ru' ? 'Во' : 'Vo');
+    if (lang === 'ru') o = o.replace(/^հ/, 'х').replace(/^Հ/, 'Х');
+    return o.replace(/[\s\S]/g, ch => {
+      if (ch === '\u0001') return lang === 'ru' ? 'у' : 'u';
+      if (ch === '\u0002') return lang === 'ru' ? 'У' : 'U';
+      const lo = ch.toLowerCase(), t = M[lo];
+      if (t === undefined) return ch;
+      return lo !== ch && t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+    });
+  }).join('');
+}
+const TAX_FORM = { ru: { 'ՍՊԸ': 'ООО', 'ՓԲԸ': 'ЗАО', 'ԲԲԸ': 'ОАО', 'ՀԿ': 'ОО', 'ԱՁ': 'ИП', 'Հիմնադրամ': 'Фонд' }, en: { 'ՍՊԸ': 'LLC', 'ՓԲԸ': 'CJSC', 'ԲԲԸ': 'OJSC', 'ՀԿ': 'NGO', 'ԱՁ': 'IE', 'Հիմնադրամ': 'Foundation' } };
+function taxCompName(name, lang) {
+  if (lang === 'hy') return name;
+  const p = parseCompName(name), F = TAX_FORM[lang];
+  if (p.type === 'ԱՁ') return F['ԱՁ'] + ' ' + hyTr(p.person, lang);
+  if (!p.type || !F[p.type]) return hyTr(name, lang);
+  const b = hyTr(p.base, lang);
+  return lang === 'ru' ? F[p.type] + ' «' + b + '»' : '"' + b + '" ' + F[p.type];
+}
+const fmtAmt = n => String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const parseAmt = v => { const n = Math.round(Number(String(v == null ? '' : v).replace(/[\s,]/g, '').replace(/[^\d.]/g, '')) || 0); return n > 0 ? n : 0; };
+const dmyD = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(0, 4) : '';
+function taxYmNow() { const d = today(); return d.slice(0, 7); }
+function taxYmAdd(ym, n) { let y = +ym.slice(0, 4), m = +ym.slice(5, 7) + n; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return y + '-' + String(m).padStart(2, '0'); }
+function taxCatById() { const o = {}; (S.d.taxCat || []).forEach(t => { o[t.id] = t; }); return o; }
+function taxLoad(ym, force) {
+  S.tax = S.tax || {};
+  if ((S.tax[ym] && !force) || S.taxBusy === ym) return;
+  S.taxBusy = ym;
+  call('taxMonth', { ym }, { silent: true }).then(r => { S.tax[ym] = r; }).catch(e => { S.tax[ym] = { err: e.message }; })
+    .finally(() => { S.taxBusy = ''; if (S.view === 'docs' && S.docTab === 'tax') renderView(); });
+}
+/** Քարտի տողերը՝ ամսվա հարկերը + լրացված (այդ թվում «այլ») գումարները */
+function taxLines(c) {
+  const sh = c.sheet, saved = {}, extra = [];
+  if (sh) sh.items.forEach(it => { if (it.id === 'X') extra.push(it); else saved[it.id] = it; });
+  const out = c.taxes.map(t => ({ id: t.id, name: t.name, due: (saved[t.id] || {}).due || t.due, amt: (saved[t.id] || {}).amt || 0, account: t.account }));
+  if (sh) sh.items.forEach(it => { if (it.id !== 'X' && !c.taxes.some(t => t.id === it.id)) out.push(it); });
+  return out.concat(extra.map(x => Object.assign({ x: 1 }, x)));
+}
+const TAX_ST = { sent: ['🟢', 'Ուղարկված', '#dcfce7', '#166534'], ready: ['🟡', 'Լրացված', '#fef9c3', '#854d0e'], '': ['⚪', 'Չլրացված', '#f1f5f9', '#475569'] };
+function taxChip(sh) { const st = TAX_ST[sh && sh.status || ''] || TAX_ST['']; return `<span class="tag" style="background:${st[2]};color:${st[3]};border:0">${st[0]} ${st[1]}${sh && sh.status === 'sent' && sh.sentVia ? ' · ' + esc(sh.sentVia) : ''}</span>`; }
+function taxCard(c, ym) {
+  const L = taxLines(c), total = L.reduce((a, x) => a + (+x.amt || 0), 0);
+  const row = x => `<div class="taxrow" data-tid="${esc(x.id)}" style="display:grid;grid-template-columns:1fr 150px${x.x ? ' 30px' : ''};gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)">
+      ${x.x ? `<input class="inp" data-taxname value="${esc(x.name)}" placeholder="Վճարի անվանում (օր. տուգանք)" style="padding:6px 10px">` : `<div style="min-width:0"><div style="font-size:13.5px;font-weight:600">${esc(x.name)}</div><div class="muted" style="font-size:11.5px">մինչև ${esc(dmyD(x.due))}</div></div>`}
+      <input class="inp" data-taxamt inputmode="numeric" value="${x.amt ? fmtAmt(x.amt) : ''}" placeholder="${c.prev[x.id] ? 'նախ.՝ ' + fmtAmt(c.prev[x.id]) : '0'}" style="text-align:right;font-weight:700;padding:6px 10px">
+      ${x.x ? `<button type="button" class="btn sm" data-act="taxRmRow" title="Հեռացնել">✕</button>` : ''}</div>`;
+  return `<div class="card taxcard" data-cid="${esc(c.id)}" style="padding:14px 16px;display:flex;flex-direction:column">
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><div style="flex:1;min-width:0"><b style="font-size:14.5px">${esc(c.name)}</b><div class="muted" style="font-size:12px">${esc(c.responsible || '—')}${c.lang !== 'hy' ? ' · ' + (c.lang === 'ru' ? '🇷🇺 RU' : '🇬🇧 EN') : ''}</div></div><span data-taxchip>${taxChip(c.sheet)}</span></div>
+    <div data-rows>${L.map(row).join('') || '<div class="muted" style="font-size:12.5px;padding:6px 0">Այս ամիս նշված հարկեր չկան</div>'}</div>
+    <button type="button" class="btn sm" data-act="taxAddRow" style="align-self:flex-start;margin-top:8px">+ Այլ վճար</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span class="muted" style="font-size:12.5px">Ընդամենը</span><b data-taxtot style="font-size:16px;flex:1;white-space:nowrap">${fmtAmt(total)} ֏</b>
+      <button type="button" class="btn primary sm" data-act="taxImgOpen" data-id="${esc(c.id)}" ${total ? '' : 'disabled'}>🖼 Նկար և ուղարկել</button></div>
+  </div>`;
+}
+function viewTax() {
+  const ym = S.taxYm || (S.taxYm = taxYmNow()), T = (S.tax || {})[ym];
+  const head = `<div class="card" style="padding:14px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+    <h3 style="margin:0;margin-right:6px">💰 Հարկերի թերթիկներ</h3>
+    <button class="btn sm" data-act="taxYm" data-n="-1">◀</button><input class="inp" type="month" id="taxYmIn" value="${esc(ym)}" style="width:170px"><button class="btn sm" data-act="taxYm" data-n="1">▶</button>
+    ${isMgr() ? `<select class="inp" id="taxWho" style="width:auto"><option value="">Բոլորը</option>${S.d.employees.filter(e => e.active).map(e => `<option ${S.taxWho === e.name ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>` : ''}
+    <span style="flex:1"></span><button class="btn sm" data-act="taxReload">${ico('refresh')}</button>${isMgr() ? '<button class="btn sm" data-act="taxCatOpen">⚙️ Հարկերի ցանկ</button>' : ''}</div>`;
+  if (!T) { taxLoad(ym); return head + '<div class="card" style="padding:18px"><span class="muted">⏳ Բեռնվում է…</span></div>'; }
+  if (T.err) return head + `<div class="card" style="padding:18px"><div class="lerr">${esc(T.err)}</div></div>`;
+  const list = T.companies.filter(c => !S.taxWho || c.responsible === S.taxWho);
+  const withT = list.filter(c => c.taxes.length || (c.sheet && c.sheet.items.length)), noT = list.filter(c => !c.hasTaxes);
+  const cnt = k => withT.filter(c => (c.sheet && c.sheet.status || '') === k).length;
+  return head + `<div class="hint" style="margin:0 0 10px">${esc(T.month)} · ${withT.length} կազմակերպություն · 🟢 ուղարկված՝ ${cnt('sent')} · 🟡 լրացված՝ ${cnt('ready')} · ⚪ չլրացված՝ ${cnt('')}. գումարները պահպանվում են ավտոմատ։</div>
+    ${noT.length ? `<details class="card" style="padding:10px 14px;margin-bottom:12px"><summary style="cursor:pointer;font-size:13px">⚠ Վճարվող հարկերը նշված չեն՝ ${noT.length} կազմակերպություն${isMgr() ? ' (նշեք կազմակերպության քարտում)' : ''}</summary><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${noT.map(c => isMgr() ? `<button class="btn sm" data-act="editCompany" data-id="${esc(c.id)}">✏️ ${esc(c.name)}</button>` : `<span class="tag">${esc(c.name)}</span>`).join('')}</div></details>` : ''}
+    ${withT.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:12px;align-items:start">${withT.map(c => taxCard(c, ym)).join('')}</div>` : '<div class="card" style="padding:18px"><span class="muted">Այս ամսվա համար հարկեր ունեցող կազմակերպություններ չկան։</span></div>'}`;
+}
+function taxCardItems(card) {
+  return [...card.querySelectorAll('.taxrow')].map(r => ({ id: r.dataset.tid, name: (r.querySelector('[data-taxname]') || {}).value || '', amt: parseAmt(r.querySelector('[data-taxamt]').value) }))
+    .filter(x => x.id !== 'X' || x.name.trim());
+}
+function taxCardTotal(card) { const t = taxCardItems(card).reduce((a, x) => a + x.amt, 0); card.querySelector('[data-taxtot]').textContent = fmtAmt(t) + ' ֏'; card.querySelector('[data-act=taxImgOpen]').disabled = !t; return t; }
+const TAXQ = {};
+function taxCardSave(card) {
+  const cid = card.dataset.cid, ym = S.taxYm, T = S.tax[ym], c = T && T.companies.find(x => x.id === cid); if (!c) return;
+  clearTimeout(TAXQ[cid]);
+  TAXQ[cid] = setTimeout(async () => {
+    try {
+      const sh = await call('taxSave', { ym, id: cid, items: taxCardItems(card).map(x => Object.assign(x, { due: (c.taxes.find(t => t.id === x.id) || {}).due })) }, { silent: true });
+      c.sheet = sh; const ch = card.querySelector('[data-taxchip]'); if (ch) ch.innerHTML = taxChip(sh);
+    } catch (e) { toast(esc(e.message), 'err'); }
+  }, 400);
+}
+document.addEventListener('input', e => { const card = e.target.closest && e.target.closest('.taxcard'); if (card && (e.target.dataset.taxamt !== undefined || e.target.dataset.taxname !== undefined)) taxCardTotal(card); });
+document.addEventListener('focusout', e => {
+  const card = e.target.closest && e.target.closest('.taxcard'); if (!card) return;
+  if (e.target.dataset.taxamt !== undefined) { const n = parseAmt(e.target.value); e.target.value = n ? fmtAmt(n) : ''; }
+  if (e.target.dataset.taxamt !== undefined || e.target.dataset.taxname !== undefined) taxCardSave(card);
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !e.target.dataset || e.target.dataset.taxamt === undefined) return;
+  e.preventDefault(); const all = [...document.querySelectorAll('[data-taxamt]')], i = all.indexOf(e.target); if (all[i + 1]) all[i + 1].focus(); else e.target.blur();
+});
+/* ---------- Նկարը (canvas → PNG) ---------- */
+function taxWrap(ctx, text, maxW) {
+  const words = String(text).split(/\s+/), lines = []; let cur = '';
+  words.forEach(w => { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+  if (cur) lines.push(cur); return lines.length ? lines : [''];
+}
+function taxCanvas(o) {
+  const L = TAX_I18N[o.lang] || TAX_I18N.hy, W = 1080, P = 56, FF = "'Noto Sans Armenian', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif";
+  const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+  const font = (w, px) => { ctx.font = w + ' ' + px + 'px ' + FF; };
+  const NAMEW = 520, AMTX = 800, DUEX = W - P;
+  // չափեր
+  font(800, 54); const titleLines = taxWrap(ctx, o.company, W - 2 * P);
+  const rows = o.items.map(it => { font(600, 34); const nl = taxWrap(ctx, it.name, NAMEW); return { it, nl, h: 26 * 2 + nl.length * 44 + (it.account ? 38 : 0) }; });
+  const dues = o.items.map(x => x.due).filter(Boolean).sort(); const due = dues[0] || '';
+  font(700, 34); const payLines = due ? taxWrap(ctx, L.pay(due, L.gen), W - 2 * P - 72) : [];
+  const headH = 40 + 40 + titleLines.length * 64 + 56 + 36;
+  const tblH = 70 + rows.reduce((a, r) => a + r.h, 0);
+  const H = headH + 36 + tblH + 30 + 170 + (payLines.length ? 26 + payLines.length * 48 + 44 : 0) + 40 + 150;
+  const SC = 1; cv.width = W * SC; cv.height = H * SC; ctx.scale(SC, SC);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'alphabetic';
+  // վերնագիր
+  ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0, 0, W, headH);
+  let y = 40 + 34; ctx.fillStyle = 'rgba(255,255,255,.85)'; font(600, 30); ctx.fillText(L.title, P, y);
+  y += 20; ctx.fillStyle = '#ffffff'; font(800, 54); titleLines.forEach(t => { y += 64; ctx.fillText(t, P, y - 8); });
+  y += 50; ctx.fillStyle = '#fde68a'; font(600, 38); ctx.fillText(o.month, P, y - 4);
+  // աղյուսակ
+  y = headH + 36 + 40; ctx.fillStyle = '#6b7280'; font(600, 26); ctx.fillText(L.c1, P, y);
+  ctx.textAlign = 'right'; ctx.fillText(L.c2, AMTX, y); ctx.fillText(L.c3, DUEX, y); ctx.textAlign = 'left';
+  y += 20; ctx.fillStyle = '#e5e7eb'; ctx.fillRect(P, y, W - 2 * P, 3); y += 10;
+  rows.forEach(r => {
+    const top = y; let ty = top + 26;
+    ctx.fillStyle = '#111827'; font(600, 34); r.nl.forEach(t => { ty += 44; ctx.fillText(t, P, ty - 10); });
+    if (r.it.account) { ctx.fillStyle = '#6b7280'; font(400, 24); ctx.fillText(L.acct + r.it.account, P, ty + 24); }
+    const mid = top + r.h / 2 + 12;
+    ctx.textAlign = 'right'; ctx.fillStyle = '#111827'; font(800, 36); ctx.fillText(fmtAmt(r.it.amt), AMTX, mid);
+    ctx.fillStyle = '#374151'; font(400, 29); ctx.fillText(dmyD(r.it.due), DUEX, mid); ctx.textAlign = 'left';
+    y = top + r.h; ctx.fillStyle = '#eef0f4'; ctx.fillRect(P, y - 2, W - 2 * P, 2);
+  });
+  // ընդամենը
+  y += 30; const bx = P, bw = W - 2 * P, bh = 150;
+  const rr = (x, yy, w, h, rad) => { ctx.beginPath(); ctx.moveTo(x + rad, yy); ctx.arcTo(x + w, yy, x + w, yy + h, rad); ctx.arcTo(x + w, yy + h, x, yy + h, rad); ctx.arcTo(x, yy + h, x, yy, rad); ctx.arcTo(x, yy, x + w, yy, rad); ctx.closePath(); };
+  rr(bx, y, bw, bh, 28); ctx.fillStyle = '#fef3c7'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#f59e0b'; ctx.stroke();
+  ctx.fillStyle = '#111827'; font(700, 34); ctx.fillText(L.total[0], bx + 40, y + 64); ctx.fillText(L.total[1], bx + 40, y + 108);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#b45309'; let tp = 64; const tt = fmtAmt(o.total) + ' ֏'; font(800, tp); while (ctx.measureText(tt).width > bw - 360 && tp > 36) { tp -= 2; font(800, tp); } ctx.fillText(tt, bx + bw - 40, y + bh / 2 + tp * .36); ctx.textAlign = 'left';
+  y += bh + 26;
+  if (payLines.length) {
+    const ph = payLines.length * 48 + 44; rr(P, y, W - 2 * P, ph, 22); ctx.fillStyle = '#fee2e2'; ctx.fill();
+    ctx.fillStyle = '#991b1b'; font(700, 34); ctx.textAlign = 'center'; payLines.forEach((t, i) => ctx.fillText(t, W / 2, y + 22 + 38 + i * 48)); ctx.textAlign = 'left';
+    y += ph;
+  }
+  y += 40; ctx.fillStyle = '#e5e7eb'; ctx.fillRect(P, y, W - 2 * P, 3);
+  y += 56; ctx.fillStyle = '#4b5563'; font(400, 27);
+  const seg = (txt, bold) => { font(bold ? 700 : 400, 27); ctx.fillStyle = bold ? '#111827' : '#4b5563'; ctx.fillText(txt, x0, y); x0 += ctx.measureText(txt).width; };
+  let x0 = P; seg(L.prep); seg(o.firm, true); if (o.by) { seg(' · ' + L.acc + ' '); seg(o.by, true); }
+  y += 44; x0 = P; if (o.phone) { seg(L.call + ' '); seg(o.phone, true); } else seg(L.callNo);
+  return cv;
+}
+const cvBlob = cv => new Promise(r => cv.toBlob(r, 'image/png'));
+const blobB64 = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(b); });
+async function taxImgOpen(cid) {
+  const ym = S.taxYm, T = S.tax[ym], c = T.companies.find(x => x.id === cid); if (!c) return;
+  const card = document.querySelector('.taxcard[data-cid="' + cid + '"]');
+  if (card) { clearTimeout(TAXQ[cid]); try { c.sheet = await call('taxSave', { ym, id: cid, items: taxCardItems(card).map(x => Object.assign(x, { due: (c.taxes.find(t => t.id === x.id) || {}).due })) }); } catch (e) { return toast(esc(e.message), 'err'); } }
+  const items = (c.sheet ? c.sheet.items : []).filter(x => x.amt > 0);
+  if (!items.length) return toast('Լրացրեք գումարները', 'err');
+  const cat = taxCatById();
+  let lang = c.lang || 'hy', up = null, upKey = '';
+  const st = { name: {}, by: {} };
+  const nm = () => st.name[lang] != null ? st.name[lang] : taxCompName(c.name, lang);
+  const byN = () => st.by[lang] != null ? st.by[lang] : hyTr(c.responsible || '', lang);
+  const data = () => {
+    const its = items.map(x => { const t = cat[x.id]; return { name: lang === 'hy' || !t ? x.name : (lang === 'ru' ? t.nameRu : t.nameEn) || x.name, amt: x.amt, due: x.due, account: x.account || '' }; });
+    const L = TAX_I18N[lang]; const mi = +ym.slice(5, 7) - 1;
+    return { lang, company: nm(), month: L.mon[mi] + ' ' + ym.slice(0, 4), items: its, total: items.reduce((a, x) => a + x.amt, 0), by: byN(), firm: lang === 'hy' ? T.firm.name : (lang === 'ru' ? 'Numetrix' : 'Numetrix'), phone: T.firm.phone };
+  };
+  const text = () => { const d = data(), due = d.items.map(x => x.due).sort()[0]; return TAX_I18N[lang].msg(d.company, d.month, fmtAmt(d.total), dmyD(due)); };
+  const m = openModal('🖼 Հարկերի թերթիկ — ' + c.name, `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px" class="taxm">
+    <div><img id="taxPrev" style="width:100%;border:1px solid var(--line);border-radius:12px;display:block" alt=""></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label class="f">Լեզու</label><div class="seg" id="taxLangSeg">${TAX_LANG.map(([k, l]) => `<button type="button" data-l="${k}">${l}</button>`).join('')}</div></div>
+      <div><label class="f">Կազմակերպության անվանումը նկարում</label><input class="inp" id="taxNm"></div>
+      <div><label class="f">Հաշվապահ</label><input class="inp" id="taxBy"></div>
+      <div><label class="f">Տեքստ (նկարի հետ)</label><textarea class="inp" id="taxTx" rows="3" readonly style="font-size:12.5px"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button type="button" class="btn primary" id="taxShare">📲 WhatsApp / Viber</button><button type="button" class="btn" id="taxSend">📤 Չաթ / էլ. փոստ</button>
+        <button type="button" class="btn" id="taxDl">📥 Ներբեռնել</button><button type="button" class="btn" id="taxCopy">📋 Պատճենել նկարը</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="taxSt">${taxChip(c.sheet)}</span><span style="flex:1"></span>${c.sheet && c.sheet.status === 'sent' ? '<button type="button" class="btn sm" id="taxUnmark">↩ Հանել նշումը</button>' : '<button type="button" class="btn sm" id="taxMark">✔ Նշել ուղարկված</button>'}</div>
+      <div class="hint" style="margin:0">Հեռախոսում «WhatsApp / Viber»-ը բացում է կիսվելու ցանկը՝ նկարը կգնա լուսանկարի տեսքով։ Համակարգչում նկարը կներբեռնվի և կբացվի WhatsApp-ը. կցեք նկարը (📎) կամ տեղադրեք Ctrl+V-ով։</div>
+    </div></div>`, null, { okOnly: true, wide: true });
+  const draw = () => {
+    m.querySelectorAll('#taxLangSeg button').forEach(b => b.classList.toggle('on', b.dataset.l === lang));
+    m.querySelector('#taxNm').value = nm(); m.querySelector('#taxBy').value = byN(); m.querySelector('#taxTx').value = text();
+    m.querySelector('#taxPrev').src = taxCanvas(data()).toDataURL('image/png');
+  };
+  const key = () => JSON.stringify(data());
+  const file = async () => {
+    const k = key();
+    if (up && upKey === k) return up;
+    const blob = await cvBlob(taxCanvas(data()));
+    const r = await call('taxImg', { ym, id: cid, lang, data: await blobB64(blob) });
+    up = { fid: r.fid, name: r.name, blob, file: new File([blob], r.name + '.png', { type: 'image/png' }) }; upKey = k;
+    if (S.docList) delete S.docList[cid];
+    return up;
+  };
+  const busy = async (btn, fn) => { const t = btn.textContent; btn.disabled = true; btn.textContent = '⏳ …'; try { await fn(); } catch (e) { if (e && e.message !== 'Չեղարկվեց') toast(esc(e.message || String(e)), 'err'); } finally { btn.disabled = false; btn.textContent = t; } };
+  const marked = sh => { c.sheet = sh; const s = m.querySelector('#taxSt'); if (s) s.innerHTML = taxChip(sh); if (S.view === 'docs') { const cd = document.querySelector('.taxcard[data-cid="' + cid + '"] [data-taxchip]'); if (cd) cd.innerHTML = taxChip(sh); } };
+  m.querySelector('#taxLangSeg').onclick = e => { const b = e.target.closest('[data-l]'); if (!b || b.dataset.l === lang) return; lang = b.dataset.l; c.lang = lang; draw(); call('taxLang', { id: cid, lang }, { silent: true }).catch(() => {}); };
+  m.querySelector('#taxNm').oninput = e => { st.name[lang] = e.target.value; clearTimeout(m.__t); m.__t = setTimeout(draw, 350); };
+  m.querySelector('#taxBy').oninput = e => { st.by[lang] = e.target.value; clearTimeout(m.__t); m.__t = setTimeout(draw, 350); };
+  m.querySelector('#taxShare').onclick = e => busy(e.currentTarget, async () => {
+    const f = await file(), tx = text();
+    if (navigator.canShare && navigator.canShare({ files: [f.file] })) {
+      try { await navigator.share({ files: [f.file], text: tx }); } catch (x) { if (x && x.name === 'AbortError') return; throw x; }
+      marked(await call('taxMark', { ym, id: cid, via: 'share' })); toast('✔ Ուղարկվեց', 'ok'); return;
+    }
+    saveFileAs(f.file); try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': f.blob })]); } catch (x) {}
+    window.open(WEB + 'wa.me/?text=' + encodeURIComponent(tx), '_blank', 'noopener');
+    toast('📥 Նկարը ներբեռնվեց (և պատճենվեց)։ WhatsApp-ում ընտրեք չաթը և տեղադրեք նկարը (Ctrl+V կամ 📎)։ Հետո սեղմեք «✔ Նշել ուղարկված»։', 'ok', null, 12000);
+  });
+  m.querySelector('#taxDl').onclick = e => busy(e.currentTarget, async () => { const f = await file(); saveFileAs(f.file); });
+  m.querySelector('#taxCopy').onclick = e => busy(e.currentTarget, async () => { const b = await cvBlob(taxCanvas(data())); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); toast('📋 Նկարը պատճենվեց. տեղադրեք չաթում Ctrl+V-ով', 'ok'); });
+  m.querySelector('#taxSend').onclick = e => busy(e.currentTarget, async () => { const f = await file(); S.taxAfterSend = { ym, cid }; docsSend(cid, [{ fid: f.fid, name: f.name }], text()); });
+  const mk = m.querySelector('#taxMark'); if (mk) mk.onclick = e => busy(e.currentTarget, async () => { marked(await call('taxMark', { ym, id: cid, via: 'other' })); toast('✔ Նշվեց ուղարկված', 'ok'); });
+  const um = m.querySelector('#taxUnmark'); if (um) um.onclick = e => busy(e.currentTarget, async () => { marked(await call('taxMark', { ym, id: cid, undo: true })); toast('Նշումը հանվեց', 'ok'); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw); else draw();
+  draw();
+}
+/* ---------- Հարկերի ցանկ (Կարգավորումներ) ---------- */
+function taxCatOpen() {
+  const row = t => `<div class="trow" data-id="${esc(t.id || '')}" style="border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;display:grid;grid-template-columns:2fr 1fr 70px 1.2fr auto;gap:6px">
+    <input class="inp" data-t="name" value="${esc(t.name || '')}" placeholder="Անվանում (հայերեն)"><input class="inp" data-t="months" value="${esc(t.months || '')}" placeholder="ամեն ամիս" title="Որ ամիսներին է վճարվում (օր. 3,6,9,12). դատարկ՝ ամեն ամիս"><input class="inp" data-t="dueDay" value="${esc(t.dueDay || 20)}" inputmode="numeric" title="Վճարման օրը"><input class="inp" data-t="account" value="${esc(t.account || '')}" placeholder="Գանձ. հաշիվ (ըստ ցանկ.)"><button type="button" class="btn sm" data-rmt>✕</button>
+    <input class="inp" data-t="nameRu" value="${esc(t.nameRu || '')}" placeholder="По-русски" style="grid-column:1/3"><input class="inp" data-t="nameEn" value="${esc(t.nameEn || '')}" placeholder="In English" style="grid-column:3/5"><input type="hidden" data-t="regimes" value="${esc(t.regimes || '')}"></div>`;
+  const m = openModal('💰 Հարկեր և պարտադիր վճարներ', `<div class="hint" style="margin-bottom:10px">Սյուներ՝ <b>անվանում</b> · <b>ամիսներ</b> (որ ամիսներին է վճարվում, օր. «3,6,9,12»; դատարկ՝ ամեն ամիս) · <b>վճարման օր</b> (եթե ընկնում է հանգստյան օրվա, տեղափոխվում է հաջորդ աշխատանքային օր) · <b>գանձապետական հաշիվ</b> (լրացնելու դեպքում կերևա նկարում)։ Ներքևում՝ ռուսերեն և անգլերեն անվանումները։ ⚠ Ստուգեք ժամկետները՝ նախնական արժեքները օրինակային են։</div>
+    <div id="tBox">${(S.d.taxCat || []).filter(t => t.active).map(row).join('')}</div><button type="button" class="btn sm" id="tAdd">+ Ավելացնել</button>`, async () => {
+    const list = [...m.querySelectorAll('.trow')].map(r => { const o = { id: r.dataset.id }; r.querySelectorAll('[data-t]').forEach(i => { o[i.dataset.t] = i.value; }); return o; }).filter(x => x.name.trim());
+    S.d.taxCat = await call('taxCatSave', { list }); S.tax = {}; toast('Պահպանված է', 'ok'); if (S.view === 'docs') renderView();
+  }, { wide: true });
+  m.querySelector('#tAdd').onclick = () => m.querySelector('#tBox').insertAdjacentHTML('beforeend', row({ dueDay: 20 }));
+  m.addEventListener('click', e => { const b = e.target.closest('[data-rmt]'); if (b) b.closest('.trow').remove(); });
+}
+/** Կազմակերպության քարտում՝ վճարվող հարկերը և թերթիկի լեզուն */
+function compTaxFields(c) {
+  const cat = (S.d.taxCat || []).filter(t => t.active), sel = String(c.taxes || '').split(',').filter(Boolean);
+  if (!cat.length) return '';
+  const per = t => !t.months ? 'ամեն ամիս' : t.months.split(',').length === 1 ? 'տարեկան' : 'եռամսյակային';
+  return `<div class="full"><label class="f" style="display:flex;align-items:center;gap:8px">💰 Վճարվող հարկեր <span class="muted" style="font-weight:400">(ամսական թերթիկի համար)</span><span style="flex:1"></span><button type="button" class="btn sm" id="taxSug">✨ Առաջարկել ըստ ռեժիմի</button></label>
+      <div class="multi" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 12px">${cat.map(t => `<label class="chk"><input type="checkbox" name="taxes" value="${esc(t.id)}" data-reg="${esc(t.regimes)}" ${sel.includes(t.id) ? 'checked' : ''}><span>${esc(t.name)} <span class="muted">(${per(t)})</span></span></label>`).join('')}</div></div>
+    <div><label class="f">Թերթիկի լեզու</label><select class="inp" name="taxLang">${TAX_LANG.map(([k, l]) => `<option value="${k}" ${(c.taxLang || 'hy') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
+}
 /* ---------- 📒 Փաստաթղթերի մատյան ---------- */
-const DOC_SHORT = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ' };
+const DOC_SHORT = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ', 7: 'Ռեկվիզիտներ', 8: 'Հարկերի թերթիկ' };
 function docLogF() {
   if (!S.dl) { const t = today(); S.dl = { from: t.slice(0, 8) + '01', to: t, toAuto: true, type: '', comp: '', q: '', rows: null, busy: false, mark: {}, del: false }; }
   // «Մինչև»-ն ինքնաբերաբար այսօրն է (եթե ձեռքով չի փոխվել), որ էջը երկար բաց մնալու դեպքում էլ նոր փաստաթղթերը երևան
@@ -4382,7 +4690,7 @@ function viewDocLog() {
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
       <div><label class="f">Սկսած</label><input class="inp" type="date" data-dl="from" value="${esc(F.from)}"></div>
       <div><label class="f">Մինչև</label><input class="inp" type="date" data-dl="to" value="${esc(F.to)}"></div>
-      <div style="min-width:200px"><label class="f">Փաստաթղթի տեսակ</label><select class="inp" data-dl="type"><option value="">Բոլորը</option>${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${String(F.type) === String(n) ? 'selected' : ''}>${n}. ${esc(DOC_SHORT[n])}</option>`).join('')}</select></div>
+      <div style="min-width:200px"><label class="f">Փաստաթղթի տեսակ</label><select class="inp" data-dl="type"><option value="">Բոլորը</option>${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}" ${String(F.type) === String(n) ? 'selected' : ''}>${n}. ${esc(DOC_SHORT[n])}</option>`).join('')}</select></div>
       <div style="flex:1;min-width:200px"><label class="f">Կազմակերպություն</label><select class="inp" data-dl="comp"><option value="">Բոլորը</option>${comps.map(c => `<option value="${esc(c.id)}" ${F.comp === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
       <div style="min-width:160px"><label class="f">Որոնում</label><input class="inp" data-dl="q" value="${esc(F.q)}" placeholder="Համար, անուն…"></div>
       <button class="btn" data-act="docLogRe" title="Թարմացնել">${ico('refresh')}</button>
@@ -4430,6 +4738,7 @@ function viewDocsMake() {
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:16px">
       <div style="flex:1;min-width:240px"><label class="f">Կազմակերպություն</label><select class="inp" id="docComp"><option value="">— ընտրեք —</option>${comps.map(c => `<option value="${esc(c.id)}" ${c.id === cid ? 'selected' : ''}>${esc(c.name)}${c.tin ? ' · ' + esc(c.tin) : ''}</option>`).join('')}</select></div>
       ${isMgr() ? `<button class="btn" data-act="docCompEdit" ${cid ? '' : 'disabled'}>✏️ Կազմակերպության տվյալները</button>` : ''}
+      <button class="btn" data-act="reqFirm" title="Numetrix-ի ռեկվիզիտները՝ պատճենել, PDF, ուղարկել">🏢 Մեր ռեկվիզիտները</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:14px">Փաստաթղթեր</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="docSelAll">${S.docSel.length === 6 ? 'Հանել բոլորը' : 'Նշել բոլորը'}</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
@@ -4439,7 +4748,63 @@ function viewDocsMake() {
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn primary" data-act="docGoView" ${cid && S.docSel.length ? '' : 'disabled'}>Շարունակել →</button></div>
   </div>
-  ${cid ? docsMadeCard(cid) : ''}`;
+  ${cid ? reqCard(cid) + docsMadeCard(cid) : ''}`;
+}
+/* ---------- 🏦 Կազմակերպության տվյալներ (ռեկվիզիտներ). հաճախորդը զանգում է՝ «շտապ ռեկվիզիտներն են պետք» ---------- */
+function reqLoad(id) {
+  S.req = S.req || {};
+  if (S.req[id] || S.reqBusy === id) return;
+  S.reqBusy = id;
+  call('reqInfo', { id }, { silent: true }).then(r => { S.req[id] = r; }).catch(e => { S.req[id] = { err: e.message }; })
+    .finally(() => { S.reqBusy = ''; const b = document.querySelector('#modal .reqbox[data-id="' + id + '"]'); if (b) b.outerHTML = reqBody(id); else if (S.view === 'docs') renderView(); });
+}
+function reqText(R, withAbout) {
+  return [R.name].concat(R.rows.filter(r => r[0] !== 'Անվանում').map(r => r[0] + '՝ ' + r[1])).concat(withAbout && R.about ? ['', R.about] : []).join('\n');
+}
+function reqBody(id) {
+  S.req = S.req || {}; S.reqAbout = S.reqAbout || {};
+  const R = S.req[id];
+  if (!R) { reqLoad(id); return `<div class="reqbox" data-id="${esc(id)}"><span class="muted">⏳ Բեռնվում է…</span></div>`; }
+  if (R.err) return `<div class="reqbox" data-id="${esc(id)}"><div class="lerr">${esc(R.err)}</div><button class="btn sm" data-act="reqRe" data-id="${esc(id)}">${ico('refresh')} Կրկին</button></div>`;
+  const ab = !!S.reqAbout[id] && !!R.about;
+  return `<div class="reqbox" data-id="${esc(id)}">
+    ${R.miss.length ? `<div class="hint" style="color:#b45309;margin:0 0 8px">⚠ Լրացված չէ՝ ${esc(R.miss.join(', '))}${isMgr() ? ` · <a data-act="${id === 'FIRM' ? 'reqFirmEdit' : 'docCompEdit'}" style="cursor:pointer;text-decoration:underline">լրացնել</a>` : ''}</div>` : ''}
+    <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden"><table class="tbl" style="margin:0"><tbody>
+      ${R.rows.map(r => `<tr><td style="width:38%;font-size:12.5px;color:var(--muted);white-space:nowrap">${esc(r[0])}</td><td style="font-size:13.5px;user-select:all"><b>${esc(r[1])}</b></td></tr>`).join('')}
+    </tbody></table></div>
+    ${R.about ? `<div class="click" data-act="reqAboutTog" data-id="${esc(id)}" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:13px;cursor:pointer"><input type="checkbox" ${ab ? 'checked' : ''} style="pointer-events:none;width:16px;height:16px;margin-top:2px"><span>Ավելացնել նկարագիրը <span class="muted">(«${esc(R.about.length > 90 ? R.about.slice(0, 90) + '…' : R.about)}»)</span></span></div>`
+      : `<div class="hint" style="margin:8px 0 0">Նկարագիր չկա${isMgr() ? ` · <a data-act="${id === 'FIRM' ? 'reqFirmEdit' : 'docCompEdit'}" style="cursor:pointer;text-decoration:underline">ավելացնել</a>` : ''}</div>`}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn primary sm" data-act="reqCopy" data-id="${esc(id)}">📋 Պատճենել տեքստը</button>
+      <button class="btn sm" data-act="reqWa" data-id="${esc(id)}">📲 WhatsApp / Viber</button>
+      <button class="btn sm" data-act="reqMake" data-f="send" data-id="${esc(id)}">📤 Ուղարկել PDF</button>
+      <button class="btn sm" data-act="reqMake" data-f="pdf" data-id="${esc(id)}">📥 PDF</button>
+      <button class="btn sm" data-act="reqMake" data-f="docx" data-id="${esc(id)}">📥 Word</button>
+      <span style="flex:1"></span><button class="btn sm" data-act="reqRe" data-id="${esc(id)}" title="Թարմացնել">${ico('refresh')}</button>
+    </div>
+    <div class="hint" style="margin:6px 0 0">📋՝ տեքստը պատճենվում է, կարող եք տեղադրել ցանկացած տեղ (SMS, Viber, Telegram)։ PDF/Word-ը պահվում է կազմակերպության «Փաստաթղթեր» թղթապանակում և մատյանում (ՌՔ-…)։</div>
+  </div>`;
+}
+function reqRedraw(id) {
+  const b = document.querySelector('#modal .reqbox[data-id="' + id + '"]');
+  if (b) { b.outerHTML = reqBody(id); return; }
+  if (S.view === 'docs') renderView();
+}
+function reqCard(cid) {
+  return `<div class="card" style="padding:18px;max-width:980px;margin-top:14px">
+    <h3 style="margin:0 0 10px">🏦 Կազմակերպության տվյալներ <span class="muted" style="font-weight:400;font-size:13px">(ռեկվիզիտներ)</span></h3>
+    ${reqBody(cid)}</div>`;
+}
+async function reqMake(id, how) {
+  toast('⏳ Պատրաստվում է ռեկվիզիտների PDF-ը…', '', null, 40000);
+  let r;
+  try { r = await call('reqCard', { id, about: !!(S.reqAbout || {})[id] }); }
+  catch (e) { return toast(esc(e.message), 'err'); }
+  finally { document.querySelectorAll('.toast').forEach(t => { if (/ռեկվիզիտների PDF/.test(t.textContent)) t.remove(); }); }
+  if (S.docList) delete S.docList[id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; }
+  const f = r.files[0];
+  if (how === 'send') docsSend(id, [{ fid: f.fid, name: f.name }]);
+  else { await docsDownload(id, [f.fid], how); if (S.view === 'docs' && !$('#modal').classList.contains('on')) renderView(); }
 }
 /** Արդեն ստեղծված փաստաթղթերը (ընտրել և ուղարկել) */
 function docsMadeCard(cid) {
@@ -4451,7 +4816,7 @@ function docsMadeCard(cid) {
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">📁 Ստեղծված փաստաթղթեր</h3><span class="muted" style="font-size:12.5px">${L.files.length}</span><span style="flex:1"></span>
       <button class="btn sm" data-act="docListRe">${ico('refresh')} Թարմացնել</button><button class="btn primary sm" data-act="docSendSel" ${mk.length ? '' : 'disabled'}>📤 Ուղարկել${mk.length ? ' (' + mk.length + ')' : ''}</button><button class="btn sm" data-act="docDlSel" data-f="pdf" ${mk.length ? '' : 'disabled'}>📥 PDF</button><button class="btn sm" data-act="docDlSel" data-f="docx" ${mk.length ? '' : 'disabled'}>📥 Word</button></div>
     ${L.files.length ? `<label class="chk" style="margin:0 0 8px 2px;font-size:13px"><input type="checkbox" data-markall ${mk.length && mk.length === L.files.length ? 'checked' : ''}> Նշել բոլորը <span class="muted">· նշեք, թե որոնք եք ուզում ուղարկել կամ ներբեռնել</span></label>` : ''}
-    ${L.files.length ? `<div style="display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto">${L.files.map(f => `<label style="display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" data-mark="${esc(f.fid)}" ${S.docMark[f.fid] ? 'checked' : ''}><span style="flex:1;min-width:0;font-size:13px">${esc(f.name)}<br><span class="muted" style="font-size:11.5px">${esc(f.at)}</span></span><a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">PDF</a></label>`).join('')}</div>`
+    ${L.files.length ? `<div style="display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto">${L.files.map(f => `<label style="display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer"><input type="checkbox" data-mark="${esc(f.fid)}" ${S.docMark[f.fid] ? 'checked' : ''}><span style="flex:1;min-width:0;font-size:13px">${esc(f.name)}<br><span class="muted" style="font-size:11.5px">${esc(f.at)}</span></span><a class="btn sm" href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${f.img ? '🖼' : 'PDF'}</a></label>`).join('')}</div>`
       : '<div class="muted" style="font-size:13px">Այս կազմակերպության համար դեռ փաստաթղթեր չեն ստեղծվել։</div>'}
   </div>`;
 }
@@ -4528,20 +4893,22 @@ async function docsDownload(companyId, fids, fmt) {
   toast('⏳ Պատրաստվում է ներբեռնումը…', '', null, 30000);
   try {
     const r = await call('docFiles', { id: companyId, fids, fmt });
-    r.forEach((x, i) => saveFileAs(new File([b64Bytes(x.data)], x.name, { type: fmt === 'docx' ? DOCX_MIME : 'application/pdf' }), i));
+    r.forEach((x, i) => saveFileAs(new File([b64Bytes(x.data)], x.name, { type: fileMime(x.name) }), i));
     toast('📥 Ներբեռնվեց ' + r.length + ' ֆայլ (' + (fmt === 'docx' ? 'Word' : 'PDF') + ')', 'ok');
   } catch (e) { toast(esc(e.message), 'err'); }
   finally { document.querySelectorAll('.toast').forEach(t => { if (/Պատրաստվում է ներբեռնումը/.test(t.textContent)) t.remove(); }); }
 }
 const phoneIntl = v => { let d = String(v || '').replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); if (d.length === 9 && d[0] === '0') d = '374' + d.slice(1); else if (d.length === 8) d = '374' + d; return d; };
 const SEND_VIA = [['chat', '💬 Ներքին չաթ'], ['email', '✉️ Էլ. փոստ'], ['wa', '🟢 WhatsApp'], ['tg', '✈️ Telegram']];
-async function docsSend(companyId, files) {
+const fileMime = n => /\.png$/i.test(n) ? 'image/png' : /\.docx$/i.test(n) ? DOCX_MIME : 'application/pdf';
+function taxAfterSend() { const a = S.taxAfterSend; if (!a) return; S.taxAfterSend = null; if (S.tax) delete S.tax[a.ym]; if (S.view === 'docs' && S.docTab === 'tax') renderView(); }
+async function docsSend(companyId, files, text0) {
   if (!files || !files.length) return toast('Ընտրեք փաստաթղթերը', 'err');
   let L; try { L = S.docList && S.docList[companyId] || await call('docList', { id: companyId }); } catch (e) { return toast(esc(e.message), 'err'); }
   const ext = L.ext || [];
   const emails = (String(L.contact || '').match(/[^\s,;]+@[^\s,;]+\.[^\s,;]+/g) || []);
   let via = 'chat', blobs = null, blobsKey = '';
-  const defText = 'Բարև Ձեզ։ Կից ուղարկում ենք «' + L.name + '»-ի փաստաթղթերը։';
+  const defText = text0 || 'Բարև Ձեզ։ Կից ուղարկում ենք «' + L.name + '»-ի փաստաթղթերը։';
   const m = openModal('📤 Ուղարկել փաստաթղթերը — ' + L.name, `<div class="fgrid">
     <div class="full"><label class="f">Փաստաթղթեր</label><div class="cbox" style="max-height:170px">${files.map(f => `<label><input type="checkbox" name="sf" value="${esc(f.fid)}" checked> ${esc(f.name)}</label>`).join('')}</div></div>
     <div class="full"><label class="f">Ինչով ուղարկել</label><div id="viaBox" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">${SEND_VIA.map(([k, l]) => `<button type="button" class="btn" data-via="${k}">${l}</button>`).join('')}</div></div>
@@ -4558,16 +4925,16 @@ async function docsSend(companyId, files) {
     if (via === 'chat') {
       if (!f.extId) throw new Error('Ընտրեք ստացողին');
       const r = await call('docSend', { id: companyId, fids, via: 'chat', extId: f.extId, text: f.text });
-      if (S.dl) S.dl.rows = null; toast('✔ Ուղարկվեց չաթով՝ ' + esc(r.to), 'ok'); return;
+      if (S.dl) S.dl.rows = null; taxAfterSend(); toast('✔ Ուղարկվեց չաթով՝ ' + esc(r.to), 'ok'); return;
     }
     if (via === 'email') {
       const r = await call('docSend', { id: companyId, fids, via: 'email', to: f.to, subject: f.subject, text: f.text });
-      if (S.dl) S.dl.rows = null; toast('✔ Ուղարկվեց՝ ' + esc(r.to), 'ok'); return;
+      if (S.dl) S.dl.rows = null; taxAfterSend(); toast('✔ Ուղարկվեց՝ ' + esc(r.to), 'ok'); return;
     }
     // WhatsApp / Telegram՝ ֆայլերը սարքից
     if (!blobs || blobsKey !== fids.join()) throw new Error('⏳ Ֆայլերը դեռ բեռնվում են, մի քանի վայրկյանից նորից սեղմեք');
-    const fl = blobs.map(x => new File([b64Bytes(x.data)], x.name, { type: 'application/pdf' }));
-    const logIt = () => { call('docSentLog', { id: companyId, fids, via, to: f.phone }, { silent: true }).catch(() => {}); if (S.dl) S.dl.rows = null; };
+    const fl = blobs.map(x => new File([b64Bytes(x.data)], x.name, { type: fileMime(x.name) }));
+    const logIt = () => { call('docSentLog', { id: companyId, fids, via, to: f.phone }, { silent: true }).then(taxAfterSend).catch(() => {}); if (S.dl) S.dl.rows = null; };
     if (navigator.canShare && navigator.canShare({ files: fl })) {
       try { await navigator.share({ files: fl, text: f.text }); } catch (e) { if (e && e.name === 'AbortError') throw new Error('Չեղարկվեց'); throw e; }
       logIt(); return;
@@ -4593,7 +4960,7 @@ async function docsSend(companyId, files) {
     m.querySelector('#extHint').textContent = via === 'chat' ? 'Կուղարկվի այս օգտագործողի անձնական չաթին (մյուսները չեն տեսնի)։' : (u ? '' : 'Ընտրելու դեպքում նրա էլ. փոստը / հեռախոսը կլրացվի ավտոմատ։');
     const share = !!(navigator.canShare && window.File && (() => { try { return navigator.canShare({ files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] }); } catch (e) { return false; } })());
     const ready = blobs && blobsKey === [...m.querySelectorAll('[name=sf]:checked')].map(x => x.value).join();
-    m.querySelector('#viaHint').innerHTML = via === 'email' ? 'Նամակը կուղարկվի ձեր Google հաշվից՝ PDF ֆայլերը կցված։'
+    m.querySelector('#viaHint').innerHTML = via === 'email' ? 'Նամակը կուղարկվի ձեր Google հաշվից՝ ֆայլերը կցված։'
       : via === 'chat' ? 'Ֆայլերը կհայտնվեն հաճախորդի հավելվածի չաթում։'
       : (ready ? '✔ Ֆայլերը պատրաստ են։ ' : '⏳ Ֆայլերը բեռնվում են… ') + (share ? 'Սեղմեք «Ուղարկել» և ընտրեք ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը։' : 'Սեղմելիս ֆայլերը կներբեռնվեն և կբացվի ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը. կցեք ֆայլերը չաթում (📎)։');
   };
@@ -4610,8 +4977,9 @@ async function firmOpen() {
   openModal('🏢 Numetrix-ի տվյալները (փաստաթղթերի համար)', `<div class="fgrid">
     ${fIn('name', 'Անվանում', d.name || '«Նումետրիքս» ՍՊԸ', { full: true })}${fIn('tin', 'ՀՎՀՀ', d.tin)}${fIn('regNo', 'Պետռեգիստրի համար', d.regNo)}
     ${fIn('legalAddr', 'Իրավաբանական հասցե', d.legalAddr, { full: true })}${fIn('bank', 'Բանկ', d.bank)}${fIn('account', 'Հաշվեհամար', d.account)}
-    ${fIn('dirName', 'Տնօրեն (Անուն Ազգանուն)', d.dirName)}${fIn('dirPos', 'Պաշտոն', d.dirPos)}${fIn('phone', 'Հեռախոս', d.phone, { ph: '+374…' })}
-  </div>`, async f => { await call('docSave', { id: 'FIRM', data: f }); toast('Պահպանված է', 'ok'); }, { wide: true });
+    ${fIn('dirName', 'Տնօրեն (Անուն Ազգանուն)', d.dirName)}${fIn('dirPos', 'Պաշտոն', d.dirPos)}${fIn('phone', 'Հեռախոս', d.phone, { ph: '+374…' })}${fIn('email', 'Էլ. փոստ', d.email, { ph: 'info@numetrix.am' })}
+    <div class="full"><label class="f">📝 Նկարագիր (մեր մասին)</label><textarea class="inp" name="about" rows="5" maxlength="5000" placeholder="Օր.՝ «Նումետրիքս» ՍՊԸ-ն հիմնադրվել է … թ․ … կողմից՝ նպատակ ունենալով շուկայում մատուցել որակյալ հաշվապահական ծառայություններ …">${esc(d.about || '')}</textarea></div>
+  </div>`, async f => { await call('docSave', { id: 'FIRM', data: f }); if (S.req) delete S.req.FIRM; toast('Պահպանված է', 'ok'); }, { wide: true });
 }
 /* ՀՎՍՎ-ների ցանկ */
 async function hvsvOpen() {
@@ -5098,6 +5466,25 @@ const ACT = {
   docLogDel1: el => { const r = (docLogF().rows || []).find(x => x.fid === el.dataset.fid); if (r) docLogDelete([r]); },
   docLogDl: el => docsDownload(el.dataset.c, [el.dataset.fid], el.dataset.f),
   docLogSend: el => { const r = (docLogF().rows || []).find(x => x.fid === el.dataset.fid); docsSend(el.dataset.c, [{ fid: el.dataset.fid, name: r ? r.name : 'Փաստաթուղթ' }]); },
+  docTabTax: () => { S.docTab = 'tax'; ACT.go({ dataset: { v: 'docs' } }); },
+  taxYm: el => { S.taxYm = taxYmAdd(S.taxYm || taxYmNow(), +el.dataset.n); renderView(); },
+  taxReload: () => { taxLoad(S.taxYm, true); renderView(); },
+  taxCatOpen: () => taxCatOpen(),
+  taxImgOpen: el => taxImgOpen(el.dataset.id),
+  taxAddRow: el => { const card = el.closest('.taxcard'); card.querySelector('[data-rows]').insertAdjacentHTML('beforeend', `<div class="taxrow" data-tid="X" style="display:grid;grid-template-columns:1fr 150px 30px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)"><input class="inp" data-taxname placeholder="Վճարի անվանում (օր. տուգանք)" style="padding:6px 10px"><input class="inp" data-taxamt inputmode="numeric" placeholder="0" style="text-align:right;font-weight:700;padding:6px 10px"><button type="button" class="btn sm" data-act="taxRmRow">✕</button></div>`); card.querySelector('[data-rows] .taxrow:last-child [data-taxname]').focus(); },
+  taxRmRow: el => { const card = el.closest('.taxcard'); el.closest('.taxrow').remove(); taxCardTotal(card); taxCardSave(card); },
+  reqFirm: () => { openModal('🏢 Numetrix-ի ռեկվիզիտները', reqBody('FIRM'), null, { okOnly: true, wide: true }); },
+  reqFirmEdit: () => { closeModal(); setTimeout(firmOpen, 0); },
+  reqRe: el => { if (S.req) delete S.req[el.dataset.id]; reqRedraw(el.dataset.id); },
+  reqAboutTog: el => { const id = el.dataset.id; S.reqAbout = S.reqAbout || {}; S.reqAbout[id] = !S.reqAbout[id]; reqRedraw(id); },
+  reqCopy: el => { const R = (S.req || {})[el.dataset.id]; if (!R) return; toast(copyText(reqText(R, (S.reqAbout || {})[el.dataset.id])) ? '📋 Ռեկվիզիտները պատճենվեցին' : 'Չհաջողվեց պատճենել', 'ok'); },
+  reqWa: async el => {
+    const R = (S.req || {})[el.dataset.id]; if (!R) return;
+    const t = reqText(R, (S.reqAbout || {})[el.dataset.id]);
+    if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) { try { await navigator.share({ text: t }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    window.open(WEB + 'wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener');
+  },
+  reqMake: el => reqMake(el.dataset.id, el.dataset.f),
   docListRe: () => { if (S.docList) delete S.docList[S.docComp]; renderView(); },
   docDlSel: el => { const L = (S.docList || {})[S.docComp]; if (L) docsDownload(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => f.fid), el.dataset.f); },
   docSendSel: () => { const L = (S.docList || {})[S.docComp]; if (L) docsSend(S.docComp, L.files.filter(f => S.docMark[f.fid]).map(f => ({ fid: f.fid, name: f.name }))); },
@@ -5219,7 +5606,7 @@ const ACT = {
     if (n.type === 'mail' || /^M:/.test(n.taskId || '')) { closeNotifs(); openMailNotif(n); return; }
     if (n.type === 'chat' || /^(G-|R-|WA-)/.test(n.taskId || '')) { closeNotifs(); openChat(n.taskId); return; }
     if (n.taskId) openTask(n.taskId);
-    else { closeNotifs(); if (n.type === 'reports') ACT.go({ dataset: { v: 'reports' } }); else if (n.type === 'request') ACT.go({ dataset: { v: 'requests' } }); else if (n.type === 'company') ACT.go({ dataset: { v: 'companies' } }); }
+    else { closeNotifs(); if (n.type === 'reports') ACT.go({ dataset: { v: 'reports' } }); else if (n.type === 'request') ACT.go({ dataset: { v: 'requests' } }); else if (n.type === 'company') ACT.go({ dataset: { v: 'companies' } }); else if (n.type === 'tax') ACT.docTabTax(); }
   },
   setStatus: el => stageEdit('status', el.dataset.s),
   saveTask: () => saveTask(),
@@ -5288,6 +5675,8 @@ document.addEventListener('change', e => {
   if (el.dataset && el.dataset.dlx === 'all') { const F = docLogF(); F.mark = {}; if (el.checked) (F.rows || []).filter(r => !r.deletedAt && (isMgr() || r.by === me())).forEach(r => { F.mark[r.fid] = true; }); renderView(); return; }
   if (el.dataset && el.dataset.dlx === 'del') { const F = docLogF(); F.del = el.checked; F.rows = null; renderView(); return; }
   if (el.dataset && el.dataset.dl) { const F = docLogF(); F[el.dataset.dl] = el.value; if (el.dataset.dl === 'to') F.toAuto = !el.value || el.value === today(); F.rows = null; F.busy = false; renderView(); return; }
+  if (el.id === 'taxYmIn') { if (/^\d{4}-\d\d$/.test(el.value)) { S.taxYm = el.value; renderView(); } return; }
+  if (el.id === 'taxWho') { S.taxWho = el.value; renderView(); return; }
   if (el.id === 'docComp') { S.docComp = el.value; S.docMark = {}; renderView(); return; }
   if (el.hasAttribute && el.hasAttribute('data-markall')) { const L = (S.docList || {})[S.docComp]; S.docMark = {}; if (el.checked && L) L.files.forEach(f => { S.docMark[f.fid] = true; }); renderView(); return; }
   if (el.dataset.mark) { S.docMark = S.docMark || {}; S.docMark[el.dataset.mark] = el.checked; renderView(); return; }
