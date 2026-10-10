@@ -4383,7 +4383,7 @@ async function docsOpen(companyId, sel) {
 }
 /* «Փաստաթղթեր» բաժին՝ ցանկացած կազմակերպության համար ցանկացած փաստաթուղթ */
 const DOC_ICO = { 1: '🏛️', 2: '📝', 3: '🛃', 4: '📊', 5: '🤝', 6: '📍', 7: '🏦' };
-const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար առանձին', 7: 'Կազմակերպության տվյալներ (ՀՎՀՀ, բանկ, հաշիվ)' };
+const DOC_SUB = { 1: 'Պետական եկամուտների կոմիտե', 2: 'ՊԵԿ դիմում', 3: 'Մաքսային մարմիններ', 4: 'Վիճակագրական կոմիտե', 5: 'Սպասարկման պայմանագիր', 6: 'Ամեն գործունեության հասցեի համար', 7: 'ՀՎՀՀ, բանկ, հաշիվ, հասցե' };
 const docTabs = () => `<div class="seg" style="margin-bottom:14px;max-width:100%;overflow-x:auto;white-space:nowrap">${[['make', '📄 Ստեղծել'], ['tax', '💰 Հարկերի թերթիկներ'], ['log', '📒 Մատյան']].map(([k, l]) => `<button class="${(S.docTab || 'make') === k ? 'on' : ''}" data-act="docTab" data-k="${k}">${l}</button>`).join('')}</div>`;
 function viewDocs() {
   if (S.docTab === 'log') return docTabs() + viewDocLog();
@@ -4438,7 +4438,7 @@ function taxCompName(name, lang) {
 const fmtAmt = n => String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 const parseAmt = v => { const n = Math.round(Number(String(v == null ? '' : v).replace(/[\s,]/g, '').replace(/[^\d.]/g, '')) || 0); return n > 0 ? n : 0; };
 const dmyD = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(0, 4) : '';
-function taxYmNow() { const d = today(); return d.slice(0, 7); }
+function taxYmNow() { return taxYmAdd(today().slice(0, 7), -1); }   /* հոկտեմբերին կազմում ենք սեպտեմբերի թերթիկը */
 function taxYmAdd(ym, n) { let y = +ym.slice(0, 4), m = +ym.slice(5, 7) + n; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return y + '-' + String(m).padStart(2, '0'); }
 function taxCatById() { const o = {}; (S.d.taxCat || []).forEach(t => { o[t.id] = t; }); return o; }
 function taxLoad(ym, force) {
@@ -4452,7 +4452,7 @@ function taxLoad(ym, force) {
 function taxLines(c) {
   const sh = c.sheet, saved = {}, extra = [];
   if (sh) sh.items.forEach(it => { if (it.id === 'X') extra.push(it); else saved[it.id] = it; });
-  const out = c.taxes.map(t => ({ id: t.id, name: t.name, due: (saved[t.id] || {}).due || t.due, amt: (saved[t.id] || {}).amt || 0, account: t.account }));
+  const out = c.taxes.map(t => ({ id: t.id, name: t.name, due: t.due, amt: (saved[t.id] || {}).amt || 0, account: t.account }));
   if (sh) sh.items.forEach(it => { if (it.id !== 'X' && !c.taxes.some(t => t.id === it.id)) out.push(it); });
   return out.concat(extra.map(x => Object.assign({ x: 1 }, x)));
 }
@@ -4484,7 +4484,7 @@ function viewTax() {
   const list = T.companies.filter(c => !S.taxWho || c.responsible === S.taxWho);
   const withT = list.filter(c => c.taxes.length || (c.sheet && c.sheet.items.length)), noT = list.filter(c => !c.hasTaxes);
   const cnt = k => withT.filter(c => (c.sheet && c.sheet.status || '') === k).length;
-  return head + `<div class="hint" style="margin:0 0 10px">${esc(T.month)} · ${withT.length} կազմակերպություն · 🟢 ուղարկված՝ ${cnt('sent')} · 🟡 լրացված՝ ${cnt('ready')} · ⚪ չլրացված՝ ${cnt('')}. գումարները պահպանվում են ավտոմատ։</div>
+  return head + `<div class="hint" style="margin:0 0 10px"><b>${esc(T.month)}</b>-ի հարկերը (վճարվում են ${esc(String(T.payMonth || '').toLowerCase())}ին) · ${withT.length} կազմակերպություն · 🟢 ուղարկված՝ ${cnt('sent')} · 🟡 լրացված՝ ${cnt('ready')} · ⚪ չլրացված՝ ${cnt('')}. գումարները պահպանվում են ավտոմատ։</div>
     ${noT.length ? `<details class="card" style="padding:10px 14px;margin-bottom:12px"><summary style="cursor:pointer;font-size:13px">⚠ Վճարվող հարկերը նշված չեն՝ ${noT.length} կազմակերպություն${isMgr() ? ' (նշեք կազմակերպության քարտում)' : ''}</summary><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${noT.map(c => isMgr() ? `<button class="btn sm" data-act="editCompany" data-id="${esc(c.id)}">✏️ ${esc(c.name)}</button>` : `<span class="tag">${esc(c.name)}</span>`).join('')}</div></details>` : ''}
     ${withT.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:12px;align-items:start">${withT.map(c => taxCard(c, ym)).join('')}</div>` : '<div class="card" style="padding:18px"><span class="muted">Այս ամսվա համար հարկեր ունեցող կազմակերպություններ չկան։</span></div>'}`;
 }
@@ -4649,7 +4649,7 @@ function taxCatOpen() {
   const row = t => `<div class="trow" data-id="${esc(t.id || '')}" style="border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;display:grid;grid-template-columns:2fr 1fr 70px 1.2fr auto;gap:6px">
     <input class="inp" data-t="name" value="${esc(t.name || '')}" placeholder="Անվանում (հայերեն)"><input class="inp" data-t="months" value="${esc(t.months || '')}" placeholder="ամեն ամիս" title="Որ ամիսներին է վճարվում (օր. 3,6,9,12). դատարկ՝ ամեն ամիս"><input class="inp" data-t="dueDay" value="${esc(t.dueDay || 20)}" inputmode="numeric" title="Վճարման օրը"><input class="inp" data-t="account" value="${esc(t.account || '')}" placeholder="Գանձ. հաշիվ (ըստ ցանկ.)"><button type="button" class="btn sm" data-rmt>✕</button>
     <input class="inp" data-t="nameRu" value="${esc(t.nameRu || '')}" placeholder="По-русски" style="grid-column:1/3"><input class="inp" data-t="nameEn" value="${esc(t.nameEn || '')}" placeholder="In English" style="grid-column:3/5"><input type="hidden" data-t="regimes" value="${esc(t.regimes || '')}"></div>`;
-  const m = openModal('💰 Հարկեր և պարտադիր վճարներ', `<div class="hint" style="margin-bottom:10px">Սյուներ՝ <b>անվանում</b> · <b>ամիսներ</b> (որ ամիսներին է վճարվում, օր. «3,6,9,12»; դատարկ՝ ամեն ամիս) · <b>վճարման օր</b> (եթե ընկնում է հանգստյան օրվա, տեղափոխվում է հաջորդ աշխատանքային օր) · <b>գանձապետական հաշիվ</b> (լրացնելու դեպքում կերևա նկարում)։ Ներքևում՝ ռուսերեն և անգլերեն անվանումները։ ⚠ Ստուգեք ժամկետները՝ նախնական արժեքները օրինակային են։</div>
+  const m = openModal('💰 Հարկեր և պարտադիր վճարներ', `<div class="hint" style="margin-bottom:10px">Սյուներ՝ <b>անվանում</b> · <b>ամիսներ</b> (որ ամիսներին է <u>վճարվում</u>, օր. շրջանառության հարկ՝ «1,4,7,10», շահութահարկի կանխավճար՝ «3,6,9,12»; դատարկ՝ ամեն ամիս)։ Թերթիկը կազմվում է ըստ ամսվա (օր. «Սեպտեմբեր»), իսկ հարկերն ու ժամկետները վերցվում են հաջորդ ամսից (մինչև հոկտեմբերի 20) · <b>վճարման օր</b> (եթե ընկնում է հանգստյան օրվա, տեղափոխվում է հաջորդ աշխատանքային օր) · <b>գանձապետական հաշիվ</b> (լրացնելու դեպքում կերևա նկարում)։ Ներքևում՝ ռուսերեն և անգլերեն անվանումները։ ⚠ Ստուգեք ժամկետները՝ նախնական արժեքները օրինակային են։</div>
     <div id="tBox">${(S.d.taxCat || []).filter(t => t.active).map(row).join('')}</div><button type="button" class="btn sm" id="tAdd">+ Ավելացնել</button>`, async () => {
     const list = [...m.querySelectorAll('.trow')].map(r => { const o = { id: r.dataset.id }; r.querySelectorAll('[data-t]').forEach(i => { o[i.dataset.t] = i.value; }); return o; }).filter(x => x.name.trim());
     S.d.taxCat = await call('taxCatSave', { list }); S.tax = {}; toast('Պահպանված է', 'ok'); if (S.view === 'docs') renderView();
@@ -4743,9 +4743,9 @@ function viewDocsMake() {
       <button class="btn" data-act="reqFirm" title="Numetrix-ի ռեկվիզիտները՝ պատճենել, PDF, ուղարկել">🏢 Մեր ռեկվիզիտները</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:14px">Փաստաթղթեր</b><span class="sp" style="flex:1"></span><button class="btn sm" data-act="docSelAll">${S.docSel.length === 7 ? 'Հանել բոլորը' : 'Նշել բոլորը'}</button></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
-      ${[1, 2, 3, 4, 5, 6, 7].map(n => { const on = S.docSel.includes(n); return `<div class="click" data-act="docTog" data-n="${n}" style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;cursor:pointer;border:1.5px solid ${on ? 'var(--accent,#4f46e5)' : 'var(--line)'};background:${on ? 'var(--panel2)' : 'transparent'}">
-        <span style="font-size:24px">${DOC_ICO[n]}</span><span style="flex:1;min-width:0"><b style="font-size:14px">${n}. ${esc(DOC_LBL[n].replace(/ \(.*\)$/, ''))}</b><br><span class="muted" style="font-size:12px">${esc(DOC_SUB[n])}</span></span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));grid-auto-rows:1fr;gap:10px">
+      ${[1, 2, 3, 4, 5, 6, 7].map(n => { const on = S.docSel.includes(n); return `<div class="click" data-act="docTog" data-n="${n}" style="display:flex;gap:12px;align-items:center;height:100%;min-height:82px;box-sizing:border-box;padding:12px 14px;border-radius:12px;cursor:pointer;border:1.5px solid var(--accent,#4f46e5);background:${on ? 'var(--panel2)' : 'var(--panel)'}">
+        <span style="font-size:24px;width:32px;flex:none;text-align:center">${DOC_ICO[n]}</span><span style="flex:1;min-width:0"><b style="font-size:14px;display:block;line-height:1.3">${n}. ${esc(DOC_SHORT[n])}</b><span class="muted" style="font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(DOC_SUB[n])}</span></span>
         <input type="checkbox" ${on ? 'checked' : ''} style="pointer-events:none;width:18px;height:18px"></div>`; }).join('')}
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn primary" data-act="docGoView" ${cid && S.docSel.length ? '' : 'disabled'}>Շարունակել →</button></div>
@@ -4760,8 +4760,15 @@ function reqLoad(id) {
   call('reqInfo', { id }, { silent: true }).then(r => { S.req[id] = r; }).catch(e => { S.req[id] = { err: e.message }; })
     .finally(() => { S.reqBusy = ''; const b = document.querySelector('#modal .reqbox[data-id="' + id + '"]'); if (b) b.outerHTML = reqBody(id); else if (S.view === 'docs') renderView(); });
 }
-function reqText(R, withAbout) {
-  return [R.name].concat(R.rows.filter(r => r[0] !== 'Անվանում').map(r => r[0] + '՝ ' + r[1])).concat(withAbout && R.about ? ['', R.about] : []).join('\n');
+/** Ընտրված գործունեության հասցեները (մեկ հասցեի դեպքում՝ ավտոմատ) */
+function reqSel(id) { const R = (S.req || {})[id] || {}, A = R.addrs || []; S.reqAddr = S.reqAddr || {}; if (A.length === 1) return A.slice(); return (S.reqAddr[id] || []).filter(a => A.includes(a)); }
+function reqRows(R, id) {
+  const sel = reqSel(id), rows = R.rows.slice();
+  if (sel.length) { let i = rows.findIndex(r => r[0] === 'Իրավաբանական հասցե'); if (i < 0) i = rows.findIndex(r => r[0] === 'Պետ. գրանցման համար'); if (i < 0) i = 1; rows.splice(i + 1, 0, [sel.length > 1 ? 'Գործունեության հասցեներ' : 'Գործունեության հասցե', sel.join('; ')]); }
+  return rows;
+}
+function reqText(R, withAbout, id) {
+  return [R.name].concat(reqRows(R, id).filter(r => r[0] !== 'Անվանում').map(r => r[0] + '՝ ' + r[1])).concat(withAbout && R.about ? ['', R.about] : []).join('\n');
 }
 function reqBody(id) {
   S.req = S.req || {}; S.reqAbout = S.reqAbout || {};
@@ -4772,8 +4779,10 @@ function reqBody(id) {
   return `<div class="reqbox" data-id="${esc(id)}">
     ${R.miss.length ? `<div class="hint" style="color:#b45309;margin:0 0 8px">⚠ Լրացված չէ՝ ${esc(R.miss.join(', '))}${isMgr() ? ` · <a data-act="${id === 'FIRM' ? 'reqFirmEdit' : 'docCompEdit'}" style="cursor:pointer;text-decoration:underline">լրացնել</a>` : ''}</div>` : ''}
     <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden"><table class="tbl" style="margin:0"><tbody>
-      ${R.rows.map(r => `<tr><td style="width:38%;font-size:12.5px;color:var(--muted);white-space:nowrap">${esc(r[0])}</td><td style="font-size:13.5px;user-select:all"><b>${esc(r[1])}</b></td></tr>`).join('')}
+      ${reqRows(R, id).map(r => `<tr><td style="width:38%;font-size:12.5px;color:var(--muted);white-space:nowrap">${esc(r[0])}</td><td style="font-size:13.5px;user-select:all"><b>${esc(r[1])}</b></td></tr>`).join('')}
     </tbody></table></div>
+    ${(R.addrs || []).length > 1 ? `<div style="margin:10px 0 0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px"><div style="font-size:13px;font-weight:600;margin-bottom:6px">📍 Գործունեության հասցե <span class="muted" style="font-weight:400">· նշեք, որը ներառել (օր. որի վրա մատակարարը պետք է հաշիվ գրի)</span></div>
+      ${R.addrs.map((a, i) => `<div class="click" data-act="reqAddrTog" data-id="${esc(id)}" data-i="${i}" style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:13px;cursor:pointer"><input type="checkbox" ${reqSel(id).includes(a) ? 'checked' : ''} style="pointer-events:none;width:16px;height:16px"><span>${esc(a)}</span></div>`).join('')}</div>` : ''}
     ${R.about ? `<div class="click" data-act="reqAboutTog" data-id="${esc(id)}" style="display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:13px;cursor:pointer"><input type="checkbox" ${ab ? 'checked' : ''} style="pointer-events:none;width:16px;height:16px;margin-top:2px"><span>Ավելացնել նկարագիրը <span class="muted">(«${esc(R.about.length > 90 ? R.about.slice(0, 90) + '…' : R.about)}»)</span></span></div>`
       : `<div class="hint" style="margin:8px 0 0">Նկարագիր չկա${isMgr() ? ` · <a data-act="${id === 'FIRM' ? 'reqFirmEdit' : 'docCompEdit'}" style="cursor:pointer;text-decoration:underline">ավելացնել</a>` : ''}</div>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
@@ -4798,16 +4807,32 @@ function reqCard(cid) {
     ${reqBody(cid)}</div>`;
 }
 /** Միայն ռեկվիզիտներ (առանց ձևանմուշների)՝ ստեղծել և բացել «պատրաստ է» պատուհանը */
-async function reqOnly(id) {
+async function reqOnly(id, addrs) {
+  if (addrs === undefined) {
+    let R = (S.req || {})[id];
+    if (!R || R.err) { try { R = await call('reqInfo', { id }); S.req = S.req || {}; S.req[id] = R; } catch (e) { return toast(esc(e.message), 'err'); } }
+    if ((R.addrs || []).length > 1) return reqAddrPick(id, R, sel => reqOnly(id, sel));
+    addrs = reqSel(id);
+  }
   toast('⏳ Ստեղծվում են ռեկվիզիտները…', '', null, 40000);
-  try { const r = await call('reqCard', { id, about: !!(S.reqAbout || {})[id] }); if (S.docList) delete S.docList[id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; } docsDone(r, id); if (S.view === 'docs') setTimeout(renderView, 0); }
+  try { const r = await call('reqCard', { id, about: !!(S.reqAbout || {})[id], addrs }); if (S.docList) delete S.docList[id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; } docsDone(r, id); if (S.view === 'docs') setTimeout(renderView, 0); }
   catch (e) { toast(esc(e.message), 'err'); }
   finally { document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են ռեկվիզիտները/.test(t.textContent)) t.remove(); }); }
+}
+/** Մի քանի գործունեության հասցե՝ ընտրել, որը գրել ռեկվիզիտներում */
+function reqAddrPick(id, R, done) {
+  const cur = reqSel(id);
+  const m = openModal('📍 Գործունեության հասցե ռեկվիզիտներում', `<div class="hint" style="margin:0 0 10px">${esc(R.name)}-ն ունի ${R.addrs.length} գործունեության հասցե։ Նշեք, որը (որոնք) գրել ռեկվիզիտներում, օրինակ այն, որի վրա մատակարարը պետք է հաշիվ դուրս գրի։ Կարող եք ոչ մեկը չնշել։</div>
+    <div class="cbox" style="max-height:none">${R.addrs.map((a, i) => `<label><input type="checkbox" name="ra" value="${i}" ${cur.includes(a) ? 'checked' : ''}> ${esc(a)}</label>`).join('')}</div>`, async () => {
+    const sel = [...m.querySelectorAll('[name=ra]:checked')].map(x => R.addrs[+x.value]);
+    S.reqAddr = S.reqAddr || {}; S.reqAddr[id] = sel;
+    setTimeout(() => done(sel), 0);
+  }, { submit: '🏦 Ստեղծել ռեկվիզիտները' });
 }
 async function reqMake(id, how) {
   toast('⏳ Պատրաստվում է ռեկվիզիտների PDF-ը…', '', null, 40000);
   let r;
-  try { r = await call('reqCard', { id, about: !!(S.reqAbout || {})[id] }); }
+  try { r = await call('reqCard', { id, about: !!(S.reqAbout || {})[id], addrs: reqSel(id) }); }
   catch (e) { return toast(esc(e.message), 'err'); }
   finally { document.querySelectorAll('.toast').forEach(t => { if (/ռեկվիզիտների PDF/.test(t.textContent)) t.remove(); }); }
   if (S.docList) delete S.docList[id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; }
@@ -4836,6 +4861,7 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
   const m = openModal('📄 Ստեղծել փաստաթղթեր — ' + D.company.name, `<div class="fgrid">
     <div class="full">${missBox(dirMissList(D.data))}${!D.data.regNo || !D.data.hvsv ? '<div class="hint" style="color:#b45309">Լրացված չէ՝ ' + esc([!D.data.regNo && 'գրանցման համար', !D.data.hvsv && 'ՀՎՍՎ'].filter(Boolean).join(', ')) + '</div>' : ''}</div>
     <div class="full"><label class="f">Որ փաստաթղթերը</label><div class="cbox" style="max-height:none">${D.types.map(t => `<label><input type="checkbox" name="doc" value="${t.n}" ${!sel || !sel.length || sel.includes(t.n) ? 'checked' : ''}> ${t.n}. ${esc(DOC_LBL[t.n] || t.name)}</label>`).join('')}<label><input type="checkbox" name="doc" value="7" ${sel && sel.includes(7) ? 'checked' : ''}> 7. 🏦 Կազմակերպության տվյալներ (ռեկվիզիտներ)</label></div>
+      ${(() => { const L = String(D.data.legalAddr || '').trim(), RA = addrs.map(x => String(x.a || '').trim()).filter((x, i, arr) => x && x !== L && arr.indexOf(x) === i); return RA.length > 1 ? `<div id="reqAddrBox" style="margin-top:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">📍 Ռեկվիզիտներում՝ գործունեության հասցե <span class="muted" style="font-weight:400">(նշեք, որը)</span></div>${RA.map(a => `<label class="chk" style="font-size:13px"><input type="checkbox" name="reqAddr" value="${esc(a)}" ${reqSel(companyId).includes(a) ? 'checked' : ''}> ${esc(a)}</label>`).join('')}</div>` : ''; })()}
       ${addrs.length ? '' : '<div class="hint" style="color:#b45309">Գործունեության հասցե նշված չէ. տեղեկատվական թերթիկը կստեղծվի առանց հասցեի։</div>'}</div>
     ${fSel('authEmp', 'Լիազորվող աշխատակից', authEmp, au)}
     <div class="full" id="authWarn"></div>
@@ -4848,9 +4874,10 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
     let docs = [...m.querySelectorAll('[name=doc]:checked')].map(x => +x.value);
     if (!docs.length) throw new Error('Նշեք առնվազն մեկ փաստաթուղթ');
     const withReq = docs.includes(7); docs = docs.filter(n => n !== 7);
-    if (!docs.length) { setTimeout(() => reqOnly(companyId), 0); return; }
+    const reqAddrs = [...m.querySelectorAll('[name=reqAddr]:checked')].map(x => x.value);
+    if (!docs.length) { setTimeout(() => reqOnly(companyId, m.querySelector('[name=reqAddr]') ? reqAddrs : undefined), 0); return; }
     if (docs.includes(5) && !f.contractDate) throw new Error('Նշեք պայմանագրի կնքման ամսաթիվը');
-    const opts = { id: companyId, docs, withReq, authEmp: f.authEmp, date: f.date, contractDate: docs.includes(5) ? f.contractDate : '', years: f.years, until: f.until, place: f.place };
+    const opts = { id: companyId, docs, withReq, reqAddrs: m.querySelector('[name=reqAddr]') ? reqAddrs : undefined, authEmp: f.authEmp, date: f.date, contractDate: docs.includes(5) ? f.contractDate : '', years: f.years, until: f.until, place: f.place };
     const P = await call('docPreview', opts);
     setTimeout(() => docsReview(opts, P, addrs), 0);
   }, { wide: true, submit: 'Շարունակել →', extra: isMgr() ? `<button type="button" class="btn" id="docEdit" style="margin-right:auto">✏️ Խմբագրել տվյալները</button>` : '' });
@@ -4859,6 +4886,7 @@ function docsPick(companyId, D, authEmp, addrs, sel) {
   m.querySelector('[name=authEmp]').onchange = aw; aw();
   const cdT = () => { const on = !!m.querySelector('[name=doc][value="5"]:checked'); m.querySelector('#cdBox').style.display = on ? '' : 'none'; };
   m.querySelectorAll('[name=doc]').forEach(c => c.addEventListener('change', cdT)); cdT();
+  const rab = m.querySelector('#reqAddrBox'); if (rab) { const rT = () => { rab.style.display = m.querySelector('[name=doc][value="7"]:checked') ? '' : 'none'; }; m.querySelectorAll('[name=doc]').forEach(c => c.addEventListener('change', rT)); rT(); }
 }
 /** Ստուգում. ցույց է տալիս բոլոր լրացվող տվյալները (կարելի է ուղղել), դատարկները՝ կարմիր */
 function docsReview(opts, P, addrs) {
@@ -4874,7 +4902,7 @@ function docsReview(opts, P, addrs) {
     const tags = {}; m.querySelectorAll('[data-tag]').forEach(i => { tags[i.dataset.tag] = i.value; });
     toast('⏳ Ստեղծվում են փաստաթղթերը… (մինչև 1 րոպե)', '', null, 60000);
     const r = await call('docGenerate', Object.assign({}, opts, { tags, addrs }));
-    if (opts.withReq) { try { const q = await call('reqCard', { id: opts.id, about: !!(S.reqAbout || {})[opts.id] }); r.files = r.files.concat(q.files); } catch (e) { toast('Ռեկվիզիտներ՝ ' + esc(e.message), 'err'); } }
+    if (opts.withReq) { try { const q = await call('reqCard', { id: opts.id, about: !!(S.reqAbout || {})[opts.id], addrs: opts.reqAddrs }); r.files = r.files.concat(q.files); } catch (e) { toast('Ռեկվիզիտներ՝ ' + esc(e.message), 'err'); } }
     document.querySelectorAll('.toast').forEach(t => { if (/Ստեղծվում են/.test(t.textContent)) t.remove(); });
     if (S.docList) delete S.docList[opts.id]; if (S.dl) { S.dl.rows = null; S.dl.busy = false; }
     setTimeout(() => { docsDone(r, opts.id); if (S.view === 'docs') renderView(); }, 0);
@@ -5488,11 +5516,12 @@ const ACT = {
   reqFirm: () => { openModal('🏢 Numetrix-ի ռեկվիզիտները', reqBody('FIRM'), null, { okOnly: true, wide: true }); },
   reqFirmEdit: () => { closeModal(); setTimeout(firmOpen, 0); },
   reqRe: el => { if (S.req) delete S.req[el.dataset.id]; reqRedraw(el.dataset.id); },
+  reqAddrTog: el => { const id = el.dataset.id, R = (S.req || {})[id]; if (!R) return; const a = R.addrs[+el.dataset.i]; S.reqAddr = S.reqAddr || {}; const cur = reqSel(id); S.reqAddr[id] = cur.includes(a) ? cur.filter(x => x !== a) : cur.concat(a); reqRedraw(id); },
   reqAboutTog: el => { const id = el.dataset.id; S.reqAbout = S.reqAbout || {}; S.reqAbout[id] = !S.reqAbout[id]; reqRedraw(id); },
-  reqCopy: el => { const R = (S.req || {})[el.dataset.id]; if (!R) return; toast(copyText(reqText(R, (S.reqAbout || {})[el.dataset.id])) ? '📋 Ռեկվիզիտները պատճենվեցին' : 'Չհաջողվեց պատճենել', 'ok'); },
+  reqCopy: el => { const R = (S.req || {})[el.dataset.id]; if (!R) return; toast(copyText(reqText(R, (S.reqAbout || {})[el.dataset.id], el.dataset.id)) ? '📋 Ռեկվիզիտները պատճենվեցին' : 'Չհաջողվեց պատճենել', 'ok'); },
   reqWa: async el => {
     const R = (S.req || {})[el.dataset.id]; if (!R) return;
-    const t = reqText(R, (S.reqAbout || {})[el.dataset.id]);
+    const t = reqText(R, (S.reqAbout || {})[el.dataset.id], el.dataset.id);
     if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) { try { await navigator.share({ text: t }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
     window.open(WEB + 'wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener');
   },
