@@ -6040,6 +6040,104 @@ const ACT = {
     catch (e) { toast(esc(e.message), 'err'); }
   }
 };
+/* ====================== 💼 ԱՇԽԱՏԱՎԱՐՁԻ ՀԱՇՎԻՉ ======================
+   Դրույքները՝ ըստ ամսվա (ym ≥ from)։ Փոփոխության դեպքում ավելացնել նոր տող SAL_RULES-ում։
+   Աղբյուրներ՝ ՀՀ հարկային օրենսգիրք, «Կուտակային կենսաթոշակների մասին», «Զինծառայողների ... վնասների հատուցման մասին»,
+   «Առողջության համընդհանուր ապահովագրության մասին» ՀՕ-459-Ն (17.12.2025), ՊԵԿ պարզաբանում (25.12.2025) */
+const SAL_RULES = [
+  { from: '2023-01', it: 0.20, health: false,
+    stamp: [[100000, 1500], [200000, 3000], [500000, 5500], [1000000, 8500], [Infinity, 15000]] },
+  // 2025-ի դեկտեմբերից՝ առողջության ապահովագրավճար (>200 000), վճարողների դրոշմանիշայինը՝ 1 000
+  { from: '2025-12', it: 0.20, health: true, stampIns: [[1000000, 1000], [Infinity, 15000]],
+    stamp: [[100000, 1500], [200000, 3000], [500000, 5500], [1000000, 8500], [Infinity, 15000]] },
+  // 2026-ի սեպտեմբերից՝ դրոշմանիշայինը 1 000 բոլորի համար (մինչև 1 000 000)
+  { from: '2026-09', it: 0.20, health: true, stampIns: [[1000000, 1000], [Infinity, 15000]], stamp: [[1000000, 1000], [Infinity, 15000]] }
+];
+const SAL_SOC = { cap: 1125000, lim: 500000, low: 0.05, high: 0.10, minus: 25000, volNewCap: 56250 };
+const SAL_HEALTH = { thr: 200000, lim: 500000, low: 4800, high: 10800 };
+function salRules(ym) { let r = SAL_RULES[0]; SAL_RULES.forEach(x => { if (ym >= x.from) r = x; }); return r; }
+function salBand(tbl, g) { for (const [lim, v] of tbl) if (g <= lim) return v; return tbl[tbl.length - 1][1]; }
+/** Կեղտոտից՝ պահումները. o = {ym, soc:'mand'|'volOld'|'volNew'|'none', ins:'auto'|'yes'|'no', it10:bool} */
+function salFromGross(g, o) {
+  g = Math.max(0, Math.round(g)); const R = salRules(o.ym);
+  const it = Math.round(g * (o.it10 ? 0.10 : R.it));
+  let soc = 0;
+  if (o.soc !== 'none' && g > 0) {
+    const b = Math.min(g, SAL_SOC.cap);
+    if (o.soc === 'volNew') soc = Math.min(Math.round(b * SAL_SOC.low), SAL_SOC.volNewCap);
+    else soc = b <= SAL_SOC.lim ? Math.round(b * SAL_SOC.low) : Math.round(b * SAL_SOC.high - SAL_SOC.minus);
+  }
+  const insured = R.health && g > 0 && (o.ins === 'yes' || (o.ins === 'auto' && g > SAL_HEALTH.thr));
+  const health = insured ? (g <= SAL_HEALTH.lim ? SAL_HEALTH.low : SAL_HEALTH.high) : 0;
+  const stamp = g > 0 ? salBand(insured && R.stampIns ? R.stampIns : R.stamp, g) : 0;
+  const ded = it + soc + stamp + health;
+  return { gross: g, it, soc, stamp, health, insured, ded, net: g - ded };
+}
+/** Մաքուրից՝ կեղտոտ. շեմերի մոտ մաքուրը կարող է նվազել (նոր դրույք), ուստի որոնվում է ամեն միջակայքում առանձին և ընտրվում է ամենափոքր կեղտոտը */
+function salFromNet(n, o) {
+  n = Math.max(0, Math.round(n)); if (!n) return salFromGross(0, o);
+  const cuts = [0, 100000, 200000, 500000, 1000000, 1125000], top = Math.max(n * 3, 3000000), segs = [];
+  cuts.forEach((c, i) => segs.push([i ? c + 1 : 1, i < cuts.length - 1 ? cuts[i + 1] : top]));
+  let best = null;
+  segs.forEach(([lo, hi]) => {
+    if (salFromGross(hi, o).net < n) return;
+    while (lo < hi) { const md = Math.floor((lo + hi) / 2); if (salFromGross(md, o).net >= n) hi = md; else lo = md + 1; }
+    const r = salFromGross(lo, o);
+    if (!best || (r.net === n && best.net !== n) || ((r.net === n) === (best.net === n) && r.gross < best.gross)) best = r;
+  });
+  return best || salFromGross(n, o);
+}
+function salCalcOpen() {
+  const now = new Date(), ym0 = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const st = { mode: 'net', ym: ym0 };
+  try { Object.assign(st, JSON.parse(localStorage.getItem('nx_sal') || '{}')); st.ym = ym0; } catch (e) {}
+  const opt = (name, list, v) => `<select class="inp" data-s="${name}">${list.map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  const m = openModal('💼 Աշխատավարձի հաշվիչ', `<div class="salc">
+    <div class="seg" id="salMode" style="margin-bottom:12px"><button type="button" data-m="net">Մաքուրից → կեղտոտ</button><button type="button" data-m="gross">Կեղտոտից → մաքուր</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px">
+      <div style="grid-column:1/-1"><label class="f" id="salLbl">Մաքուր աշխատավարձ (ձեռքին)</label><input class="inp" id="salIn" inputmode="numeric" autocomplete="off" style="font-size:22px;font-weight:700;padding:10px 14px" value="${st.v ? fmtAmt(st.v) : ''}" placeholder="0"></div>
+      <div><label class="f">Սոցիալական վճար (կուտակային կենսաթոշակ)</label>${opt('soc', [['mand', 'Մասնակից՝ պարտադիր (ծնված 1974-ից)'], ['volOld', 'Կամավոր մասնակից (միացել է մինչև 01.07.2018)'], ['volNew', 'Կամավոր մասնակից (միացել է 01.07.2018-ից հետո)'], ['none', 'Չի մասնակցում (ծնված մինչև 1974)']], st.soc || 'mand')}</div>
+      <div><label class="f">Առողջության ապահովագրավճար</label>${opt('ins', [['auto', 'Ավտոմատ՝ եթե կեղտոտը > 200 000'], ['yes', 'Վճարող է (որևէ ամիս գերազանցել է 200 000-ը)'], ['no', 'Չի վճարում (մինչև 18 / 65+ տարեկան)']], st.ins || 'auto')}</div>
+      <div><label class="f">Եկամտային հարկ</label>${opt('it', [['20', '20%'], ['10', '10% (ՏՏ արտոնություն)']], st.it || '20')}</div>
+      <div><label class="f">Ամիս (դրույքները)</label><input class="inp" type="month" data-s="ym" value="${esc(st.ym)}"></div>
+    </div>
+    <div id="salRes" style="margin-top:16px"></div>
+    <div class="hint" style="margin-top:10px;font-size:11.5px">Սոցիալական վճար՝ մինչև 500 000-ը 5%, ավելի՝ 10% − 25 000 (բազան՝ առավելագույնը 1 125 000)։ Առողջության ապահովագրավճար՝ մինչև 500 000-ը 4 800, ավելի՝ 10 800 (եթե կեղտոտը որևէ ամիս գերազանցել է 200 000-ը, պահվում է նաև հետագա 12 ամիսներին)։ Դրոշմանիշային՝ մինչև 1 000 000-ը 1 000, ավելի՝ 15 000 (2026-ի սեպտեմբերից)։</div>
+  </div>`, null, { okOnly: true, wide: true });
+  const inp = m.querySelector('#salIn');
+  const read = () => { const o = {}; m.querySelectorAll('[data-s]').forEach(x => { o[x.dataset.s] = x.value; }); return { ym: o.ym || ym0, soc: o.soc, ins: o.ins, it10: o.it === '10', raw: o }; };
+  const row = (l, v, b, c) => `<tr><td style="padding:7px 10px;${b ? 'font-weight:700' : ''}">${l}</td><td style="padding:7px 10px;text-align:right;white-space:nowrap;${b ? 'font-weight:800;font-size:16px' : 'font-weight:600'};${c ? 'color:' + c : ''}">${fmtAmt(v)} ֏</td></tr>`;
+  let last = null;
+  const draw = () => {
+    const o = read(), v = parseAmt(inp.value);
+    const r = st.mode === 'net' ? salFromNet(v, o) : salFromGross(v, o); last = r;
+    const pct = r.gross ? ' <span class="muted" style="font-weight:400">(' + (Math.round(r.ded / r.gross * 1000) / 10).toString().replace('.', ',') + '%)</span>' : '';
+    m.querySelector('#salRes').innerHTML = !v ? '<div class="muted" style="padding:10px">Գրեք գումարը</div>' : `<table style="width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+      ${row('Կեղտոտ (հաշվարկված) աշխատավարձ', r.gross, true, st.mode === 'net' ? '#1d4ed8' : '')}
+      <tr><td colspan="2" style="border-top:1px solid var(--line);padding:0"></td></tr>
+      ${row('Եկամտային հարկ (' + (o.it10 ? '10' : '20') + '%)', r.it)}
+      ${row('Սոցիալական վճար' + (o.soc === 'none' ? ' (չի մասնակցում)' : ''), r.soc)}
+      ${row('Դրոշմանիշային վճար', r.stamp)}
+      ${row('Առողջության ապահովագրավճար' + (r.insured ? '' : ' (չի պահվում)'), r.health)}
+      <tr style="background:var(--panel2)"><td style="padding:7px 10px;font-weight:700">Ընդամենը պահումներ${pct}</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmtAmt(r.ded)} ֏</td></tr>
+      ${row('Մաքուր (ձեռքին)', r.net, true, st.mode === 'gross' ? '#059669' : '')}
+    </table>
+    ${st.mode === 'net' && r.net !== v ? `<div class="hint" style="margin-top:6px">Ճշգրիտ ${fmtAmt(v)} մաքուր ստանալ հնարավոր չէ կլորացումների պատճառով. մոտակա՝ ${fmtAmt(r.net)}</div>` : ''}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button type="button" class="btn sm" id="salCopy">📋 Պատճենել բացվածքը</button></div>`;
+    const cb = m.querySelector('#salCopy'); if (cb) cb.onclick = () => { copyText(['Կեղտոտ՝ ' + fmtAmt(r.gross), 'Եկամտային հարկ՝ ' + fmtAmt(r.it), 'Սոցիալական վճար՝ ' + fmtAmt(r.soc), 'Դրոշմանիշային վճար՝ ' + fmtAmt(r.stamp), 'Առողջության ապահովագրավճար՝ ' + fmtAmt(r.health), 'Ընդամենը պահումներ՝ ' + fmtAmt(r.ded), 'Մաքուր՝ ' + fmtAmt(r.net)].join('\n')); toast('📋 Պատճենվեց', 'ok'); };
+    try { localStorage.setItem('nx_sal', JSON.stringify({ mode: st.mode, v, soc: o.raw.soc, ins: o.raw.ins, it: o.raw.it })); } catch (e) {}
+  };
+  const setMode = md => {
+    if (last && parseAmt(inp.value)) inp.value = fmtAmt(md === 'net' ? last.net : last.gross);
+    st.mode = md; m.querySelectorAll('#salMode button').forEach(b => b.classList.toggle('on', b.dataset.m === md));
+    m.querySelector('#salLbl').textContent = md === 'net' ? 'Մաքուր աշխատավարձ (ձեռքին)' : 'Կեղտոտ (հաշվարկված) աշխատավարձ';
+    draw(); inp.focus();
+  };
+  m.querySelectorAll('#salMode button').forEach(b => { b.onclick = () => setMode(b.dataset.m); });
+  inp.addEventListener('input', () => { const pos = inp.value.length - inp.selectionStart, v = parseAmt(inp.value); inp.value = v ? fmtAmt(v) : ''; try { inp.setSelectionRange(inp.value.length - pos, inp.value.length - pos); } catch (e) {} draw(); });
+  m.addEventListener('change', e => { if (e.target.matches('[data-s]')) draw(); });
+  setMode(st.mode === 'gross' ? 'gross' : 'net');
+}
 /* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
 const TOOL_MENU = {
   tax: [['salary', '💼', 'Աշխատավարձի հաշվիչ', 'Գրանցված ↔ մաքուր, պահումներ'], ['turnover', '📈', 'Շրջանառության հարկի հաշվիչ', 'Ըստ գործունեության տեսակի']]
@@ -6071,8 +6169,9 @@ function toolGo(k, keep) {
   if (k === 'calcApp') return toolLaunch('ms-calculator:');
   if (k === 'wordApp') return toolLaunch('ms-word:nft|u|' + toolTpl('blank.docx'));
   if (k === 'xlsApp') return toolLaunch('ms-excel:nft|u|' + toolTpl('blank.xlsx'));
-  if (k === 'salary' || k === 'turnover') {
-    const t = k === 'salary' ? '💼 Աշխատավարձի հաշվիչ' : '📈 Շրջանառության հարկի հաշվիչ';
+  if (k === 'salary') return salCalcOpen();
+  if (k === 'turnover') {
+    const t = '📈 Շրջանառության հարկի հաշվիչ';
     openModal(t, '<div class="hint" style="font-size:14px;padding:14px">🛠 Այս հաշվիչը պատրաստվում է։ Հաշվարկի տրամաբանությունը (դրույքներ, շեմեր, պահումներ) կհամաձայնեցնենք, և այն կհայտնվի այստեղ։</div>', null, { okOnly: true });
   }
 }
