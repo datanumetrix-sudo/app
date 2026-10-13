@@ -207,6 +207,7 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 16px}
 .toolbar select.inp{width:auto;min-width:150px;padding:7px 10px}
 .toolbar .sp{flex:1}
+.taxpay{padding:4px 0;width:34px;justify-content:center;font-weight:700;color:var(--muted)}.taxpay.on{background:#059669;border-color:#059669;color:#fff}.taxrow.paid [data-taxamt]{background:#ecfdf5;border-color:#a7f3d0}
 .tchip{display:inline-flex;cursor:pointer}.tchip input{display:none}.tchip span{font-size:11.5px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel)}.tchip input:checked+span{background:#2563eb;border-color:#2563eb;color:#fff}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);user-select:none}
 
@@ -4477,25 +4478,33 @@ function taxLoad(ym, force) {
 /** Քարտի տողերը՝ ամսվա հարկերը + լրացված (այդ թվում «այլ») գումարները */
 function taxLines(c) {
   const sh = c.sheet, saved = {}, extra = [];
-  if (sh) sh.items.forEach(it => { if (it.id === 'X') extra.push(it); else saved[it.id] = it; });
+  if (sh) sh.items.forEach(it => { if (/^X/.test(it.id)) extra.push(it); else saved[it.id] = it; });
   const out = c.taxes.map(t => ({ id: t.id, name: t.name, due: t.due, amt: (saved[t.id] || {}).amt || 0, account: t.account, noComm: t.noComm, comm: t.comm }));
-  if (sh) sh.items.forEach(it => { if (it.id !== 'X' && !c.taxes.some(t => t.id === it.id)) out.push(it); });
+  if (sh) sh.items.forEach(it => { if (!/^X/.test(it.id) && !c.taxes.some(t => t.id === it.id)) out.push(it); });
   return out.concat(extra.map(x => Object.assign({ x: 1 }, x)));
 }
-const TAX_ST = { sent: ['🟢', 'Ուղարկված', '#dcfce7', '#166534'], ready: ['🟡', 'Լրացված', '#fef9c3', '#854d0e'], '': ['⚪', 'Չլրացված', '#f1f5f9', '#475569'] };
-function taxChip(sh) { const st = TAX_ST[sh && sh.status || ''] || TAX_ST['']; return `<span class="tag" style="background:${st[2]};color:${st[3]};border:0">${st[0]} ${st[1]}${sh && sh.status === 'sent' && sh.sentVia ? ' · ' + esc(sh.sentVia) : ''}</span>`; }
+const TAX_ST = { paid: ['✅', 'Վճարված', '#d1fae5', '#065f46'], part: ['🔵', 'Մասնակի վճարված', '#dbeafe', '#1e40af'], sent: ['🟢', 'Ուղարկված', '#dcfce7', '#166534'], ready: ['🟡', 'Լրացված', '#fef9c3', '#854d0e'], '': ['⚪', 'Չլրացված', '#f1f5f9', '#475569'] };
+function taxPayCnt(sh) { if (!sh) return [0, 0]; const pos = sh.items.filter(it => it.amt > 0), pd = sh.paid || {}; return [pos.filter(it => pd[it.id]).length, pos.length]; }
+function taxStat(sh) { if (!sh) return ''; if (sh.paidAll) return 'paid'; return taxPayCnt(sh)[0] ? 'part' : (sh.status || ''); }
+function taxChip(sh) {
+  const k = taxStat(sh), st = TAX_ST[k] || TAX_ST[''], pc = taxPayCnt(sh);
+  const extra = k === 'part' ? ' ' + pc[0] + '/' + pc[1] + (sh.status === 'sent' ? ' · 🟢 ուղարկված' : '') : k === 'paid' ? (sh.status === 'sent' ? '' : ' · ⚠ չուղարկված') : (k === 'sent' && sh.sentVia ? ' · ' + esc(sh.sentVia) : '');
+  return `<span class="tag" style="background:${st[2]};color:${st[3]};border:0">${st[0]} ${st[1]}${extra}</span>`;
+}
 function taxCard(c, ym) {
   const L = taxLines(c), total = L.reduce((a, x) => a + (+x.amt || 0), 0);
-  const row = x => `<div class="taxrow" data-tid="${esc(x.id)}" style="display:grid;grid-template-columns:1fr 150px${x.x ? ' 30px' : ''};gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)">
-      ${x.x ? `<input class="inp" data-taxname value="${esc(x.name)}" placeholder="Վճարի անվանում (օր. տուգանք)" style="padding:6px 10px">` : `<div style="min-width:0"><div style="font-size:13.5px;font-weight:600">${esc(x.name)}</div><div class="muted" style="font-size:11.5px">մինչև ${esc(dmyD(x.due))}${x.comm ? (x.account ? ' · հ/հ ' + esc(x.account) : ' · <span style="color:#b45309">⚠ հաշիվը նշված չէ</span>') : ''}${x.noComm ? ' · <span style="color:#b45309">⚠ համայնքը նշված չէ (կազմակերպության քարտում)</span>' : ''}</div></div>`}
+  const pd = (c.sheet && c.sheet.paid) || {}, td = today();
+  const payBtn = x => { const p = pd[x.id], can = x.amt > 0; return `<button type="button" class="btn sm taxpay${p ? ' on' : ''}" data-act="taxPay" data-line="${esc(x.id)}" ${can ? '' : 'disabled'} title="${p ? esc('Վճարված՝ ' + dmyD(p.at.slice(0, 10)) + ' ' + p.at.slice(11) + ' · ' + p.by + ' (սեղմեք՝ հանելու համար)') : can ? 'Նշել վճարված' : 'Նախ լրացրեք գումարը'}">${p ? '✓' : '○'}</button>`; };
+  const row = x => `<div class="taxrow${pd[x.id] ? ' paid' : ''}" data-tid="${esc(x.id)}" style="display:grid;grid-template-columns:1fr 118px 34px${x.x ? ' 30px' : ''};gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)">
+      ${x.x ? `<input class="inp" data-taxname value="${esc(x.name)}" placeholder="Վճարի անվանում (օր. տուգանք)" style="padding:6px 10px">` : `<div style="min-width:0"><div style="font-size:13.5px;font-weight:600">${esc(x.name)}</div><div class="muted" style="font-size:11.5px">${pd[x.id] ? `<span style="color:#059669;font-weight:600">✓ վճարված ${esc(dmyD(pd[x.id].at.slice(0, 10)))}</span> · ` : ''}<span style="${!pd[x.id] && x.amt > 0 && x.due && x.due < td ? 'color:#dc2626;font-weight:700' : ''}">մինչև ${esc(dmyD(x.due))}${!pd[x.id] && x.amt > 0 && x.due && x.due < td ? ' · ժամկետն անցել է' : ''}</span>${x.comm ? (x.account ? ' · հ/հ ' + esc(x.account) : ' · <span style="color:#b45309">⚠ հաշիվը նշված չէ</span>') : ''}${x.noComm ? ' · <span style="color:#b45309">⚠ համայնքը նշված չէ (կազմակերպության քարտում)</span>' : ''}</div></div>`}
       <input class="inp" data-taxamt inputmode="numeric" value="${x.amt ? fmtAmt(x.amt) : ''}" placeholder="${c.prev[x.id] ? 'նախ.՝ ' + fmtAmt(c.prev[x.id]) : '0'}" style="text-align:right;font-weight:700;padding:6px 10px">
-      ${x.x ? `<button type="button" class="btn sm" data-act="taxRmRow" title="Հեռացնել">✕</button>` : ''}</div>`;
+      ${payBtn(x)}${x.x ? `<button type="button" class="btn sm" data-act="taxRmRow" title="Հեռացնել">✕</button>` : ''}</div>`;
   return `<div class="card taxcard" data-cid="${esc(c.id)}" style="padding:14px 16px;display:flex;flex-direction:column">
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><div style="flex:1;min-width:0"><b style="font-size:14.5px">${esc(c.name)}</b><div class="muted" style="font-size:12px">${esc(c.responsible || '—')}${c.lang !== 'hy' ? ' · ' + (c.lang === 'ru' ? '🇷🇺 RU' : '🇬🇧 EN') : ''}</div></div><span data-taxchip>${taxChip(c.sheet)}</span></div>
     <div data-rows>${L.map(row).join('') || '<div class="muted" style="font-size:12.5px;padding:6px 0">Այս ամիս նշված հարկեր չկան</div>'}</div>
     <button type="button" class="btn sm" data-act="taxAddRow" style="align-self:flex-start;margin-top:8px">+ Այլ վճար</button>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span class="muted" style="font-size:12.5px">Ընդամենը</span><b data-taxtot style="font-size:16px;flex:1;white-space:nowrap">${fmtAmt(total)} ֏</b>
-      <button type="button" class="btn primary sm" data-act="taxImgOpen" data-id="${esc(c.id)}" ${total ? '' : 'disabled'}>🖼 Նկար և ուղարկել</button></div>
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span class="muted" style="font-size:12.5px">Ընդամենը</span><b data-taxtot style="font-size:16px;flex:1;white-space:nowrap">${fmtAmt(total)} ֏</b>
+      ${total && !(c.sheet && c.sheet.paidAll) ? `<button type="button" class="btn sm" data-act="taxPayAll" title="Նշել բոլոր տողերը վճարված">✓ Բոլորը</button>` : ''}<button type="button" class="btn primary sm" data-act="taxImgOpen" data-id="${esc(c.id)}" ${total ? '' : 'disabled'}>🖼 Նկար և ուղարկել</button></div>
   </div>`;
 }
 function viewTax() {
@@ -4510,16 +4519,34 @@ function viewTax() {
   const list = T.companies.filter(c => !S.taxWho || c.responsible === S.taxWho);
   const withT = list.filter(c => c.taxes.length || (c.sheet && c.sheet.items.length)), noT = list.filter(c => !c.hasTaxes);
   const cnt = k => withT.filter(c => (c.sheet && c.sheet.status || '') === k).length;
-  return head + `<div class="hint" style="margin:0 0 10px"><b>${esc(T.month)}</b>-ի հարկերը (վճարվում են ${esc(String(T.payMonth || '').toLowerCase())}ին) · ${withT.length} կազմակերպություն · 🟢 ուղարկված՝ ${cnt('sent')} · 🟡 լրացված՝ ${cnt('ready')} · ⚪ չլրացված՝ ${cnt('')}. գումարները պահպանվում են ավտոմատ։</div>
+  const arch = withT.filter(c => c.sheet && c.sheet.paidAll), act = withT.filter(c => !(c.sheet && c.sheet.paidAll));
+  return head + `<div class="hint" style="margin:0 0 10px"><b>${esc(T.month)}</b>-ի հարկերը (վճարվում են ${esc(String(T.payMonth || '').toLowerCase())}ին) · ${withT.length} կազմակերպություն · 🟢 ուղարկված՝ ${cnt('sent')} · 🟡 լրացված՝ ${cnt('ready')} · ⚪ չլրացված՝ ${cnt('')} · ✅ վճարված՝ ${arch.length}. գումարները պահպանվում են ավտոմատ, ○/✓՝ վճարված նշումը (նկարում չի երևում)։</div>
     ${noT.length ? `<details class="card" style="padding:10px 14px;margin-bottom:12px"><summary style="cursor:pointer;font-size:13px">⚠ Վճարվող հարկերը նշված չեն՝ ${noT.length} կազմակերպություն${isMgr() ? ' (նշեք կազմակերպության քարտում)' : ''}</summary><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${noT.map(c => isMgr() ? `<button class="btn sm" data-act="editCompany" data-id="${esc(c.id)}">✏️ ${esc(c.name)}</button>` : `<span class="tag">${esc(c.name)}</span>`).join('')}</div></details>` : ''}
-    ${withT.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:12px;align-items:start">${withT.map(c => taxCard(c, ym)).join('')}</div>` : '<div class="card" style="padding:18px"><span class="muted">Այս ամսվա համար հարկեր ունեցող կազմակերպություններ չկան։</span></div>'}`;
+    ${act.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:12px;align-items:start">${act.map(c => taxCard(c, ym)).join('')}</div>` : withT.length ? '<div class="card" style="padding:18px"><span class="muted">🎉 Այս ամսվա բոլոր հարկերը վճարված են։</span></div>' : '<div class="card" style="padding:18px"><span class="muted">Այս ամսվա համար հարկեր ունեցող կազմակերպություններ չկան։</span></div>'}
+    ${arch.length ? `<details class="card" id="taxArch" style="padding:10px 14px;margin-top:14px" ${S.taxArchOpen ? 'open' : ''}><summary style="cursor:pointer;font-weight:600">📦 Արխիվ — ամբողջությամբ վճարված (${arch.length})${arch.some(c => c.sheet.status !== 'sent') ? ' · <span style="color:#b45309">⚠ ' + arch.filter(c => c.sheet.status !== 'sent').length + ' չուղարկված</span>' : ''}</summary><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:12px;align-items:start;margin-top:10px">${arch.map(c => taxCard(c, ym)).join('')}</div></details>` : ''}`;
 }
 function taxCardItems(card) {
   return [...card.querySelectorAll('.taxrow')].map(r => ({ id: r.dataset.tid, name: (r.querySelector('[data-taxname]') || {}).value || '', amt: parseAmt(r.querySelector('[data-taxamt]').value) }))
-    .filter(x => x.id !== 'X' || x.name.trim());
+    .filter(x => !/^X/.test(x.id) || x.name.trim());
 }
-function taxCardTotal(card) { const t = taxCardItems(card).reduce((a, x) => a + x.amt, 0); card.querySelector('[data-taxtot]').textContent = fmtAmt(t) + ' ֏'; card.querySelector('[data-act=taxImgOpen]').disabled = !t; return t; }
+function taxCardTotal(card) { card.querySelectorAll('.taxrow').forEach(r => { const b = r.querySelector('.taxpay'); if (!b || b.classList.contains('on')) return; const nm = r.querySelector('[data-taxname]'); b.disabled = !(parseAmt(r.querySelector('[data-taxamt]').value) > 0) || (nm && !nm.value.trim()); }); const t = taxCardItems(card).reduce((a, x) => a + x.amt, 0); card.querySelector('[data-taxtot]').textContent = fmtAmt(t) + ' ֏'; card.querySelector('[data-act=taxImgOpen]').disabled = !t; return t; }
 const TAXQ = {};
+/** «Վճարված» նշում. նախ պահպանում է գումարները, հետո նշում */
+async function taxPayToggle(el, all) {
+  const card = el.closest('.taxcard'), cid = card.dataset.cid, ym = S.taxYm, T = S.tax[ym], c = T && T.companies.find(x => x.id === cid); if (!c) return;
+  const line = all ? '' : el.dataset.line, was = !all && !!((c.sheet && c.sheet.paid) || {})[line], arch0 = !!(c.sheet && c.sheet.paidAll);
+  if (all && !await NxDlg.confirm('Նշե՞լ բոլոր տողերը վճարված՝ ' + c.name, { ok: '✓ Այո, վճարված են' })) return;
+  el.disabled = true;
+  try {
+    clearTimeout(TAXQ[cid]);
+    c.sheet = await call('taxSave', { ym, id: cid, items: taxCardItems(card).map(x => Object.assign(x, { due: (c.taxes.find(t => t.id === x.id) || {}).due })) }, { silent: true });
+    let ln = line;
+    if (!all && /^X/.test(line)) { const i = [...card.querySelectorAll('.taxrow')].filter(r => /^X/.test(r.dataset.tid)).indexOf(el.closest('.taxrow')); const xs = c.sheet.items.filter(it => /^X/.test(it.id)); ln = xs[i] ? xs[i].id : line; }
+    c.sheet = await call('taxPaid', { ym, id: cid, line: ln, all: !!all, paid: all ? true : !was });
+    if (!!c.sheet.paidAll !== arch0) { toast(c.sheet.paidAll ? '✅ ' + esc(c.name) + '՝ բոլորը վճարված են, տեղափոխվեց արխիվ' : '↩ ' + esc(c.name) + '՝ վերադարձավ ընթացիկ ցանկ', 'ok'); renderView(); }
+    else { const tmp = document.createElement('div'); tmp.innerHTML = taxCard(c, ym); card.replaceWith(tmp.firstElementChild); }
+  } catch (e) { toast(esc(e.message), 'err'); el.disabled = false; }
+}
 function taxCardSave(card) {
   const cid = card.dataset.cid, ym = S.taxYm, T = S.tax[ym], c = T && T.companies.find(x => x.id === cid); if (!c) return;
   clearTimeout(TAXQ[cid]);
@@ -4530,6 +4557,7 @@ function taxCardSave(card) {
     } catch (e) { toast(esc(e.message), 'err'); }
   }, 400);
 }
+document.addEventListener('toggle', e => { if (e.target && e.target.id === 'taxArch') S.taxArchOpen = e.target.open; }, true);
 document.addEventListener('input', e => { const card = e.target.closest && e.target.closest('.taxcard'); if (card && (e.target.dataset.taxamt !== undefined || e.target.dataset.taxname !== undefined)) taxCardTotal(card); });
 document.addEventListener('focusout', e => {
   const card = e.target.closest && e.target.closest('.taxcard'); if (!card) return;
@@ -5776,7 +5804,9 @@ const ACT = {
   taxReload: () => { taxLoad(S.taxYm, true); renderView(); },
   taxCatOpen: () => taxCatOpen(),
   taxImgOpen: el => taxImgOpen(el.dataset.id),
-  taxAddRow: el => { const card = el.closest('.taxcard'); card.querySelector('[data-rows]').insertAdjacentHTML('beforeend', `<div class="taxrow" data-tid="X" style="display:grid;grid-template-columns:1fr 150px 30px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)"><input class="inp" data-taxname placeholder="Վճարի անվանում (օր. տուգանք)" style="padding:6px 10px"><input class="inp" data-taxamt inputmode="numeric" placeholder="0" style="text-align:right;font-weight:700;padding:6px 10px"><button type="button" class="btn sm" data-act="taxRmRow">✕</button></div>`); card.querySelector('[data-rows] .taxrow:last-child [data-taxname]').focus(); },
+  taxAddRow: el => { const card = el.closest('.taxcard'); card.querySelector('[data-rows]').insertAdjacentHTML('beforeend', `<div class="taxrow" data-tid="X" style="display:grid;grid-template-columns:1fr 118px 34px 30px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)"><input class="inp" data-taxname placeholder="Վճարի անվանում (օր. տուգանք)" style="padding:6px 10px"><input class="inp" data-taxamt inputmode="numeric" placeholder="0" style="text-align:right;font-weight:700;padding:6px 10px"><button type="button" class="btn sm taxpay" data-act="taxPay" data-line="X" disabled title="Նշել վճարված">○</button><button type="button" class="btn sm" data-act="taxRmRow">✕</button></div>`); card.querySelector('[data-rows] .taxrow:last-child [data-taxname]').focus(); },
+  taxPay: el => taxPayToggle(el, false),
+  taxPayAll: el => taxPayToggle(el, true),
   taxRmRow: el => { const card = el.closest('.taxcard'); el.closest('.taxrow').remove(); taxCardTotal(card); taxCardSave(card); },
   reqFirm: () => { openModal('🏢 Numetrix-ի ռեկվիզիտները', reqBody('FIRM'), null, { okOnly: true, wide: true }); },
   reqFirmEdit: () => { closeModal(); setTimeout(firmOpen, 0); },
