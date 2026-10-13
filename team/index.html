@@ -207,6 +207,7 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 16px}
 .toolbar select.inp{width:auto;min-width:150px;padding:7px 10px}
 .toolbar .sp{flex:1}
+.tchip{display:inline-flex;cursor:pointer}.tchip input{display:none}.tchip span{font-size:11.5px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel)}.tchip input:checked+span{background:#2563eb;border-color:#2563eb;color:#fff}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);user-select:none}
 
 /* ---------- stats ---------- */
@@ -3448,7 +3449,7 @@ async function editCompany(id, preset) {
     const portalLogins = {};
     loginPortals().forEach(pt => { portalLogins[pt.id] = f['pl_' + pt.id] || ''; });
     const payload = { id: c ? c.id : '', name: f.name, type: f.type, baseName: f.baseName, tin: f.tin, portalLogins, regime: f.regime, responsible: f.responsible, startDate: f.startDate, reports, reportAssignees, contact: f.contact, active: f.active, notes: f.notes };
-    if (m.querySelector('[name=taxLang]')) { payload.taxes = [].concat(f.taxes || []); payload.taxLang = f.taxLang; }
+    if (m.querySelector('[name=taxLang]')) { payload.taxes = taxSelOut(m); payload.taxLang = f.taxLang; }
     if (!f.type) throw new Error('Ընտրեք կազմակերպության տեսակը');
     if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); docs.vat = f.d_vat ? 'Այո' : 'Ոչ'; if (f.type === 'ԱՁ') docs.dirPos = ''; payload.docs = docs; }
     const r = await call('saveCompany', payload);
@@ -3456,7 +3457,7 @@ async function editCompany(id, preset) {
     if (S.req) delete S.req[r.id || (c && c.id)];
     await refresh();
     setTimeout(() => showDiag(f.name, r), 0);
-  }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր</button>${inboxOk() ? `<button type="button" class="btn" data-act="coMail" data-id="${esc(c.id)}">✉️ Նամակներ</button>` : ''}` : '' });
+  }, { submit: 'Պահպանել', wide: true, extra: c ? `<button type="button" class="btn danger" data-act="compDelete" data-id="${esc(c.id)}" title="Ջնջել կազմակերպությունը">🗑</button><button type="button" class="btn" data-act="docsOpen" data-id="${esc(c.id)}" style="margin-right:auto">📄 Ստեղծել փաստաթղթեր</button>${inboxOk() ? `<button type="button" class="btn" data-act="coMail" data-id="${esc(c.id)}">✉️ Նամակներ</button>` : ''}` : '' });
   const afterDocs = () => {
     bindAddrs(m);
     const missDraw = () => { const f = formData(m), d = {}; Object.keys(f).forEach(k => { if (k.startsWith('d_')) d[k.slice(2)] = f[k]; }); const dm = m.querySelector('#dirMiss'); if (dm) dm.innerHTML = missBox(dirMissList(d)); };
@@ -3479,10 +3480,11 @@ async function editCompany(id, preset) {
     m.querySelector('#namePrev').innerHTML = nm ? `Անվանումը փաստաթղթերում և ցուցակներում՝ <b>${esc(nm)}</b>` : `<span style="color:#b45309">${t === 'ԱՁ' ? 'Լրացրեք ԱՁ-ի անունը և ազգանունը ներքևում' : 'Ընտրեք տեսակը և լրացրեք անվանումը'}</span>`;
   };
   m.__nameDraw = nameDraw; nameDraw(); m.addEventListener('input', nameDraw); m.addEventListener('change', nameDraw);
+  compTaxBind(m);
   const ts = m.querySelector('#taxSug');
   if (ts) ts.onclick = () => {
     const reg = m.querySelector('[name=regime]').value; let n = 0;
-    m.querySelectorAll('[name=taxes]').forEach(x => { if (x.dataset.reg.split(',').includes(reg)) { if (!x.checked) n++; x.checked = true; } });
+    m.querySelectorAll('[name=taxes]').forEach(x => { if (x.dataset.reg.split(',').includes(reg)) { if (!x.checked) n++; x.checked = true; const ov = x.closest('.taxsel').querySelector('[data-tov]'); if (ov) ov.style.display = ''; } });
     toast(n ? '✨ Նշվեց ' + n + ' հարկ ըստ «' + esc(reg) + '» ռեժիմի. ստուգեք' : 'Նոր առաջարկ չկա «' + esc(reg) + '» ռեժիմի համար', 'ok');
   };
   const tl = m.querySelector('#tinLook');
@@ -4611,7 +4613,7 @@ async function taxImgOpen(cid) {
   const nm = () => st.name[lang] != null ? st.name[lang] : taxCompName(c.name, lang);
   const byN = () => st.by[lang] != null ? st.by[lang] : hyTr(c.responsible || '', lang);
   const data = () => {
-    const its = items.map(x => { const t = cat[x.id]; return { name: lang === 'hy' || !t ? x.name : (lang === 'ru' ? t.nameRu : t.nameEn) || x.name, amt: x.amt, due: x.due, account: x.account || '' }; });
+    const its = items.map(x => { const t = cat[x.id], dd = lang === 'hy' ? null : taxDict(x.name); return { name: lang === 'hy' ? x.name : (t && (lang === 'ru' ? t.nameRu : t.nameEn)) || (dd && dd[lang]) || x.name, amt: x.amt, due: x.due, account: x.account || '' }; });
     const L = TAX_I18N[lang]; const mi = +ym.slice(5, 7) - 1;
     return { lang, company: nm(), month: L.mon[mi] + ' ' + ym.slice(0, 4), items: its, total: items.reduce((a, x) => a + x.amt, 0), by: byN(), firm: lang === 'hy' ? T.firm.name : (lang === 'ru' ? 'Numetrix' : 'Numetrix'), phone: T.firm.phone };
   };
@@ -4668,27 +4670,150 @@ async function taxImgOpen(cid) {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw); else draw();
   draw();
 }
+const btnBusy = async (btn, fn) => { const t = btn.textContent; btn.disabled = true; btn.textContent = '⏳ …'; try { await fn(); } catch (e) { toast(esc(e.message || String(e)), 'err'); } finally { if (document.body.contains(btn)) { btn.disabled = false; btn.textContent = t; } } };
+/** Հաճախ հանդիպող վճարների ռուսերեն/անգլերեն անվանումները (ավտոլրացում) */
+const TAX_DICT = [
+  [/ապահովագր/i, 'Страховой взнос', 'Insurance premium'],
+  [/ռոյալթի/i, 'Налог на роялти', 'Royalty tax'],
+  [/տրանսպորտ|ավտոմեքենա/i, 'Налог на имущество (транспортные средства)', 'Property tax (vehicles)'],
+  [/գույքահարկ/i, 'Налог на имущество', 'Property tax'],
+  [/հողի հարկ/i, 'Земельный налог', 'Land tax'],
+  [/բնապահպան/i, 'Экологический налог', 'Environmental tax'],
+  [/պետական տուրք|պետտուրք/i, 'Государственная пошлина', 'State duty'],
+  [/տեղական տուրք/i, 'Местная пошлина', 'Local duty'],
+  [/շահաբաժ/i, 'Подоходный налог с дивидендов', 'Dividend income tax'],
+  [/տոկոս/i, 'Подоходный налог с процентов', 'Interest income tax'],
+  [/վարձակալ/i, 'Подоходный налог с аренды', 'Rental income tax'],
+  [/արտոնագր/i, 'Патентный платёж', 'Patent fee'],
+  [/ռենտա|բնօգտագործ/i, 'Плата за природопользование', 'Natural resource fee'],
+  [/հաշվառման|ՀԴՄ|հսկիչ դրամարկղ/i, 'Плата за ККМ', 'Cash register fee'],
+  [/տուգանք/i, 'Штраф', 'Penalty'],
+  [/տույժ/i, 'Пеня', 'Late payment interest']
+];
+function taxDict(name) { const n = String(name || ''); const d = TAX_DICT.find(x => x[0].test(n)); return d ? { ru: d[1], en: d[2] } : null; }
+/** Անվանումը գրելիս՝ ռուսերեն/անգլերեն դաշտերը լրացվում են (եթե դատարկ են կամ ավտոմատ են լրացվել) */
+function taxDictBind(root, nameSel, ruSel, enSel) {
+  root.addEventListener('input', e => {
+    if (!e.target.matches(nameSel)) return;
+    const sc = e.target.closest('.trow') || root, d = taxDict(e.target.value);
+    [[ruSel, 'ru'], [enSel, 'en']].forEach(([q, k]) => { const i = sc.querySelector(q); if (!i) return; if (!i.value.trim() || i.dataset.auto) { i.value = d ? d[k] : ''; if (d) i.dataset.auto = '1'; else delete i.dataset.auto; } });
+  });
+  root.addEventListener('input', e => { if (e.target.matches(ruSel + ',' + enSel)) delete e.target.dataset.auto; });
+}
+/* ---------- Պարբերականություն (վճարման ամիսներ) ---------- */
+const TAX_PER = [['m', 'Ամսական'], ['q', 'Եռամսյակային'], ['h', 'Կիսամյակային'], ['y', 'Տարեկան'], ['c', 'Ըստ ամիսների']];
+const TAX_PRESET = { m: [], q: [1, 4, 7, 10], h: [1, 7], y: [4] };
+const TAX_MSH = ['Հնվ', 'Փտր', 'Մրտ', 'Ապր', 'Մյս', 'Հնս', 'Հլս', 'Օգս', 'Սպտ', 'Հկտ', 'Նյմ', 'Դկտ'];
+function taxMs(months) { const a = String(months || '').split(/[,.]/).map(Number).filter(n => n >= 1 && n <= 12); return a.length === 12 ? [] : [...new Set(a)].sort((x, y) => x - y); }
+function taxPerOf(months) {
+  const a = taxMs(months);
+  if (!a.length) return 'm';
+  const step = d => a.every((x, i) => !i || x - a[i - 1] === d);
+  if (a.length === 4 && step(3)) return 'q';
+  if (a.length === 2 && step(6)) return 'h';
+  if (a.length === 1) return 'y';
+  return 'c';
+}
+function taxPerTxt(months) {
+  const a = taxMs(months), p = taxPerOf(months), l = (TAX_PER.find(x => x[0] === p) || [])[1] || '';
+  return p === 'm' ? l.toLowerCase() : l.toLowerCase() + ' · ' + a.map(n => TAX_MSH[n - 1]).join(', ');
+}
+/** Պարբերականության ընտրիչ. def՝ «ըստ ցանկի» տարբերակի տեքստը (կազմակերպության քարտում) */
+function taxMonPick(months, def) {
+  const own = months !== null && months !== undefined, a = own ? taxMs(months) : [], p = own ? taxPerOf(months) : '';
+  return `<div class="tmp" style="display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center">
+    <select class="inp" data-tper style="width:auto;padding:5px 8px;font-size:12.5px">${def !== undefined ? `<option value="">Ըստ ցանկի (${esc(def)})</option>` : ''}${TAX_PER.map(([k, l]) => `<option value="${k}" ${p === k || (!own && def === undefined && k === 'm') ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <span data-tchips style="display:${own && p !== 'm' ? 'flex' : 'none'};flex-wrap:wrap;gap:3px">${TAX_MSH.map((n, i) => `<label class="tchip" title="Վճարման ամիս"><input type="checkbox" value="${i + 1}" ${a.includes(i + 1) ? 'checked' : ''}><span>${n}</span></label>`).join('')}</span></div>`;
+}
+/** null՝ ըստ ցանկի, ''՝ ամեն ամիս, «1,4,7,10»՝ վճարման ամիսները */
+function taxMonRead(w) {
+  const p = w.querySelector('[data-tper]').value;
+  if (p === '') return null;
+  if (p === 'm') return '';
+  const a = [...w.querySelectorAll('[data-tchips] input:checked')].map(x => +x.value);
+  return a.length === 12 || !a.length ? '' : a.join(',');
+}
+function taxMonBind(root) {
+  root.addEventListener('change', e => {
+    const w = e.target.closest('.tmp'); if (!w) return;
+    const ch = w.querySelector('[data-tchips]');
+    if (e.target.matches('[data-tper]')) {
+      const p = e.target.value;
+      ch.style.display = p && p !== 'm' ? 'flex' : 'none';
+      if (TAX_PRESET[p]) ch.querySelectorAll('input').forEach(x => { x.checked = TAX_PRESET[p].includes(+x.value); });
+    } else if (e.target.closest('[data-tchips]')) {
+      const a = [...ch.querySelectorAll('input:checked')].map(x => +x.value);
+      const sel = w.querySelector('[data-tper]'); sel.value = a.length ? taxPerOf(a.join(',')) : 'c';
+    }
+  });
+}
 /* ---------- Հարկերի ցանկ (Կարգավորումներ) ---------- */
+function taxCatRow(t) {
+  return `<div class="trow" data-id="${esc(t.id || '')}" style="border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;display:grid;grid-template-columns:2fr 80px 1.2fr auto;gap:6px">
+    <input class="inp" data-t="name" value="${esc(t.name || '')}" placeholder="Անվանում (հայերեն)"><input class="inp" data-t="dueDay" value="${esc(t.dueDay || 20)}" inputmode="numeric" title="Վճարման օրը (մինչև որ օրը)" placeholder="օր"><input class="inp" data-t="account" value="${esc(t.account || '')}" placeholder="Գանձ. հաշիվ (ըստ ցանկ.)"><button type="button" class="btn sm" data-rmt title="Հեռացնել">✕</button>
+    <div style="grid-column:1/-1">${taxMonPick(t.months || '')}</div>
+    <input class="inp" data-t="nameRu" value="${esc(t.nameRu || '')}" placeholder="🇷🇺 По-русски" style="grid-column:1/3"><input class="inp" data-t="nameEn" value="${esc(t.nameEn || '')}" placeholder="🇬🇧 In English" style="grid-column:3/5"><input type="hidden" data-t="regimes" value="${esc(t.regimes || '')}"></div>`;
+}
+function taxCatRead(r) { const o = { id: r.dataset.id }; r.querySelectorAll('[data-t]').forEach(i => { o[i.dataset.t] = i.value; }); o.months = taxMonRead(r.querySelector('.tmp')) || ''; return o; }
+function taxCatPlain() { return (S.d.taxCat || []).filter(t => t.active).map(t => ({ id: t.id, name: t.name, nameRu: t.nameRu, nameEn: t.nameEn, months: t.months, dueDay: t.dueDay, account: t.account, regimes: t.regimes })); }
 function taxCatOpen() {
-  const row = t => `<div class="trow" data-id="${esc(t.id || '')}" style="border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;display:grid;grid-template-columns:2fr 1fr 70px 1.2fr auto;gap:6px">
-    <input class="inp" data-t="name" value="${esc(t.name || '')}" placeholder="Անվանում (հայերեն)"><input class="inp" data-t="months" value="${esc(t.months || '')}" placeholder="ամեն ամիս" title="Որ ամիսներին է վճարվում (օր. 3,6,9,12). դատարկ՝ ամեն ամիս"><input class="inp" data-t="dueDay" value="${esc(t.dueDay || 20)}" inputmode="numeric" title="Վճարման օրը"><input class="inp" data-t="account" value="${esc(t.account || '')}" placeholder="Գանձ. հաշիվ (ըստ ցանկ.)"><button type="button" class="btn sm" data-rmt>✕</button>
-    <input class="inp" data-t="nameRu" value="${esc(t.nameRu || '')}" placeholder="По-русски" style="grid-column:1/3"><input class="inp" data-t="nameEn" value="${esc(t.nameEn || '')}" placeholder="In English" style="grid-column:3/5"><input type="hidden" data-t="regimes" value="${esc(t.regimes || '')}"></div>`;
-  const m = openModal('💰 Հարկեր և պարտադիր վճարներ', `<div class="hint" style="margin-bottom:10px">Սյուներ՝ <b>անվանում</b> · <b>ամիսներ</b> (որ ամիսներին է <u>վճարվում</u>, օր. շրջանառության հարկ՝ «1,4,7,10», շահութահարկի կանխավճար՝ «3,6,9,12»; դատարկ՝ ամեն ամիս)։ Թերթիկը կազմվում է ըստ ամսվա (օր. «Սեպտեմբեր»), իսկ հարկերն ու ժամկետները վերցվում են հաջորդ ամսից (մինչև հոկտեմբերի 20) · <b>վճարման օր</b> (եթե ընկնում է հանգստյան օրվա, տեղափոխվում է հաջորդ աշխատանքային օր) · <b>գանձապետական հաշիվ</b> (լրացնելու դեպքում կերևա նկարում)։ Ներքևում՝ ռուսերեն և անգլերեն անվանումները։ ⚠ Ստուգեք ժամկետները՝ նախնական արժեքները օրինակային են։</div>
-    <div id="tBox">${(S.d.taxCat || []).filter(t => t.active).map(row).join('')}</div><button type="button" class="btn sm" id="tAdd">+ Ավելացնել</button>`, async () => {
-    const list = [...m.querySelectorAll('.trow')].map(r => { const o = { id: r.dataset.id }; r.querySelectorAll('[data-t]').forEach(i => { o[i.dataset.t] = i.value; }); return o; }).filter(x => x.name.trim());
+  const m = openModal('💰 Հարկեր և պարտադիր վճարներ', `<div class="hint" style="margin-bottom:10px">Յուրաքանչյուր հարկատեսակի համար՝ <b>անվանում</b>, <b>վճարման օր</b> (հանգստյան օրվա դեպքում՝ հաջորդ աշխատանքային օրը), <b>գանձապետական հաշիվ</b> (ըստ ցանկության) և <b>պարբերականություն</b>՝ ամսական, եռամսյակային, կիսամյակային, տարեկան կամ ըստ ամիսների։ Նշված ամիսները <u>վճարման</u> ամիսներն են (օր. շրջանառության հարկ՝ Հնվ, Ապր, Հլս, Հկտ)։ Կազմակերպության քարտում կարող եք յուրաքանչյուր հարկի պարբերականությունը փոխել անհատապես։</div>
+    <div id="tBox">${(S.d.taxCat || []).filter(t => t.active).map(taxCatRow).join('')}</div><button type="button" class="btn sm" id="tAdd">+ Նոր հարկատեսակ</button>`, async () => {
+    const list = [...m.querySelectorAll('.trow')].map(taxCatRead).filter(x => x.name.trim());
+    const miss = list.filter(x => !String(x.nameRu || '').trim() || !String(x.nameEn || '').trim()).map(x => x.name);
+    if (miss.length) throw new Error('Լրացրեք ռուսերեն և անգլերեն անվանումները՝ ' + miss.join(', '));
     S.d.taxCat = await call('taxCatSave', { list }); S.tax = {}; toast('Պահպանված է', 'ok'); if (S.view === 'docs') renderView();
   }, { wide: true });
-  m.querySelector('#tAdd').onclick = () => m.querySelector('#tBox').insertAdjacentHTML('beforeend', row({ dueDay: 20 }));
+  taxMonBind(m); taxDictBind(m, '[data-t=name]', '[data-t=nameRu]', '[data-t=nameEn]');
+  m.querySelector('#tAdd').onclick = () => { m.querySelector('#tBox').insertAdjacentHTML('beforeend', taxCatRow({ dueDay: 20 })); const r = m.querySelector('#tBox .trow:last-child [data-t=name]'); if (r) r.focus(); };
   m.addEventListener('click', e => { const b = e.target.closest('[data-rmt]'); if (b) b.closest('.trow').remove(); });
 }
-/** Կազմակերպության քարտում՝ վճարվող հարկերը և թերթիկի լեզուն */
+/** Կազմակերպության քարտում՝ վճարվող հարկերը (անհատական պարբերականությամբ) և թերթիկի լեզուն */
+function taxSelParse(s) { const o = {}; String(s || '').split(',').filter(Boolean).forEach(x => { const [id, sp] = x.split('@'); o[id] = sp === undefined ? null : sp === '*' ? '' : sp.split('.').join(','); }); return o; }
+function taxGridHtml(sel) {
+  const cat = (S.d.taxCat || []).filter(t => t.active);
+  return cat.map(t => { const on = t.id in sel; return `<div class="taxsel" data-id="${esc(t.id)}" style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--line)">
+    <label class="chk" style="flex:1;min-width:220px"><input type="checkbox" name="taxes" value="${esc(t.id)}" data-reg="${esc(t.regimes)}" ${on ? 'checked' : ''}><span>${esc(t.name)}</span></label>
+    <div data-tov style="display:${on ? '' : 'none'};flex-basis:100%;padding-left:24px">${taxMonPick(on ? sel[t.id] : null, taxPerTxt(t.months))}</div></div>`; }).join('') || '<div class="muted" style="font-size:12.5px">Հարկատեսակներ չկան</div>';
+}
+function taxGridRead(m) { const o = {}; m.querySelectorAll('.taxsel').forEach(r => { if (r.querySelector('[name=taxes]').checked) o[r.dataset.id] = taxMonRead(r.querySelector('.tmp')); }); return o; }
+function taxSelOut(m) { const o = taxGridRead(m); return Object.keys(o).map(id => o[id] === null ? id : id + '@' + (o[id] === '' ? '*' : o[id].split(',').join('.'))); }
 function compTaxFields(c) {
-  const cat = (S.d.taxCat || []).filter(t => t.active), sel = String(c.taxes || '').split(',').filter(Boolean);
-  if (!cat.length) return '';
-  const per = t => !t.months ? 'ամեն ամիս' : t.months.split(',').length === 1 ? 'տարեկան' : 'եռամսյակային';
-  return `<div class="full"><label class="f" style="display:flex;align-items:center;gap:8px">💰 Վճարվող հարկեր <span class="muted" style="font-weight:400">(ամսական թերթիկի համար)</span><span style="flex:1"></span><button type="button" class="btn sm" id="taxSug">✨ Առաջարկել ըստ ռեժիմի</button></label>
-      <div class="multi" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 12px">${cat.map(t => `<label class="chk"><input type="checkbox" name="taxes" value="${esc(t.id)}" data-reg="${esc(t.regimes)}" ${sel.includes(t.id) ? 'checked' : ''}><span>${esc(t.name)} <span class="muted">(${per(t)})</span></span></label>`).join('')}</div></div>
-    <div><label class="f">Թերթիկի լեզու</label><select class="inp" name="taxLang">${TAX_LANG.map(([k, l]) => `<option value="${k}" ${(c.taxLang || 'hy') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
+  if (!(S.d.taxCat || []).length && !isMgr()) return '';
+  return `<div class="full"><label class="f" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">💰 Վճարվող հարկեր <span class="muted" style="font-weight:400">(ամսական թերթիկի համար. պարբերականությունը կարող եք փոխել այս կազմակերպության համար)</span><span style="flex:1"></span><button type="button" class="btn sm" id="taxSug">✨ Առաջարկել ըստ ռեժիմի</button>${isMgr() ? '<button type="button" class="btn sm" id="taxNew">+ Նոր հարկատեսակ</button>' : ''}</label>
+      <div id="taxNewBox"></div>
+      <div class="multi" id="taxGrid">${taxGridHtml(taxSelParse(c && c.taxes))}</div></div>
+    <div><label class="f">Թերթիկի լեզու</label><select class="inp" name="taxLang">${TAX_LANG.map(([k, l]) => `<option value="${k}" ${((c && c.taxLang) || 'hy') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
+}
+function compTaxBind(m) {
+  if (!m.querySelector('#taxGrid')) return;
+  taxMonBind(m);
+  m.addEventListener('change', e => { if (e.target.matches('#taxGrid [name=taxes]')) { const r = e.target.closest('.taxsel'); r.querySelector('[data-tov]').style.display = e.target.checked ? '' : 'none'; } });
+  const nb = m.querySelector('#taxNew'); if (!nb) return;
+  nb.onclick = () => {
+    const box = m.querySelector('#taxNewBox');
+    if (box.innerHTML) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div style="border:1px solid var(--accent,#2563eb);border-radius:10px;padding:10px;margin:6px 0 8px;display:grid;grid-template-columns:2fr 80px;gap:6px">
+      <input class="inp" id="tnName" placeholder="Անվանում (օր. Ապահովագրավճար, Ռոյալթի, Գույքահարկ)"><input class="inp" id="tnDay" value="20" inputmode="numeric" title="Վճարման օրը" placeholder="օր">
+      <div style="grid-column:1/-1">${taxMonPick('')}</div>
+      <input class="inp" id="tnRu" placeholder="🇷🇺 По-русски (обязательно)"><input class="inp" id="tnEn" placeholder="🇬🇧 In English (required)">
+      <div style="grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end"><button type="button" class="btn sm" id="tnCancel">Չեղարկել</button><button type="button" class="btn primary sm" id="tnAdd">Ավելացնել ցանկում</button></div></div>`;
+    box.querySelector('#tnName').focus();
+    if (!box.__dict) { taxDictBind(box, '#tnName', '#tnRu', '#tnEn'); box.__dict = 1; }
+    box.querySelector('#tnCancel').onclick = () => { box.innerHTML = ''; };
+    box.querySelector('#tnAdd').onclick = e => btnBusy(e.currentTarget, async () => {
+      const name = box.querySelector('#tnName').value.trim(); if (!name) { box.querySelector('#tnName').focus(); return toast('Գրեք անվանումը', 'err'); }
+      if ((S.d.taxCat || []).some(t => t.active && t.name.trim().toLowerCase() === name.toLowerCase())) return toast('Այս անվանումով հարկատեսակ արդեն կա', 'err');
+      const ru = box.querySelector('#tnRu').value.trim(), en = box.querySelector('#tnEn').value.trim();
+      if (!ru || !en) { box.querySelector(ru ? '#tnEn' : '#tnRu').focus(); return toast('Լրացրեք ռուսերեն և անգլերեն անվանումները (թերթիկի RU/EN տարբերակների համար)', 'err'); }
+      const keep = taxGridRead(m), before = new Set((S.d.taxCat || []).map(t => t.id));
+      const list = taxCatPlain().concat([{ name, months: taxMonRead(box.querySelector('.tmp')) || '', dueDay: box.querySelector('#tnDay').value, nameRu: ru, nameEn: en, account: '', regimes: '' }]);
+      S.d.taxCat = await call('taxCatSave', { list }); S.tax = {};
+      const nw = S.d.taxCat.find(t => t.active && !before.has(t.id)); if (nw) keep[nw.id] = null;
+      m.querySelector('#taxGrid').innerHTML = taxGridHtml(keep); box.innerHTML = '';
+      toast('✔ «' + esc(name) + '» ավելացվեց և նշվեց այս կազմակերպության համար', 'ok');
+    });
+  };
 }
 /* ---------- 📒 Փաստաթղթերի մատյան ---------- */
 const DOC_SHORT = { 1: 'Լիազորագիր ՊԵԿ', 2: 'Դիմում ՊԵԿ', 3: 'Լիազորագիր մաքսային', 4: 'Լիազորագիր վիճակագրական', 5: 'Պայմանագիր', 6: 'Տեղեկատվական թերթիկ', 7: 'Ռեկվիզիտներ', 8: 'Հարկերի թերթիկ' };
@@ -4905,6 +5030,25 @@ function hcImportModal() {
     try { items = hcParse(await f.text()); R = await call('hcImport', { items }); draw(); }
     catch (x) { m.querySelector('#hcRes').innerHTML = `<div class="lerr" style="display:block">${esc(x.message)}</div>`; }
   };
+}
+/** Կազմակերպության ջնջում (միայն եթե դեռ աշխատանք չկա), այլապես՝ առաջարկ դարձնել «Ոչ ակտիվ» */
+async function compDelete(id) {
+  const c = company(id); if (!c) return;
+  let r; try { r = await call('companyDelete', { id, check: 1 }); } catch (e) { return toast(esc(e.message), 'err'); }
+  if (r.blockers.length) {
+    const qn = /[«»]/.test(r.name) ? r.name : '«' + r.name + '»';
+    const ok = await NxDlg.confirm(qn + '-ը ջնջել հնարավոր չէ, քանի որ ունի պատմություն՝\n• ' + r.blockers.join('\n• ') + '\n\nԴրա փոխարեն կարող եք այն դարձնել «Ոչ ակտիվ». կանհետանա ցուցակներից, իսկ պատմությունը կպահպանվի։ Դարձնե՞լ ոչ ակտիվ։', { ok: 'Դարձնել ոչ ակտիվ', danger: false });
+    if (!ok) return;
+    const f = m => m.querySelector('[name=active]'); const mm = $('#modal'); const sel = mm && f(mm);
+    if (sel) { sel.value = 'Ոչ'; toast('«Ակտիվ»՝ Ոչ. սեղմեք «Պահպանել»', 'ok'); }
+    return;
+  }
+  if (!await NxDlg.confirm('Ջնջե՞լ ' + (/[«»]/.test(r.name) ? r.name : '«' + r.name + '»') + '-ը։' + (r.auto ? '\nԿջնջվեն նաև նրա ' + r.auto + ' չսկսված հաշվետվությունները։' : '') + '\nԳործողությունը հետ բերել հնարավոր չէ («Պայմանագրեր և ակտեր»-ում կազմակերպությունը կմնա՝ «չենք սպասարկում» նշումով)։', { ok: '🗑 Ջնջել', danger: true })) return;
+  try {
+    const d = await call('companyDelete', { id });
+    if (!d.deleted) return toast('Չջնջվեց՝ ' + esc(d.blockers.join(', ')), 'err');
+    docGetDrop(id); closeModal(); toast('🗑 Ջնջվեց՝ ' + esc(d.name), 'ok'); await refresh();
+  } catch (e) { toast(esc(e.message), 'err'); }
 }
 function hcExportModal() {
   const comps = (S.d.compNames || S.d.companies.filter(c => c.active !== 'Ոչ')).slice().sort(compCmp);
@@ -5619,6 +5763,7 @@ const ACT = {
   reqRe: el => { if (S.req) delete S.req[el.dataset.id]; reqRedraw(el.dataset.id); },
   hcOne: el => hcDownload([el.dataset.id], reqSel(el.dataset.id)),
   hcExport: () => hcExportModal(),
+  compDelete: el => compDelete(el.dataset.id),
   hcImportOpen: () => hcImportModal(),
   reqAddrTog: el => { const id = el.dataset.id, R = (S.req || {})[id]; if (!R) return; const a = R.addrs[+el.dataset.i]; S.reqAddr = S.reqAddr || {}; const cur = reqSel(id); S.reqAddr[id] = cur.includes(a) ? cur.filter(x => x !== a) : cur.concat(a); reqRedraw(id); },
   reqAboutTog: el => { const id = el.dataset.id; S.reqAbout = S.reqAbout || {}; S.reqAbout[id] = !S.reqAbout[id]; reqRedraw(id); },
