@@ -180,6 +180,15 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .saltiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.saltiles button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:78px;padding:8px 10px;border:0;border-radius:12px;background:#ececec;color:#6b7280;cursor:pointer;font:inherit;font-size:13px;line-height:1.3;text-align:center}.saltiles button b{font-size:22px;line-height:1;color:#c4c4c4}.saltiles button.on{background:#ef4444;color:#fff}.saltiles button.on b{color:#fff}
 .salchk{display:flex;align-items:center;justify-content:flex-end;gap:12px;text-align:right;font-size:13px;color:var(--muted);cursor:pointer}.salchk input{width:24px;height:24px;accent-color:#ef4444;flex:none}.salchk.sub{font-size:12px}.salchk.sub input{width:18px;height:18px}
 @media (max-width:600px){.saltiles{grid-template-columns:1fr}}
+.tosec{font-weight:700;font-size:13px;color:var(--muted);margin:4px 0 8px}
+.tocard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--panel)}.tocard.act{border-color:#2563eb;box-shadow:0 0 0 1px #2563eb22}
+.toh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:8px}.toh .muted{font-size:12px}
+.tog{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}.tog label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.tor:not(:empty){margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+.tol{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0}.tol b{white-space:nowrap}.tol.tot{font-weight:700;font-size:15px;color:#1d4ed8}
+.tofix{display:grid;grid-template-columns:1fr 160px 110px;gap:8px;align-items:center;font-size:13px;padding:4px 0}.tofix b{text-align:right}
+.tosum{border:2px solid #2563eb;border-radius:12px;padding:10px 14px;background:#eff6ff}
+@media (max-width:600px){.tofix{grid-template-columns:1fr 1fr}.tofix b{grid-column:1/-1}}
 .tbtn{font-size:18px}.nowin .wonly{display:none}.tico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;color:#fff;font:800 13px/1 system-ui,sans-serif}
 .tpop{position:fixed;z-index:80;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:6px;min-width:260px}
 .tpop button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:8px;cursor:pointer;font:inherit;color:var(--text)}
@@ -6149,9 +6158,96 @@ function salCalcOpen() {
   m.querySelectorAll('.saltiles button').forEach(b => { b.onclick = () => { m.querySelectorAll('.saltiles button').forEach(x => x.classList.toggle('on', x === b)); draw(); }; });
   setMode(st.mode === 'gross' ? 'gross' : 'net');
 }
+/* ====================== 📈 ՇՐՋԱՆԱՌՈՒԹՅԱՆ ՀԱՐԿԻ ՀԱՇՎԻՉ ======================
+   ՀՀ հարկային օրենսգիրք, հոդվ. 257–258 (ՀՕ-285-Ն, 2025-01-01-ից) և ՊԵԿ-ի շրջանառության հարկի հաշվարկի ձևը (բլոկներ 5–10)։
+   Եռամսյակային. հարկ = եկամուտ × դրույք − (ծախսեր × նվազեցման % + նախորդ եռամսյակներից փոխանցված), բայց ոչ պակաս նվազագույնից (եկամուտ × նվազ. %)։
+   Չօգտագործված նվազեցումը = ընդհ. նվազեցում − (հարկ − նվազագույն) փոխանցվում է հաջորդ եռամսյակ (տող 11)։ */
+const TO_DED = [
+  { k: 'trade', n: 'Առևտուր (առք ու վաճառք)', rate: 10, ded: 9.5, min: 1, split: true, hint: 'Ձեռք բերված ապրանքների սկզբնական արժեք + վաճառքի և վարչական ծախսեր' },
+  { k: 'prod', n: 'Արտադրություն', rate: 7, ded: 5, min: 3, hint: 'Փաստաթղթավորված ծախսեր (հումք, աշխատավարձ, վարձ, ծառայություններ…)' },
+  { k: 'cater', n: 'Հանրային սննդի կազմակերպում', rate: 12, ded: 9, min: 3.5, hint: 'Փաստաթղթավորված ծախսեր' },
+  { k: 'other', n: 'Այլ գործունեություն (ծառայություններ և այլն)', rate: 10, ded: 6, min: 4.5, hint: 'Փաստաթղթավորված ծախսեր' }
+];
+const TO_FIX = [
+  { k: 'rent', n: 'Վարձակալություն, տոկոսներ, ռոյալթիներ', rate: 10 },
+  { k: 'asset', n: 'Այլ ակտիվների (այդ թվում՝ անշարժ գույքի) օտարում', rate: 10 },
+  { k: 'raw', n: 'Երկրորդային հումքի առք ու վաճառք (Կառավարության ցանկով)', rate: 5 },
+  { k: 'hitech', n: 'Բարձր տեխնոլոգիական գործունեություն (Կառավարության ցանկով)', rate: 1 },
+  { k: 'news', n: 'Թերթերի օտարում խմբագրությունների կողմից', rate: 1.5 },
+  { k: 'caterX', n: 'Հանրային սննդի վճարողի այլ ակտիվների օտարում / այլ գործունեություն', rate: 20 }
+];
+const TO_LIMIT = 115000000;
+/** Մեկ նվազեցվող բլոկի հաշվարկ (ՊԵԿ ձևի 5.1–5.11 տողերը) */
+function toBlock(a, inc, exp, carry) {
+  const tax = Math.round(inc * a.rate / 100), dq = Math.round(exp * a.ded / 100), dt = dq + Math.round(carry || 0), mn = Math.round(inc * a.min / 100);
+  const low = tax - dt < mn, pay = low ? mn : tax - dt, next = low ? Math.max(0, dt - (tax - mn)) : 0;
+  return { inc, tax, exp, dq, carry: Math.round(carry || 0), dt, mn, pay, next, used: dt - next };
+}
+function toCalcOpen() {
+  const now = new Date(), q0 = Math.floor(now.getMonth() / 3) || 4, y0 = q0 === 4 && now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
+  let st = {}; try { st = JSON.parse(localStorage.getItem('nx_to') || '{}'); } catch (e) {}
+  const v = k => st[k] ? fmtAmt(st[k]) : '';
+  const num = (k, ph, big) => `<input class="inp" data-to="${k}" inputmode="numeric" autocomplete="off" value="${v(k)}" placeholder="${ph || '0'}" style="text-align:right;${big ? 'font-weight:700' : ''}">`;
+  const dedCard = a => `<div class="tocard" data-blk="${a.k}">
+      <div class="toh"><b>${esc(a.n)}</b><span class="muted">դրույք ${a.rate}% · նվազեցում ծախսերի ${String(a.ded).replace('.', ',')}% · նվազագույն ${String(a.min).replace('.', ',')}%</span></div>
+      <div class="tog">
+        <label><span>Եկամուտ (եռամսյակ)</span>${num(a.k + '_inc', '0', true)}</label>
+        ${a.split ? `<label><span>Ապրանքների սկզբնական արժեք</span>${num(a.k + '_exp1')}</label><label><span>Վաճառքի և վարչական ծախսեր</span>${num(a.k + '_exp2')}</label>` : `<label title="${esc(a.hint)}"><span>Փաստաթղթավորված ծախսեր</span>${num(a.k + '_exp1')}</label>`}
+        <label title="Նախորդ եռամսյակի հաշվարկի 11-րդ տողը"><span>Փոխանցված նվազեցում (նախորդից)</span>${num(a.k + '_carry')}</label>
+      </div>
+      <div class="tor" data-res="${a.k}"></div></div>`;
+  const m = openModal('📈 Շրջանառության հարկի հաշվիչ', `<div class="toc">
+    <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:10px">
+      <div><label class="f">Եռամսյակ</label><div style="display:flex;gap:6px"><select class="inp" data-tq="q" style="width:auto">${[1, 2, 3, 4].map(q => `<option value="${q}" ${q === (st._q || q0) ? 'selected' : ''}>${['I', 'II', 'III', 'IV'][q - 1]} եռամսյակ</option>`).join('')}</select><input class="inp" data-tq="y" type="number" value="${st._y || y0}" style="width:96px"></div></div>
+      <div class="hint" style="flex:1;min-width:240px;margin:0">Լրացրեք միայն ձեր ունեցած գործունեությունները։ Ծախսերը՝ փաստաթղթավորված (հաշիվ-ապրանքագիր, ակտ, պայմանագիր…)։</div>
+      <button type="button" class="btn sm" id="toClr">🧹 Մաքրել</button>
+    </div>
+    <div class="tosec">Նվազեցում ունեցող գործունեություններ</div>
+    ${TO_DED.map(dedCard).join('')}
+    <details class="tocard" ${TO_FIX.some(f => st[f.k + '_inc']) ? 'open' : ''}><summary style="cursor:pointer;font-weight:700">Ֆիքսված դրույքով եկամուտներ (առանց նվազեցման)</summary>
+      <div style="margin-top:8px">${TO_FIX.map(f => `<div class="tofix"><span>${esc(f.n)} <span class="muted">· ${String(f.rate).replace('.', ',')}%</span></span>${num(f.k + '_inc')}<b data-res="${f.k}">0 ֏</b></div>`).join('')}</div></details>
+    <div id="toSum"></div>
+  </div>`, null, { okOnly: true, wide: true });
+  const g = k => { const i = m.querySelector('[data-to="' + k + '"]'); return i ? parseAmt(i.value) : 0; };
+  let last = null;
+  const draw = () => {
+    const rows = [], save = { _q: +m.querySelector('[data-tq=q]').value, _y: +m.querySelector('[data-tq=y]').value };
+    m.querySelectorAll('[data-to]').forEach(i => { const n = parseAmt(i.value); if (n) save[i.dataset.to] = n; });
+    TO_DED.forEach(a => {
+      const inc = g(a.k + '_inc'), exp = g(a.k + '_exp1') + g(a.k + '_exp2'), cr = g(a.k + '_carry'), el = m.querySelector('[data-res="' + a.k + '"]');
+      if (!inc && !exp && !cr) { el.innerHTML = ''; el.closest('.tocard').classList.remove('act'); return; }
+      const r = toBlock(a, inc, exp, cr); el.closest('.tocard').classList.add('act');
+      rows.push({ n: a.n, inc, pay: r.pay, next: r.next });
+      el.innerHTML = `<div class="tol"><span>Հարկ (${a.rate}%)</span><b>${fmtAmt(r.tax)}</b></div>
+        <div class="tol"><span>Նվազեցում՝ ծախսեր × ${String(a.ded).replace('.', ',')}%${r.carry ? ' + փոխանցված' : ''}</span><b>− ${fmtAmt(r.dt)}</b></div>
+        <div class="tol"><span>Նվազագույն (${String(a.min).replace('.', ',')}%)</span><b>${fmtAmt(r.mn)}</b></div>
+        <div class="tol tot"><span>Վճարման ենթակա${r.pay === r.mn && r.dt ? ' <span class="tag" style="font-size:11px">նվազագույն</span>' : ''}</span><b>${fmtAmt(r.pay)} ֏</b></div>
+        ${r.next ? `<div class="tol" style="color:#b45309"><span>Չօգտագործված նվազեցում → հաջորդ եռամսյակ</span><b>${fmtAmt(r.next)}</b></div>` : ''}`;
+    });
+    TO_FIX.forEach(f => { const inc = g(f.k + '_inc'), t = Math.round(inc * f.rate / 100); m.querySelector('[data-res="' + f.k + '"]').textContent = fmtAmt(t) + ' ֏'; if (inc) rows.push({ n: f.n, inc, pay: t, next: 0 }); });
+    const ti = rows.reduce((a, r) => a + r.inc, 0), tp = rows.reduce((a, r) => a + r.pay, 0), tn = rows.reduce((a, r) => a + r.next, 0);
+    const qn = ['I', 'II', 'III', 'IV'][save._q - 1] + ' եռամսյակ ' + save._y;
+    const due = (() => { const mo = save._q * 3 + 1, y = mo > 12 ? save._y + 1 : save._y; return '20.' + String(mo > 12 ? 1 : mo).padStart(2, '0') + '.' + y; })();
+    last = { rows, ti, tp, tn, qn, due };
+    m.querySelector('#toSum').innerHTML = rows.length ? `<div class="tosum">
+      <div class="tol"><span>Ընդամենը եկամուտ (${esc(qn)})</span><b>${fmtAmt(ti)} ֏</b></div>
+      <div class="tol tot" style="font-size:18px"><span>Ընդամենը շրջանառության հարկ</span><b>${fmtAmt(tp)} ֏</b></div>
+      <div class="tol"><span>Արդյունավետ դրույք</span><b>${ti ? String(Math.round(tp / ti * 1000) / 10).replace('.', ',') : 0}%</b></div>
+      ${tn ? `<div class="tol" style="color:#b45309"><span>Հաջորդ եռամսյակ փոխանցվող նվազեցում (ընդամենը)</span><b>${fmtAmt(tn)}</b></div>` : ''}
+      <div class="tol"><span>Հաշվարկի ներկայացման և վճարման ժամկետ</span><b>մինչև ${due}</b></div>
+      ${ti > TO_LIMIT ? '<div class="lerr" style="margin-top:6px">⚠ Եռամսյակի եկամուտը գերազանցում է 115 000 000-ը. շրջանառության հարկ վճարելու իրավունքը կորչում է (ԱԱՀ / շահութահարկ)։</div>' : ti * 4 > TO_LIMIT ? '<div class="hint" style="margin-top:6px;color:#b45309">⚠ Այս տեմպով տարեկան եկամուտը կարող է գերազանցել 115 000 000 շեմը։</div>' : ''}
+      <div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn sm" id="toCopy">📋 Պատճենել</button></div></div>` : '';
+    const cb = m.querySelector('#toCopy'); if (cb) cb.onclick = () => { copyText(['Շրջանառության հարկ — ' + qn].concat(rows.map(r => r.n + '՝ եկամուտ ' + fmtAmt(r.inc) + ', հարկ ' + fmtAmt(r.pay))).concat(['Ընդամենը՝ ' + fmtAmt(tp) + ' (մինչև ' + due + ')']).join('\n')); toast('📋 Պատճենվեց', 'ok'); };
+    try { localStorage.setItem('nx_to', JSON.stringify(save)); } catch (e) {}
+  };
+  m.addEventListener('input', e => { const i = e.target.closest('[data-to]'); if (i) { const n = parseAmt(i.value); i.value = n ? fmtAmt(n) : ''; } draw(); });
+  m.addEventListener('change', draw);
+  m.querySelector('#toClr').onclick = () => { m.querySelectorAll('[data-to]').forEach(i => { i.value = ''; }); draw(); };
+  draw();
+}
 /* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
 const TOOL_MENU = {
-  tax: [['salary', '💼', 'Աշխատավարձի հաշվիչ', 'Գրանցված ↔ մաքուր, պահումներ'], ['turnover', '📈', 'Շրջանառության հարկի հաշվիչ', 'Ըստ գործունեության տեսակի']]
+  tax: [['salary', '💼', 'Աշխատավարձի հաշվիչ', 'Գրանցված ↔ մաքուր, պահումներ'], ['turnover', '📈', 'Շրջանառության հարկի հաշվիչ', 'Եռամսյակային, ծախսերի նվազեցումով']]
 };
 function toolPopClose() { const p = $('#toolPop'); if (p) p.remove(); }
 const IS_WIN = /Windows/i.test(navigator.userAgent);
@@ -6181,10 +6277,7 @@ function toolGo(k, keep) {
   if (k === 'wordApp') return toolLaunch('ms-word:nft|u|' + toolTpl('blank.docx'));
   if (k === 'xlsApp') return toolLaunch('ms-excel:nft|u|' + toolTpl('blank.xlsx'));
   if (k === 'salary') return salCalcOpen();
-  if (k === 'turnover') {
-    const t = '📈 Շրջանառության հարկի հաշվիչ';
-    openModal(t, '<div class="hint" style="font-size:14px;padding:14px">🛠 Այս հաշվիչը պատրաստվում է։ Հաշվարկի տրամաբանությունը (դրույքներ, շեմեր, պահումներ) կհամաձայնեցնենք, և այն կհայտնվի այստեղ։</div>', null, { okOnly: true });
-  }
+  if (k === 'turnover') return toCalcOpen();
 }
 Object.assign(ACT, { toolMenu: el => toolMenu(el), toolPrimary: el => toolPrimary(el), toolGo: el => toolGo(el.dataset.k) });
 
