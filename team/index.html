@@ -177,6 +177,9 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .top{display:flex;align-items:center;gap:12px;padding:16px 28px;background:rgba(244,246,251,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;border-bottom:1px solid transparent}
 .top h1{font-size:20px;margin:0;font-weight:700;white-space:nowrap}
 .tbar{display:flex;gap:6px;align-items:center;padding-left:10px;margin-left:2px;border-left:1px solid var(--line)}
+.saltiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.saltiles button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:78px;padding:8px 10px;border:0;border-radius:12px;background:#ececec;color:#6b7280;cursor:pointer;font:inherit;font-size:13px;line-height:1.3;text-align:center}.saltiles button b{font-size:22px;line-height:1;color:#c4c4c4}.saltiles button.on{background:#ef4444;color:#fff}.saltiles button.on b{color:#fff}
+.salchk{display:flex;align-items:center;justify-content:flex-end;gap:12px;text-align:right;font-size:13px;color:var(--muted);cursor:pointer}.salchk input{width:24px;height:24px;accent-color:#ef4444;flex:none}.salchk.sub{font-size:12px}.salchk.sub input{width:18px;height:18px}
+@media (max-width:600px){.saltiles{grid-template-columns:1fr}}
 .tbtn{font-size:18px}.nowin .wonly{display:none}.tico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;color:#fff;font:800 13px/1 system-ui,sans-serif}
 .tpop{position:fixed;z-index:80;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:6px;min-width:260px}
 .tpop button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:8px;cursor:pointer;font:inherit;color:var(--text)}
@@ -6096,16 +6099,23 @@ function salCalcOpen() {
     <div class="seg" id="salMode" style="margin-bottom:12px"><button type="button" data-m="net">Մաքուրից → կեղտոտ</button><button type="button" data-m="gross">Կեղտոտից → մաքուր</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px">
       <div style="grid-column:1/-1"><label class="f" id="salLbl">Մաքուր աշխատավարձ (ձեռքին)</label><input class="inp" id="salIn" inputmode="numeric" autocomplete="off" style="font-size:22px;font-weight:700;padding:10px 14px" value="${st.v ? fmtAmt(st.v) : ''}" placeholder="0"></div>
-      <div><label class="f">Սոցիալական վճար (կուտակային կենսաթոշակ)</label>${opt('soc', [['mand', 'Մասնակից՝ պարտադիր (ծնված 1974-ից)'], ['volOld', 'Կամավոր մասնակից (միացել է մինչև 01.07.2018)'], ['volNew', 'Կամավոր մասնակից (միացել է 01.07.2018-ից հետո)'], ['none', 'Չի մասնակցում (ծնված մինչև 1974)']], st.soc || 'mand')}</div>
-      <div><label class="f">Առողջության ապահովագրավճար</label>${opt('ins', [['auto', 'Ավտոմատ՝ եթե կեղտոտը > 200 000'], ['yes', 'Վճարող է (որևէ ամիս գերազանցել է 200 000-ը)'], ['no', 'Չի վճարում (մինչև 18 / 65+ տարեկան)']], st.ins || 'auto')}</div>
-      <div><label class="f">Եկամտային հարկ</label>${opt('it', [['20', '20%'], ['10', '10% (ՏՏ արտոնություն)']], st.it || '20')}</div>
+      <div style="grid-column:1/-1"><label class="f">Մասնակցու՞մ եք արդյոք պարտադիր կուտակային կենսաթոշակային համակարգին</label>
+        <div class="saltiles">${[['volNew', '+', 'Այո, կամավոր՝ միացած 07/2018-ից հետո'], ['mand', '+', 'Այո, պարտադիր կամ մինչ 07/2018 միացած կամավոր'], ['none', '−', 'Ոչ, մասնակից չեմ']].map(([k, i, l]) => `<button type="button" data-soc="${k}" class="${(st.soc || 'mand') === k ? 'on' : ''}"><b>${i}</b><span>${l}</span></button>`).join('')}</div></div>
+      <label class="salchk" style="grid-column:1/-1"><span>Արդյո՞ք աշխատում եք ՏՏ ոլորտի հարկային արտոնություններից օգտվող ընկերությունում</span><input type="checkbox" data-s="it10" ${st.it === '10' ? 'checked' : ''}></label>
+      <label class="salchk" style="grid-column:1/-1"><span>Արդյո՞ք առողջապահության պարտադիր ապահովագրության համակարգի 18-ից 65 տարեկան մասնակից եք</span><input type="checkbox" data-s="ins" ${st.ins === 'no' ? '' : 'checked'}></label>
+      <label class="salchk sub" style="grid-column:1/-1"><span>Նախորդ 12 ամսում կեղտոտ աշխատավարձը որևէ ամիս գերազանցել է 200 000-ը (պահվում է նաև ցածր աշխատավարձից)</span><input type="checkbox" data-s="prev" ${st.ins === 'yes' ? 'checked' : ''}></label>
       <div><label class="f">Ամիս (դրույքները)</label><input class="inp" type="month" data-s="ym" value="${esc(st.ym)}"></div>
     </div>
     <div id="salRes" style="margin-top:16px"></div>
     <div class="hint" style="margin-top:10px;font-size:11.5px">Սոցիալական վճար՝ մինչև 500 000-ը 5%, ավելի՝ 10% − 25 000 (բազան՝ առավելագույնը 1 125 000)։ Առողջության ապահովագրավճար՝ մինչև 500 000-ը 4 800, ավելի՝ 10 800 (եթե կեղտոտը որևէ ամիս գերազանցել է 200 000-ը, պահվում է նաև հետագա 12 ամիսներին)։ Դրոշմանիշային՝ մինչև 1 000 000-ը 1 000, ավելի՝ 15 000 (2026-ի սեպտեմբերից)։</div>
   </div>`, null, { okOnly: true, wide: true });
   const inp = m.querySelector('#salIn');
-  const read = () => { const o = {}; m.querySelectorAll('[data-s]').forEach(x => { o[x.dataset.s] = x.value; }); return { ym: o.ym || ym0, soc: o.soc, ins: o.ins, it10: o.it === '10', raw: o }; };
+  const read = () => {
+    const g = k => m.querySelector('[data-s=' + k + ']'), soc = (m.querySelector('.saltiles .on') || {}).dataset ? m.querySelector('.saltiles .on').dataset.soc : 'mand';
+    const ins = !g('ins').checked ? 'no' : g('prev').checked ? 'yes' : 'auto', it = g('it10').checked ? '10' : '20';
+    g('prev').closest('.salchk').style.display = g('ins').checked ? '' : 'none';
+    return { ym: g('ym').value || ym0, soc, ins, it10: it === '10', raw: { soc, ins, it } };
+  };
   const row = (l, v, b, c) => `<tr><td style="padding:7px 10px;${b ? 'font-weight:700' : ''}">${l}</td><td style="padding:7px 10px;text-align:right;white-space:nowrap;${b ? 'font-weight:800;font-size:16px' : 'font-weight:600'};${c ? 'color:' + c : ''}">${fmtAmt(v)} ֏</td></tr>`;
   let last = null;
   const draw = () => {
@@ -6116,7 +6126,7 @@ function salCalcOpen() {
       ${row('Կեղտոտ (հաշվարկված) աշխատավարձ', r.gross, true, st.mode === 'net' ? '#1d4ed8' : '')}
       <tr><td colspan="2" style="border-top:1px solid var(--line);padding:0"></td></tr>
       ${row('Եկամտային հարկ (' + (o.it10 ? '10' : '20') + '%)', r.it)}
-      ${row('Սոցիալական վճար' + (o.soc === 'none' ? ' (չի մասնակցում)' : ''), r.soc)}
+      ${row('Սոցիալական վճար' + (o.soc === 'none' ? ' (մասնակից չէ)' : ''), r.soc)}
       ${row('Դրոշմանիշային վճար', r.stamp)}
       ${row('Առողջության ապահովագրավճար' + (r.insured ? '' : ' (չի պահվում)'), r.health)}
       <tr style="background:var(--panel2)"><td style="padding:7px 10px;font-weight:700">Ընդամենը պահումներ${pct}</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmtAmt(r.ded)} ֏</td></tr>
@@ -6136,6 +6146,7 @@ function salCalcOpen() {
   m.querySelectorAll('#salMode button').forEach(b => { b.onclick = () => setMode(b.dataset.m); });
   inp.addEventListener('input', () => { const pos = inp.value.length - inp.selectionStart, v = parseAmt(inp.value); inp.value = v ? fmtAmt(v) : ''; try { inp.setSelectionRange(inp.value.length - pos, inp.value.length - pos); } catch (e) {} draw(); });
   m.addEventListener('change', e => { if (e.target.matches('[data-s]')) draw(); });
+  m.querySelectorAll('.saltiles button').forEach(b => { b.onclick = () => { m.querySelectorAll('.saltiles button').forEach(x => x.classList.toggle('on', x === b)); draw(); }; });
   setMode(st.mode === 'gross' ? 'gross' : 'net');
 }
 /* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
