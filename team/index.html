@@ -176,6 +176,21 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .main{min-width:0;display:flex;flex-direction:column}
 .top{display:flex;align-items:center;gap:12px;padding:16px 28px;background:rgba(244,246,251,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;border-bottom:1px solid transparent}
 .top h1{font-size:20px;margin:0;font-weight:700;white-space:nowrap}
+.tbar{display:flex;gap:6px;align-items:center;padding-left:10px;margin-left:2px;border-left:1px solid var(--line)}
+.tbtn{font-size:18px}.tico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;color:#fff;font:800 13px/1 system-ui,sans-serif}
+.tpop{position:fixed;z-index:80;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:6px;min-width:260px}
+.tpop button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:8px;cursor:pointer;font:inherit;color:var(--text)}
+.tpop button:hover{background:var(--panel2)}.tpop small{display:block;color:var(--muted);font-size:11.5px}
+#calcBox{position:fixed;z-index:85;width:300px;background:#1e293b;color:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);user-select:none;overflow:hidden}
+#calcBox .ch{display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:move;background:#0f172a;font-size:13px}
+#calcBox .ch button{background:none;border:0;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px 6px;border-radius:6px}#calcBox .ch button:hover{background:#334155}
+#calcBox .cd{padding:10px 14px 6px;text-align:right}#calcBox .ce{min-height:18px;color:#94a3b8;font-size:13px;word-break:break-all}
+#calcBox .cr{font-size:30px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#calcBox .ck{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 10px 12px}
+#calcBox .ck button{height:46px;border:0;border-radius:10px;background:#334155;color:#fff;font:600 18px system-ui,sans-serif;cursor:pointer}
+#calcBox .ck button:hover{filter:brightness(1.15)}#calcBox .ck .op{background:#475569;color:#fde68a}#calcBox .ck .eq{background:#2563eb}#calcBox .ck .fn{background:#64748b}
+#calcBox .chist{max-height:96px;overflow:auto;padding:0 14px;font-size:12px;color:#94a3b8;text-align:right}#calcBox .chist div{cursor:pointer;padding:1px 0}#calcBox .chist div:hover{color:#fff}
+@media (max-width:860px){.tbar{display:none}}
 .search{flex:1;max-width:420px;margin-left:auto;position:relative}
 .search input{width:100%;padding:9px 12px 9px 36px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted2)}
@@ -658,6 +673,12 @@ body.dockon .toasts{right:420px}
     <header class="top">
       <button class="iconbtn menubtn" data-act="toggleSide" title="Մենյու"><svg class="i"><use href="#i-menu"/></svg></button>
       <h1 id="pageTitle">Թասքեր</h1>
+      <div class="tbar" id="toolBar">
+        <button class="iconbtn tbtn" data-act="toolCalc" title="Հաշվիչ (կալկուլյատոր)">🧮</button>
+        <button class="iconbtn tbtn" data-act="toolMenu" data-k="tax" title="Հարկային հաշվիչներ"><span class="tico" style="background:#059669">%</span></button>
+        <button class="iconbtn tbtn" data-act="toolMenu" data-k="word" title="Նոր Word փաստաթուղթ"><span class="tico" style="background:#2b579a">W</span></button>
+        <button class="iconbtn tbtn" data-act="toolMenu" data-k="excel" title="Նոր Excel աղյուսակ"><span class="tico" style="background:#217346">X</span></button>
+      </div>
       <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" placeholder="Որոնում՝ թասք, կազմակերպություն, ID…" autocomplete="off"></div>
       <button class="iconbtn" data-act="hardRefresh" id="hardRef" title="Թարմացնել տվյալները (բոլորի փոփոխությունները)"><svg class="i"><use href="#i-refresh"/></svg></button>
       <button class="iconbtn musbtn" id="ssnBtn" data-act="ssnToggle" title="Սեզոնային ձևավորում">🍂</button>
@@ -5998,6 +6019,138 @@ const ACT = {
     catch (e) { toast(esc(e.message), 'err'); }
   }
 };
+/* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
+const BLANK_DOCX = 'UEsDBBQAAAAIACFPTV15bjPX6AAAAK0BAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbH1QyU7DMBD9FWuuKHHggBCK0wPLETiUDxjZk8SqN3nc0v49Tlt6QIXjzFv1+tXeO7GjzDYGBbdtB4KCjsaGScHn+rV5AMEFg0EXAyk4EMNq6NeHRCyqNrCCuZT0KCXrmTxyGxOFiowxeyz1zJNMqDc4kbzrunupYygUSlMWDxj6Zxpx64p42df3qUcmxyCeTsQlSwGm5KzGUnG5C+ZXSnNOaKvyyOHZJr6pBJBXExbk74Cz7r0Ok60h8YG5vKGvLPkVs5Em6q2vyvZ/mys94zhaTRf94pZy1MRcF/euvSAebfjpL49zD99QSwMEFAAAAAgAIU9NXZv9N+qtAAAAKQEAAAsAAABfcmVscy8ucmVsc43POw7CMAwG4KtE3mlaBoRQ0y4IqSsqB7ASN61oHkrCo7cnAwNFDIy2f3+W6/ZpZnanECdnBVRFCYysdGqyWsClP232wGJCq3B2lgQsFKFt6jPNmPJKHCcfWTZsFDCm5A+cRzmSwVg4TzZPBhcMplwGzT3KK2ri27Lc8fBpwNpknRIQOlUB6xdP/9huGCZJRydvhmz6ceIrkWUMmpKAhwuKq3e7yCzwpuarF5sXUEsDBBQAAAAIACFPTV12A3R5FwEAAMIBAAARAAAAd29yZC9kb2N1bWVudC54bWxlUMtuwjAQ/JXI92IH0jSNMIhDoZdKldp+gEmchxR7Le9CSr++dgiiUi9ez8zu7GO9/TZDctYee7CSpQvBEm0rqHvbSvb1uX8oWIKkbK0GsFqyi0a23azHsobqZLSlJBhYLEfJOiJXco5Vp43CBThtg9aAN4oC9C0fwdfOQ6URg78Z+FKInBvVWxYtj1BfYnTT8+5j8HPYgyVMxlJh1feSHV5fdsnBK6cGRSzw3c7iP57HUvwJ8lkNki2zyPDZlM89+NwQdUXXZq79iDVhpTR9FvlkH/55sSqulq59Uz6wBC7mrLKY4vu2I8mKRxHREYjA3NVBN0FMs7SY7LSqtZfsSUywAaA/sD3RBMU87m0yfjsRv59/8wtQSwECFAMUAAAACAAhT01deW4z1+gAAACtAQAAEwAAAAAAAAAAAAAAgAEAAAAAW0NvbnRlbnRfVHlwZXNdLnhtbFBLAQIUAxQAAAAIACFPTV2b/TfqrQAAACkBAAALAAAAAAAAAAAAAACAARkBAABfcmVscy8ucmVsc1BLAQIUAxQAAAAIACFPTV12A3R5FwEAAMIBAAARAAAAAAAAAAAAAACAAe8BAAB3b3JkL2RvY3VtZW50LnhtbFBLBQYAAAAAAwADALkAAAA1AwAAAAA=';
+const BLANK_XLSX = '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';
+const TOOL_MENU = {
+  tax: [['salary', '💼', 'Աշխատավարձի հաշվիչ', 'Գրանցված ↔ մաքուր, պահումներ'], ['turnover', '📈', 'Շրջանառության հարկի հաշվիչ', 'Ըստ գործունեության տեսակի']],
+  word: [['wordFile', '<span class="tico" style="background:#2b579a">W</span>', 'Նոր Word ֆայլ (.docx)', 'Ներբեռնվում է, բացեք Word-ով'], ['gdoc', '📄', 'Նոր Google Docs', 'Բացվում է նոր ներդիրում']],
+  excel: [['xlsFile', '<span class="tico" style="background:#217346">X</span>', 'Նոր Excel ֆայլ (.xlsx)', 'Ներբեռնվում է, բացեք Excel-ով'], ['gsheet', '📊', 'Նոր Google Sheets', 'Բացվում է նոր ներդիրում']]
+};
+function toolPopClose() { const p = $('#toolPop'); if (p) p.remove(); }
+function toolMenu(el) {
+  const k = el.dataset.k, was = $('#toolPop');
+  toolPopClose(); if (was && was.dataset.k === k) return;
+  const r = el.getBoundingClientRect(), d = document.createElement('div');
+  d.id = 'toolPop'; d.className = 'tpop'; d.dataset.k = k;
+  d.innerHTML = TOOL_MENU[k].map(([a, i, t, sub]) => `<button type="button" data-act="toolGo" data-k="${a}"><span style="font-size:18px;width:24px;text-align:center">${i}</span><span><b style="font-weight:600">${t}</b><small>${sub}</small></span></button>`).join('');
+  document.body.appendChild(d);
+  d.style.top = (r.bottom + 6) + 'px'; d.style.left = Math.max(8, Math.min(r.left, innerWidth - d.offsetWidth - 8)) + 'px';
+}
+document.addEventListener('mousedown', e => { if ($('#toolPop') && !e.target.closest('#toolPop,[data-act=toolMenu]')) toolPopClose(); });
+function toolBlank(b64, ext, mime) {
+  const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  const d = new Date(), pad2 = n => String(n).padStart(2, '0');
+  const name = (ext === 'docx' ? 'Document' : 'Table') + '_' + pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear() + '_' + pad2(d.getHours()) + '-' + pad2(d.getMinutes()) + '.' + ext;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u], { type: mime })); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  toast('⬇ «' + esc(name) + '»՝ ներբեռնվեց. բացեք այն ներբեռնումների ցանկից', 'ok');
+}
+function toolGo(k) {
+  toolPopClose();
+  if (k === 'wordFile') return toolBlank(BLANK_DOCX, 'docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  if (k === 'xlsFile') return toolBlank(BLANK_XLSX, 'xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  if (k === 'gdoc') return window.open('https:/' + '/docs.google.com/document/create', '_blank', 'noopener');
+  if (k === 'gsheet') return window.open('https:/' + '/docs.google.com/spreadsheets/create', '_blank', 'noopener');
+  if (k === 'salary' || k === 'turnover') {
+    const t = k === 'salary' ? '💼 Աշխատավարձի հաշվիչ' : '📈 Շրջանառության հարկի հաշվիչ';
+    openModal(t, '<div class="hint" style="font-size:14px;padding:14px">🛠 Այս հաշվիչը պատրաստվում է։ Հաշվարկի տրամաբանությունը (դրույքներ, շեմեր, պահումներ) կհամաձայնեցնենք, և այն կհայտնվի այստեղ։</div>', null, { okOnly: true });
+  }
+}
+/* ---------- 🧮 Հաշվիչ ---------- */
+const CALC = { ex: '', hist: [] };
+function calcFmt(n) {
+  if (!isFinite(n)) return 'Սխալ';
+  const r = Math.round(n * 1e10) / 1e10, [i, f] = String(Math.abs(r)).split('.');
+  return (r < 0 ? '−' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + (f ? ',' + f : '');
+}
+/** Արտահայտության հաշվարկ (առանց eval). «a + b%»՝ a-ի b տոկոսը ավելացնել */
+function calcEval(src) {
+  const t = String(src).replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/,/g, '.').replace(/\s/g, '').match(/\d*\.?\d+(?:e[+-]?\d+)?|[-+\x2a\x2f()%]/g) || [];
+  let i = 0;
+  const peek = () => t[i], next = () => t[i++];
+  const prim = () => {
+    let s = 1; while (peek() === '-' || peek() === '+') { if (next() === '-') s = -s; }
+    let v; const x = next();
+    if (x === '(') { v = expr(); if (peek() === ')') next(); }
+    else if (x !== undefined && /\d|\./.test(x)) v = parseFloat(x);
+    else throw new Error('bad');
+    let pct = false; while (peek() === '%') { next(); v /= 100; pct = true; }
+    return { v: s * v, pct };
+  };
+  const term = () => {
+    let a = prim().v;
+    while (peek() === '*' || peek() === '/') { const o = next(), b = prim().v; a = o === '*' ? a * b : a / b; }
+    return a;
+  };
+  const expr = () => {
+    let a = term();
+    while (peek() === '+' || peek() === '-') {
+      const o = next(), save = i, b = prim();
+      if (b.pct && (peek() === undefined || peek() === ')' || peek() === '+' || peek() === '-')) { a = o === '+' ? a + a * b.v : a - a * b.v; continue; }
+      i = save; const c = term(); a = o === '+' ? a + c : a - c;
+    }
+    return a;
+  };
+  if (!t.length) return 0;
+  const v = expr(); if (i < t.length) throw new Error('bad'); return v;
+}
+function calcDraw() {
+  const b = $('#calcBox'); if (!b) return;
+  let res = ''; try { res = CALC.ex ? calcFmt(calcEval(CALC.ex)) : '0'; } catch (e) { res = '…'; }
+  b.querySelector('.ce').textContent = CALC.ex.replace(/\x2a/g, '×').replace(/\x2f/g, '÷');
+  b.querySelector('.cr').textContent = res;
+  b.querySelector('.chist').innerHTML = CALC.hist.map((h, k) => `<div data-ch="${k}" title="Օգտագործել">${esc(h[0])} = <b>${esc(calcFmt(h[1]))}</b></div>`).join('');
+}
+function calcKey(k) {
+  if (k === 'C') CALC.ex = '';
+  else if (k === '⌫') CALC.ex = CALC.ex.slice(0, -1);
+  else if (k === '=') { try { const v = calcEval(CALC.ex); if (CALC.ex && isFinite(v)) { CALC.hist.unshift([CALC.ex.replace(/\x2a/g, '×').replace(/\x2f/g, '÷'), v]); CALC.hist = CALC.hist.slice(0, 8); CALC.ex = String(Math.round(v * 1e10) / 1e10); } } catch (e) { toast('Արտահայտությունը սխալ է', 'err'); } }
+  else if (k === '±') { CALC.ex = CALC.ex ? '-(' + CALC.ex + ')' : '-'; }
+  else { const last = CALC.ex.slice(-1); if (/[+\-\x2a\x2f]/.test(k) && /[+\-\x2a\x2f]/.test(last)) CALC.ex = CALC.ex.slice(0, -1); CALC.ex += k; }
+  calcDraw();
+}
+function calcOpen() {
+  if ($('#calcBox')) { $('#calcBox').remove(); return; }
+  const b = document.createElement('div'); b.id = 'calcBox';
+  const K = [['C', 'fn'], ['⌫', 'fn'], ['%', 'fn'], ['/', 'op', '÷'], ['7'], ['8'], ['9'], ['*', 'op', '×'], ['4'], ['5'], ['6'], ['-', 'op', '−'], ['1'], ['2'], ['3'], ['+', 'op', '+'], ['±', 'fn'], ['0'], ['.', '', ','], ['=', 'eq']];
+  b.innerHTML = `<div class="ch"><span>🧮 Հաշվիչ</span><span style="flex:1"></span><button type="button" data-cc="copy" title="Պատճենել արդյունքը">📋</button><button type="button" data-cc="x" title="Փակել (Esc)">✕</button></div>
+    <div class="cd"><div class="ce"></div><div class="cr">0</div></div><div class="chist"></div>
+    <div class="ck">${K.map(([k, c, l]) => `<button type="button" class="${c || ''}" data-ck="${esc(k)}">${esc(l || k)}</button>`).join('')}</div>`;
+  document.body.appendChild(b);
+  let pos = null; try { pos = JSON.parse(localStorage.getItem('nx_calc_pos') || 'null'); } catch (e) {}
+  b.style.left = Math.min(Math.max(8, pos ? pos[0] : innerWidth - 330), innerWidth - 310) + 'px'; b.style.top = Math.min(Math.max(8, pos ? pos[1] : 80), innerHeight - 200) + 'px';
+  b.addEventListener('click', e => {
+    const k = e.target.closest('[data-ck]'); if (k) return calcKey(k.dataset.ck);
+    const h = e.target.closest('[data-ch]'); if (h) { CALC.ex = String(Math.round(CALC.hist[+h.dataset.ch][1] * 1e10) / 1e10); return calcDraw(); }
+    const c = e.target.closest('[data-cc]'); if (!c) return;
+    if (c.dataset.cc === 'x') b.remove();
+    else { let v = ''; try { v = String(Math.round(calcEval(CALC.ex || '0') * 100) / 100); } catch (x) {} copyText(v); toast('📋 ' + esc(v) + '՝ պատճենվեց', 'ok'); }
+  });
+  const hd = b.querySelector('.ch');
+  hd.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    const sx = e.clientX - b.offsetLeft, sy = e.clientY - b.offsetTop; hd.setPointerCapture(e.pointerId);
+    const mv = ev => { b.style.left = Math.min(Math.max(0, ev.clientX - sx), innerWidth - 60) + 'px'; b.style.top = Math.min(Math.max(0, ev.clientY - sy), innerHeight - 40) + 'px'; };
+    const up = () => { hd.removeEventListener('pointermove', mv); hd.removeEventListener('pointerup', up); try { localStorage.setItem('nx_calc_pos', JSON.stringify([b.offsetLeft, b.offsetTop])); } catch (x) {} };
+    hd.addEventListener('pointermove', mv); hd.addEventListener('pointerup', up);
+  });
+  calcDraw();
+}
+document.addEventListener('keydown', e => {
+  if (!$('#calcBox')) return;
+  const tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA' || tg.tagName === 'SELECT' || tg.isContentEditable)) return;
+  const k = e.key;
+  if (/^[0-9]$/.test(k) || '+-\x2a\x2f%().'.includes(k)) { e.preventDefault(); calcKey(k); }
+  else if (k === ',') { e.preventDefault(); calcKey('.'); }
+  else if (k === 'Enter' || k === '=') { e.preventDefault(); calcKey('='); }
+  else if (k === 'Backspace') { e.preventDefault(); calcKey('⌫'); }
+  else if (k === 'Delete') { e.preventDefault(); calcKey('C'); }
+  else if (k === 'Escape') { $('#calcBox').remove(); }
+  else if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'c' && !String(getSelection())) { let v = ''; try { v = String(Math.round(calcEval(CALC.ex || '0') * 100) / 100); } catch (x) {} copyText(v); toast('📋 ' + esc(v) + '՝ պատճենվեց', 'ok'); }
+});
+Object.assign(ACT, { toolCalc: () => { toolPopClose(); calcOpen(); }, toolMenu: el => toolMenu(el), toolGo: el => toolGo(el.dataset.k) });
+
 document.addEventListener('click', e => {
   unlockAudio();
   const el = e.target.closest('[data-act]');
