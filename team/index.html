@@ -276,6 +276,8 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin
 .kcard .rn{font-size:12.5px;color:#334155;margin-top:3px}
 .kcard .ft{display:flex;align-items:center;gap:8px;margin-top:10px}
 .kcard .ft .btn{margin-left:auto}
+.kcard[draggable=true]{cursor:grab}.kcard.kdrag{opacity:.45}
+.kcol.kover{outline:2px dashed #2563eb;outline-offset:-3px;background:#dbeafe}.kcol.kno{outline:2px dashed #dc2626;outline-offset:-3px}
 
 /* ---------- matrix ---------- */
 .mwrap{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--line2);overflow:auto;max-height:calc(100vh - 220px)}
@@ -2992,16 +2994,59 @@ function canSetReport(t, s) {
   if (s === 'Ուղարկված է' && t.status !== 'Ստուգված է, ենթակա է ուղարկման' && !isMgr()) return false;
   return true;
 }
+/** Հաշվետվության կարգավիճակի փոփոխություն (կոճակով կամ քաշելով) */
+async function repSetStatus(id, s, el) {
+  if (s === 'Ուղարկված է' && !(await NxDlg.confirm('Նշե՞լ «Ուղարկված է»\nՀաշվետվությունը կտեղափոխվի արխիվ։', { ok: 'Այո, ուղարկված է', danger: false }))) return;
+  if (el) el.disabled = true;
+  const i0 = S.d.tasks.findIndex(x => x.id === id), before = i0 >= 0 ? Object.assign({}, S.d.tasks[i0]) : null;
+  if (before && s !== 'Ուղարկված է') { S.d.tasks[i0].status = s; renderView(); }   // անմիջապես
+  try {
+    const t = await call('updateTask', { id, patch: { status: s } }, { silent: s !== 'Ուղարկված է' });
+    const i = S.d.tasks.findIndex(x => x.id === id);
+    if (i >= 0) { if (t.archived) { S.d.tasks.splice(i, 1); S.d.recentReports.push({ companyId: t.companyId, reportCode: t.reportCode, period: t.period, archivedAt: t.archivedAt, id: t.id }); } else S.d.tasks[i] = t; }
+    toast(t.archived ? '🗄 Ուղարկված է — արխիվում է' : '→ ' + esc(s), 'ok');
+    renderShell(); renderView();
+  }
+  catch (err) { toast(esc(err.message), 'err'); if (el) el.disabled = false; if (before) { const i = S.d.tasks.findIndex(x => x.id === before.id); if (i >= 0) S.d.tasks[i] = before; renderView(); } }
+}
+/* ---------- Փուլերի միջև քաշել ---------- */
+let KDRAG = null;
+document.addEventListener('dragstart', e => {
+  const c = e.target.closest && e.target.closest('.kanban .kcard[draggable=true]'); if (!c) return;
+  const t = S.d.tasks.find(x => x.id === c.dataset.id); if (!t) return;
+  KDRAG = { id: t.id, from: t.status }; c.classList.add('kdrag');
+  e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', t.id); } catch (x) {}
+});
+document.addEventListener('dragend', () => { KDRAG = null; document.querySelectorAll('.kdrag,.kover,.kno').forEach(x => x.classList.remove('kdrag', 'kover', 'kno')); });
+document.addEventListener('dragover', e => {
+  if (!KDRAG) return;
+  const col = e.target.closest && e.target.closest('.kanban .kcol');
+  document.querySelectorAll('.kover,.kno').forEach(x => { if (x !== col) x.classList.remove('kover', 'kno'); });
+  if (!col || col.dataset.kst === KDRAG.from) return;
+  const t = S.d.tasks.find(x => x.id === KDRAG.id), ok = t && canSetReport(t, col.dataset.kst);
+  col.classList.toggle('kover', !!ok); col.classList.toggle('kno', !ok);
+  if (ok) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+});
+document.addEventListener('drop', e => {
+  if (!KDRAG) return;
+  const col = e.target.closest && e.target.closest('.kanban .kcol'), d = KDRAG; KDRAG = null;
+  document.querySelectorAll('.kdrag,.kover,.kno').forEach(x => x.classList.remove('kdrag', 'kover', 'kno'));
+  if (!col || col.dataset.kst === d.from) return;
+  e.preventDefault();
+  const t = S.d.tasks.find(x => x.id === d.id);
+  if (!t || !canSetReport(t, col.dataset.kst)) return toast('«' + esc(col.dataset.kst) + '»՝ կարող է նշել միայն ղեկավարը', 'err');
+  repSetStatus(d.id, col.dataset.kst);
+});
 function kanbanHtml() {
   const L = S.d.consts.REPORT_STATUSES.slice(0, 4);
   const list = reportsFiltered().sort(sortTasks);
   return `<div class="kanban">${L.map(s => {
     const items = list.filter(t => t.status === s);
-    return `<div class="kcol"><div class="khead"><span class="pill" style="--c:${stColor(s)}">${esc(s)}</span><span class="n">${items.length}</span></div>
+    return `<div class="kcol" data-kst="${esc(s)}"><div class="khead"><span class="pill" style="--c:${stColor(s)}">${esc(s)}</span><span class="n">${items.length}</span></div>
       ${items.map(t => {
         const di = dueInfo(t.due), nx = nextReportStatus(t);
         const can = nx && canSetReport(t, nx);
-        return `<div class="kcard" style="--pc:${prioColor(t.priority)}" data-act="open" data-id="${esc(t.id)}">
+        return `<div class="kcard" style="--pc:${prioColor(t.priority)}" data-act="open" data-id="${esc(t.id)}" draggable="${canTouch(t) ? 'true' : 'false'}" title="Սեղմեք՝ բացելու, քաշեք՝ այլ փուլ տեղափոխելու համար">
           <div class="co">${esc(t.companyName)}</div>
           <div class="rn">${esc(t.reportCode)} · ${esc(periodLabel(t))}</div>
           <div class="ft">${av(t.assignee, 'sm')}<span class="due ${di.cls}">${esc(di.label)}</span>
@@ -5974,22 +6019,7 @@ const ACT = {
   saveTask: () => saveTask(),
   finishTask: () => saveTask({ status: 'Ավարտված' }),
   discardEdit: () => { if (S.drawer) { S.drawer.edit = {}; renderDrawer(); } },
-  advance: async (el, e) => {
-    e.stopPropagation();
-    const s = el.dataset.s;
-    if (s === 'Ուղարկված է' && !(await NxDlg.confirm('Նշե՞լ «Ուղարկված է»\nՀաշվետվությունը կտեղափոխվի արխիվ։', { ok: 'Այո, ուղարկված է', danger: false }))) return;
-    el.disabled = true;
-    const i0 = S.d.tasks.findIndex(x => x.id === el.dataset.id), before = i0 >= 0 ? Object.assign({}, S.d.tasks[i0]) : null;
-    if (before && s !== 'Ուղարկված է') { S.d.tasks[i0].status = s; renderView(); }   // անմիջապես
-    try {
-      const t = await call('updateTask', { id: el.dataset.id, patch: { status: s } }, { silent: s !== 'Ուղարկված է' });
-      const i = S.d.tasks.findIndex(x => x.id === el.dataset.id);
-      if (i >= 0) { if (t.archived) { S.d.tasks.splice(i, 1); S.d.recentReports.push({ companyId: t.companyId, reportCode: t.reportCode, period: t.period, archivedAt: t.archivedAt, id: t.id }); } else S.d.tasks[i] = t; }
-      toast(t.archived ? '🗄 Ուղարկված է — արխիվում է' : '→ ' + esc(s), 'ok');
-      renderShell(); renderView();
-    }
-    catch (err) { toast(esc(err.message), 'err'); el.disabled = false; if (before) { const i = S.d.tasks.findIndex(x => x.id === before.id); if (i >= 0) S.d.tasks[i] = before; renderView(); } }
-  },
+  advance: async (el, e) => { e.stopPropagation(); await repSetStatus(el.dataset.id, el.dataset.s, el); },
   rmPart: el => { const E = S.drawer.edit || {}; const cur = E.participants || splitList(S.drawer.data.task.participants); stageEdit('participants', cur.filter(n => n !== el.dataset.n)); },
   sendComment,
   delTask: async () => { if (!(await NxDlg.confirm('Ջնջե՞լ թասքը վերջնականապես։\nԱյս գործողությունը հետ բերել հնարավոր չէ։', { ok: 'Ջնջել' }))) return; try { await call('deleteTask', { id: S.drawer.id }); closeDrawer(); toast('Ջնջված է', 'ok'); await refresh(); } catch (e) { toast(esc(e.message), 'err'); } },
