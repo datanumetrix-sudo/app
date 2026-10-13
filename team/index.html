@@ -188,6 +188,15 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .tohead td:nth-child(2){width:auto}.mbox.wide.xwide{max-width:1100px}
 .tol{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0}.tol b{white-space:nowrap}.tol.tot{font-weight:700;color:#1d4ed8}
 .tosum{border:2px solid #2563eb;border-radius:12px;padding:10px 14px;background:#eff6ff}
+.tctop{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.tcc{border:1px solid #bfdbfe;border-radius:12px;margin-bottom:12px;overflow:hidden;background:var(--panel)}.tct{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#dbeafe;font-size:13.5px}.tct b{flex:1;text-align:center}
+.tcg{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0}.tcl{padding:8px 12px;border-right:1px dashed #bfdbfe}.tcr{padding:8px 12px;background:#f8fafc}
+.tcrow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}.tcrow>span{flex:1;min-width:0}.tcrow .tcn{width:150px;text-align:right;padding:5px 8px;font-size:13px}.tcrow b{white-space:nowrap;min-width:110px;text-align:right}.tcrow em{font-style:normal;background:#fde7d9;padding:2px 6px;border-radius:4px;font-size:12px;min-width:44px;text-align:center}
+.tchd{font-weight:700;font-style:italic;font-size:14px;border-bottom:1px solid var(--line);margin-bottom:2px}.tce .inp{padding:5px 8px;font-size:12.5px}.tcrow.tce input.inp[data-en]{flex:1 1 auto;width:auto;min-width:0}.tcrow.tce select.inp{width:auto;flex:none}
+.tcpay{font-weight:700;font-style:italic;border-top:1px solid var(--line);margin-top:4px;padding-top:6px}.tcpay b{color:#1d4ed8;font-size:15px}
+.tcadd{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 12px}
+.pekh{font-weight:700;font-size:13px;margin:12px 0 4px;color:#1e3a8a}.pekv{display:inline-block;min-width:110px;text-align:right;font-weight:600;padding:3px 8px;border-radius:6px;background:#f1f5f9;cursor:copy}.pekv:hover{background:#dbeafe}
+@media (max-width:760px){.tcg{grid-template-columns:1fr}.tcl{border-right:0;border-bottom:1px dashed #bfdbfe}.tcrow .tcn{width:120px}}
 @media (max-width:700px){.totbl td:nth-child(2){width:140px}.tosum10 td:nth-child(3){width:50px}}
 .tbtn{font-size:18px}.nowin .wonly{display:none}.tico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;color:#fff;font:800 13px/1 system-ui,sans-serif}
 .tpop{position:fixed;z-index:80;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:6px;min-width:260px}
@@ -6159,136 +6168,216 @@ function salCalcOpen() {
   setMode(st.mode === 'gross' ? 'gross' : 'net');
 }
 /* ====================== 📈 ՇՐՋԱՆԱՌՈՒԹՅԱՆ ՀԱՐԿԻ ՀԱՇՎԻՉ ======================
-   ՀՀ հարկային օրենսգիրք, հոդվ. 257–258 (ՀՕ-285-Ն, 2025-01-01-ից) և ՊԵԿ-ի շրջանառության հարկի հաշվարկի ձևը (բլոկներ 5–10)։
-   Եռամսյակային. հարկ = եկամուտ × դրույք − (ծախսեր × նվազեցման % + նախորդ եռամսյակներից փոխանցված), բայց ոչ պակաս նվազագույնից (եկամուտ × նվազ. %)։
-   Չօգտագործված նվազեցումը = ընդհ. նվազեցում − (հարկ − նվազագույն) փոխանցվում է հաջորդ եռամսյակ (տող 11)։ */
-/* Բլոկներ՝ ճիշտ ՊԵԿ-ի ձևի համարակալմամբ։ split՝ x.4.1 + x.4.2, carry՝ x.7 / x.11 տողեր */
-const TO_BLK = [
-  { n: 5, rate: 10, ded: 9.5, min: 1, split: true, carry: true, t: 'Առևտրական (առք ու վաճառքի) գործունեությունից ստացվող եկամուտների մասով հարկի հաշվարկ', s: 'առևտրական (առք ու վաճառքի) գործունեությունից ստացվող',
-    e1: 'Առևտրական (առք ու վաճառքի) գործունեության առարկա հանդիսացող ապրանքների սկզբնական արժեք' },
-  { n: 6, rate: 7, ded: 5, min: 3, split: true, carry: true, t: 'Արտադրական գործունեությունից ստացվող եկամուտների մասով հարկի հաշվարկ', s: 'արտադրական գործունեությունից ստացվող',
-    e1: 'Ապրանքների արտադրության հետ անմիջականորեն կապված ծախսեր' },
-  { n: 7, rate: 12, ded: 9, min: 3.5, split: true, carry: true, t: 'Հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող եկամուտների մասով հարկի հաշվարկ (բացառությամբ սույն հաշվարկի 8-րդ կետով սահմանված եկամուտների մասով հարկի հաշվարկի)', s: 'հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող',
-    e1: 'Հանրային սննդի ոլորտում իրականացվող գործունեության հետ անմիջականորեն կապված ծախսեր' },
-  { n: 8, rate: 6, ded: 3, min: 4, split: false, carry: false, t: 'Բացառապես Երևան քաղաքից դուրս հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող եկամուտների մասով հարկի հաշվարկ', s: 'հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող', old: true },
-  { n: 9, rate: 10, ded: 6, min: 4.5, split: true, carry: true, t: 'Այլ գործունեությունից ստացվող եկամուտների մասով հարկի հաշվարկ', s: 'այլ գործունեությունից ստացվող',
-    e1: 'Այլ գործունեության հետ անմիջականորեն կապված ծախսեր' }
+   ՀՀ հարկային օրենսգիրք, հոդվ. 257–258 և ՊԵԿ-ի հաշվարկի ձևը։ Մուտքագրումը՝ մեր ձևաչափով (վաճառք/ծախսեր ըստ տողերի),
+   «ՊԵԿ ձևաչափ»-ը ցույց է տալիս միայն լրացված գործունեությունների բաժինները (x.1–x.11) և 10-րդ աղյուսակի տողերը։
+   Հարկ = վաճառք × դրույք − (ծախսեր × նվազ. % + նախորդից փոխանցված), բայց ոչ պակաս նվազագույնից. չօգտագործվածը՝ հաջորդ եռամսյակ (x.11)։ */
+const TC_DED = [
+  { k: 'trade', n: 5, line: 11, rate: 10, ded: 9.5, min: 1, t: 'Առևտրական (առք ու վաճառքի) գործունեությունից ստացվող եկամուտներ', sales: 'Ապրանքների վաճառք, որից՝', risk: true,
+    s: 'առևտրական (առք ու վաճառքի) գործունեությունից ստացվող', e1: 'Առևտրական (առք ու վաճառքի) գործունեության առարկա հանդիսացող ապրանքների սկզբնական արժեք',
+    exp: [['Ապրանքների գնումներ', 1], ['Գնման հարկից ծախսեր', 1], ['Իրացման ծախսեր', 2], ['Աշխատավարձ', 2], ['Կոմունալ', 2], ['Վարչական ծախսեր', 2]] },
+  { k: 'prod', n: 6, line: 14, rate: 7, ded: 5, min: 3, t: 'Արտադրական գործունեությունից ստացվող եկամուտներ', sales: 'Արտադրանքի վաճառք, որից՝',
+    s: 'արտադրական գործունեությունից ստացվող', e1: 'Ապրանքների արտադրության հետ անմիջականորեն կապված ծախսեր',
+    exp: [['Հումք, նյութերի գնում', 1], ['Աշխատավարձ', 1], ['Կոմունալ', 1], ['Վարչական ծախսեր', 2]] },
+  { k: 'cater', n: 7, line: 16, rate: 12, ded: 9, min: 3.5, t: 'Հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող եկամուտներ', sales: 'Ծառայությունների մատուցում, որից՝',
+    s: 'հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող', e1: 'Հանրային սննդի ոլորտում իրականացվող գործունեության հետ անմիջականորեն կապված ծախսեր',
+    exp: [['Հումք, նյութերի գնում', 1], ['Աշխատավարձ', 1], ['Վարձակալություն', 1], ['Կոմունալ', 1], ['Վարչական ծախսեր', 2]] },
+  { k: 'other', n: 9, line: 21, rate: 10, ded: 6, min: 4.5, t: 'Այլ գործունեությունից ստացվող եկամուտներ', sales: 'Ծառայությունների մատուցում, որից՝',
+    s: 'այլ գործունեությունից ստացվող', e1: 'Այլ գործունեության հետ անմիջականորեն կապված ծախսեր',
+    exp: [['Հումք, նյութերի գնում', 1], ['Աշխատավարձ', 1], ['Վարձակալություն', 1], ['Կոմունալ', 2], ['Վարչական ծախսեր', 2]] }
 ];
-/* Ամփոփիչ աղյուսակ (կետ 10). blk՝ հարկը վերցվում է բլոկից, rate՝ ֆիքսված դրույք */
-const TO_SUM = [
-  [11, 'Առևտրական (առք ու վաճառքի) գործունեությունից ստացվող եկամուտներ', { blk: 5 }],
-  [12, 'Երկրորդային հումքի առևտրական (առք ու վաճառքի) գործունեությունից ստացվող եկամուտներ', { rate: 5 }],
-  [13, 'Խմբագրությունների կողմից թերթերի օտարումից եկամուտներ', { rate: 1.5 }],
-  [14, 'Արտադրական գործունեությունից ստացվող եկամուտներ', { blk: 6 }],
-  [15, 'Վարձակալական վճար, տոկոս, ռոյալթի', { rate: 10 }],
-  [16, 'Հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող եկամուտներ (բացառությամբ սույն հաշվարկի 8-րդ կետով սահմանված եկամուտների)', { blk: 7 }],
-  [17, 'Բացառապես Երևան քաղաքից դուրս հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացվող եկամուտներ (սույն հաշվարկի 8-րդ կետով սահմանված եկամուտներ)', { blk: 8 }],
-  [18, 'Հանրային սննդի ոլորտում գործունեություն իրականացնելու համար շրջանառության հարկ վճարող համարվելու վերաբերյալ հայտարարություն ներկայացրած վճարողների կողմից «Հանրային սննդի կազմակերպում» հատվածում չներառված՝ այլ ակտիվների օտարումից, ինչպես նաև այլ գործունեությունից ստացված եկամուտներ', { rate: 20 }],
-  [19, 'Կառավարության սահմանած՝ բարձր տեխնոլոգիաների ոլորտի գործունեության տեսակների ցանկում ներառված գործունեության տեսակներից ստացված եկամուտներ', { rate: 1 }],
-  [20, 'Այլ ակտիվների, այդ թվում՝ անշարժ գույքի օտարումից ստացված եկամուտներ', { rate: 10 }],
-  [21, 'Այլ գործունեությունից ստացվող եկամուտներ', { blk: 9 }]
-];
-const TO_EXTRA = [
-  [23, '«Պետական տուրքի մասին» օրենքի 19.7-րդ և 19.8-րդ հոդվածներով սահմանված գործունեության տեսակների մասով իրացման շրջանառություն և (կամ) եկամուտներ'],
-  [24, '«Սահմանամերձ բնակավայրերում իրականացվող գործունեությունը հարկերից ազատելու մասին» օրենքով սահմանված արտոնություններից օգտվող շրջանառության հարկ վճարողների կողմից՝ առևտրի օբյեկտների, առևտրի իրականացման վայրերում վաճառասեղանի միջոցով բնակչությանը մանրածախ վաճառքի (առք ու վաճառքի) իրականացման գործունեությունից ստացված եկամուտներ'],
-  [25, '«Սահմանամերձ բնակավայրերում իրականացվող գործունեությունը հարկերից ազատելու մասին» օրենքով սահմանված արտոնություններից օգտվող շրջանառության հարկ վճարողների կողմից տնտեսական գործունեության դասակարգչով արտադրության կազմակերպման արդյունքում ստացված արտադրանքի իրացումից եկամուտներ'],
-  [26, '«Սահմանամերձ բնակավայրերում իրականացվող գործունեությունը հարկերից ազատելու մասին» օրենքով սահմանված արտոնություններից օգտվող շրջանառության հարկ վճարողների կողմից հանրային սննդի ոլորտում իրականացվող գործունեությունից ստացված եկամուտներ']
+const TC_FIX = [
+  { k: 'rent', line: 15, rate: 10, t: 'Վարձակալական վճար, տոկոս, ռոյալթի' },
+  { k: 'asset', line: 20, rate: 10, t: 'Այլ ակտիվների, այդ թվում՝ անշարժ գույքի օտարումից ստացված եկամուտներ' },
+  { k: 'raw', line: 12, rate: 5, t: 'Երկրորդային հումքի առևտրական (առք ու վաճառքի) գործունեությունից ստացվող եկամուտներ' },
+  { k: 'hitech', line: 19, rate: 1, t: 'Կառավարության սահմանած՝ բարձր տեխնոլոգիաների ոլորտի գործունեության տեսակների ցանկում ներառված գործունեության տեսակներից ստացված եկամուտներ' },
+  { k: 'news', line: 13, rate: 1.5, t: 'Խմբագրությունների կողմից թերթերի օտարումից եկամուտներ' },
+  { k: 'caterX', line: 18, rate: 20, t: 'Հանրային սննդի վճարողի կողմից «Հանրային սննդի կազմակերպում» հատվածում չներառված՝ այլ ակտիվների օտարումից, ինչպես նաև այլ գործունեությունից ստացված եկամուտներ' }
 ];
 const TO_LIMIT = 115000000;
-/** Մեկ բլոկի հաշվարկ (ՊԵԿ ձևի x.1–x.11 տողերը) */
-function toBlock(a, inc, exp, carry) {
-  const tax = Math.round(inc * a.rate / 100), dq = Math.round(exp * a.ded / 100), dt = dq + Math.round(carry || 0), mn = Math.round(inc * a.min / 100);
-  const low = tax - dt < mn, pay = low ? mn : tax - dt, next = low ? Math.max(0, dt - (tax - mn)) : 0;
-  return { inc, tax, exp, dq, carry: Math.round(carry || 0), dt, mn, pay, next };
+const c2 = x => Math.round((+x || 0) * 100) / 100;
+/** Գումար՝ «1,426,577.02», «1 426 577,02», «1426577.2» */
+function parseDec(v) {
+  let t = String(v == null ? '' : v).replace(/[\s ]/g, '').replace(/[^\d.,-]/g, '');
+  if (!t) return 0;
+  if (t.indexOf(',') >= 0 && t.indexOf('.') >= 0) t = t.replace(/,/g, '');
+  else if (t.indexOf(',') >= 0) t = /,\d{1,2}$/.test(t) && (t.match(/,/g) || []).length === 1 ? t.replace(',', '.') : t.replace(/,/g, '');
+  const n = parseFloat(t); return isFinite(n) ? c2(n) : 0;
 }
-const toP = x => String(x).replace(/\.0$/, '') + '%';
+function fmtDec(n) { n = c2(n); const neg = n < 0, [i, f] = Math.abs(n).toFixed(2).split('.'); return (neg ? '−' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + (f === '00' ? '' : '.' + f); }
+/** Մեկ բլոկ (ՊԵԿ x.1–x.11) */
+function tcBlock(a, inc, e1, e2, carry) {
+  const exp = c2(e1 + e2), tax = c2(inc * a.rate / 100), dq = c2(exp * a.ded / 100), dt = c2(dq + (carry || 0)), mn = c2(inc * a.min / 100);
+  const low = c2(tax - dt) < mn, pay = low ? mn : c2(tax - dt), next = low ? Math.max(0, c2(dt - c2(tax - mn))) : 0;
+  return { inc, e1, e2, exp, tax, dq, carry: c2(carry), dt, mn, pay, next };
+}
 function toCalcOpen() {
   const now = new Date(), q0 = Math.floor(now.getMonth() / 3) || 4, y0 = q0 === 4 && now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
-  let st = {}; try { st = JSON.parse(localStorage.getItem('nx_to2') || '{}'); } catch (e) {}
-  const v = k => st[k] ? fmtAmt(st[k]) : '';
-  const IN = k => `<input class="inp toin" data-to="${k}" inputmode="numeric" autocomplete="off" value="${v(k)}">`;
-  const OUT = k => `<input class="inp toout" data-o="${k}" value="0" readonly tabindex="-1">`;
-  const R = (no, label, cell, cls) => `<tr class="${cls || ''}"><td>${no ? no + '. ' : ''}${label}</td><td>${cell}</td></tr>`;
-  const RATE = x => `<span class="torate">${x}</span>`;
-  const blk = a => {
-    const n = a.n, rows = [
-      R(n + '.1', 'Հաշվետու եռամսյակում ' + a.s + ' եկամուտներ', IN(n + '.1')),
-      R(n + '.2', a.s[0].toUpperCase() + a.s.slice(1) + ' եկամուտների նկատմամբ հարկի դրույքաչափ', RATE(toP(a.rate))),
-      R(n + '.3', a.s[0].toUpperCase() + a.s.slice(1) + ' եկամուտների մասով հաշվետու եռամսյակի համար հաշվարկված հարկի գումար', OUT(n + '.3'))
-    ];
-    if (a.split) rows.push(R(n + '.4.1', a.e1, IN(n + '.4.1')), R(n + '.4.2', 'Իրացման և վարչական ծախսեր', IN(n + '.4.2')), R(n + '.4', 'Ընդամենը հաշվետու եռամսյակում կատարված ծախսերի գումար', OUT(n + '.4')));
-    else rows.push(R(n + '.4', 'Հաշվետու եռամսյակում հանրային սննդի ոլորտում իրականացվող գործունեության հետ կապված ծախսերի գումար', IN(n + '.4')));
-    rows.push(R(n + '.5', 'Հարկի գումարից նվազեցվող գումարի հաշվարկման համար ' + (a.split ? 'կատարված ծախսերի' : 'հանրային սննդի ոլորտում իրականացվող գործունեության հետ կապված ծախսերի') + ' գումարի նկատմամբ դրույքաչափ', RATE(toP(a.ded))),
-      R(n + '.6', 'Հաշվետու եռամսյակում հարկի գումարից նվազեցվող գումար', OUT(n + '.6')));
-    if (a.carry) rows.push(R(n + '.7', 'Նախորդ եռամսյակներում կատարված ծախսերի մասով հարկի գումարից չնվազեցված և փոխանցված գումար', IN(n + '.7')),
-      R(n + '.8', 'Ընդամենը հաշվետու եռամսյակում հարկի գումարից նվազեցվող գումար', OUT(n + '.8')),
-      R(n + '.9', 'Հաշվետու եռամսյակի համար հարկի նվազագույն գումար (' + toP(a.min) + ')', OUT(n + '.9')),
-      R(n + '.10', 'Հաշվետու եռամսյակի համար հաշվարկված վճարման ենթակա հարկի գումար', OUT(n + '.10'), 'tototal'),
-      R(n + '.11', 'Կատարված ծախսերի մասով հարկի գումարից չնվազեցվող և հաջորդ եռամսյակներ փոխանցվող գումար', OUT(n + '.11')));
-    else rows.push(R(n + '.7', 'Հաշվետու եռամսյակի համար հարկի նվազագույն գումար (' + toP(a.min) + ')', OUT(n + '.7')),
-      R(n + '.8', 'Հաշվետու եռամսյակի համար հաշվարկված վճարման ենթակա հարկի գումար', OUT(n + '.8'), 'tototal'));
-    const open = Object.keys(st).some(k => k.indexOf(n + '.') === 0) || n === 5 || n === 9;
-    return `<details class="toblk" data-b="${n}" ${open ? 'open' : ''}><summary><b>${n}.</b> ${esc(a.t)}${a.old ? ' <span class="tag" style="font-size:11px">մինչև 01.01.2026 ժամանակաշրջանների համար</span>' : ''}<span class="tobsum" data-bs="${n}"></span></summary><table class="totbl">${rows.join('')}</table></details>`;
+  let pref = {}; try { pref = JSON.parse(localStorage.getItem('nx_tc') || '{}'); } catch (e) {}
+  const comps = (S.d.companies || []).filter(c => c.active !== 'Ոչ').slice().sort(compCmp);
+  const ST = { cid: comps.some(c => c.id === pref.cid) ? pref.cid : '', y: y0, q: q0, acts: [], prevNext: {}, saved: null, dirty: false, view: 'calc' };
+  const m = openModal('📈 Շրջանառության հարկի հաշվարկ', `<div class="tcx">
+    <div class="tctop">
+      <div style="flex:1;min-width:220px"><label class="f">Կազմակերպություն</label><select class="inp" id="tcComp"><option value="">— առանց կազմակերպության (չի պահպանվում) —</option>${comps.map(c => `<option value="${esc(c.id)}" ${ST.cid === c.id ? 'selected' : ''}>${esc(c.name)}${c.tin ? ' · ' + esc(c.tin) : ''}</option>`).join('')}</select></div>
+      <div><label class="f">Տարի</label><input class="inp" id="tcY" type="number" value="${ST.y}" style="width:92px"></div>
+      <div><label class="f">Եռամսյակ</label><select class="inp" id="tcQ" style="width:auto">${[1, 2, 3, 4].map(q => `<option value="${q}" ${q === ST.q ? 'selected' : ''}>${['I', 'II', 'III', 'IV'][q - 1]}</option>`).join('')}</select></div>
+      <div class="seg" id="tcView"><button type="button" data-v="calc" class="on">🧮 Հաշվարկ</button><button type="button" data-v="pek">📋 ՊԵԿ ձևաչափ</button></div>
+    </div>
+    <div id="tcInfo" class="hint" style="margin:6px 0 10px"></div>
+    <div id="tcBody"></div>
+    <div id="tcAdd" class="tcadd"></div>
+    <div id="tcTot"></div>
+  </div>`, null, { okOnly: true, wide: true, extra: '<button type="button" class="btn primary" id="tcSave" style="margin-right:auto">💾 Պահպանել</button>' });
+  m.classList.add('xwide');
+  const body = m.querySelector('#tcBody');
+  const def = k => TC_DED.find(a => a.k === k) || TC_FIX.find(a => a.k === k);
+  const newAct = k => { const a = def(k); return { k, inv: 0, hdm: 0, ret: 0, carry: null, exp: a.exp ? a.exp.map(([n, t]) => ({ n, a: 0, t })) : [] }; };
+  const salesOf = x => c2(x.inv + x.hdm - x.ret);
+  const calcAct = x => {
+    const a = def(x.k), inc = salesOf(x);
+    if (!a.exp) return { fixed: true, inc, tax: c2(inc * a.rate / 100), pay: c2(inc * a.rate / 100), next: 0 };
+    const e1 = x.exp.filter(e => +e.t === 1).reduce((s, e) => s + e.a, 0), e2 = x.exp.filter(e => +e.t !== 1).reduce((s, e) => s + e.a, 0);
+    const carry = x.carry == null ? (ST.prevNext[x.k] || 0) : x.carry;
+    return tcBlock(a, inc, c2(e1), c2(e2), carry);
   };
-  const comps = (S.d.compNames || S.d.companies || []).slice().sort(compCmp);
-  const m = openModal('📈 Շրջանառության հարկի հաշվարկ', `<div class="toc">
-    <table class="totbl tohead">
-      <tr><td>Կազմակերպություն (լրացնելու համար)</td><td><select class="inp" id="toComp"><option value="">— ընտրել —</option>${comps.map(c => `<option value="${esc(c.id)}" ${st._c === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></td></tr>
-      <tr><td>1. Հարկ վճարողի հաշվառման համարը (ՀՎՀՀ)</td><td><input class="inp" data-h="tin" value="${esc(st._tin || '')}" style="max-width:160px"></td></tr>
-      <tr><td>2. Հարկ վճարողը</td><td><input class="inp" data-h="nm" value="${esc(st._nm || '')}"></td></tr>
-      <tr><td>3. Հարկ վճարողի գտնվելու վայրը (բնակության վայրը)</td><td><input class="inp" data-h="addr" value="${esc(st._addr || '')}"></td></tr>
-      <tr><td>4. Հաշվետու ժամանակաշրջանը</td><td><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">Տարի <input class="inp" data-tq="y" type="number" value="${st._y || y0}" style="width:96px"> թ. &nbsp; Եռամսյակ <select class="inp" data-tq="q" style="width:auto">${[1, 2, 3, 4].map(q => `<option value="${q}" ${q === (st._q || q0) ? 'selected' : ''}>${q}</option>`).join('')}</select><span style="flex:1"></span><button type="button" class="btn sm" id="toClr">🧹 Մաքրել գումարները</button></div></td></tr>
-    </table>
-    ${TO_BLK.map(blk).join('')}
-    <table class="totbl tosum10"><tr class="toth"><td>10. Շրջանառության հարկով հարկվող եկամուտների տեսակը</td><td>Եկամուտը [Ա]</td><td>Դրույքաչափը [Բ]</td><td>Հարկի գումարը [Գ]</td></tr>
-      ${TO_SUM.map(([no, l, o]) => `<tr><td>${no}. ${esc(l)}</td><td>${o.blk ? OUT('A' + no) : IN('A' + no)}</td><td class="torate">${o.blk ? 'x' : toP(o.rate)}</td><td>${OUT('G' + no)}</td></tr>`).join('')}
-      <tr class="tototal"><td>22. Ընդամենը</td><td>${OUT('A22')}</td><td class="torate">x</td><td>${OUT('G22')}</td></tr></table>
-    <table class="totbl">${TO_EXTRA.map(([no, l]) => R(no, esc(l), IN('E' + no))).join('')}${R(27, 'Գործունեության բոլոր տեսակների մասով իրացման շրջանառություն և (կամ) եկամուտներ', OUT('E27'), 'tototal')}</table>
-    <div id="toSum"></div>
-  </div>`, null, { okOnly: true, wide: true });
-  m.closest('.mbox') && m.closest('.mbox').classList.add('xwide');
-  const g = k => { const i = m.querySelector('[data-to="' + k + '"]'); return i ? parseAmt(i.value) : 0; };
-  const put = (k, n) => { const o = m.querySelector('[data-o="' + k + '"]'); if (o) o.value = fmtAmt(n) || '0'; };
-  const draw = () => {
-    const save = { _q: +m.querySelector('[data-tq=q]').value, _y: +m.querySelector('[data-tq=y]').value, _c: m.querySelector('#toComp').value };
-    m.querySelectorAll('[data-h]').forEach(i => { save['_' + i.dataset.h] = i.value; });
-    m.querySelectorAll('[data-to]').forEach(i => { const n = parseAmt(i.value); if (n) save[i.dataset.to] = n; });
-    const B = {};
-    TO_BLK.forEach(a => {
-      const n = a.n, exp = a.split ? g(n + '.4.1') + g(n + '.4.2') : g(n + '.4'), r = toBlock(a, g(n + '.1'), exp, a.carry ? g(n + '.7') : 0); B[n] = r;
-      put(n + '.3', r.tax); if (a.split) put(n + '.4', exp); put(n + '.6', r.dq);
-      if (a.carry) { put(n + '.8', r.dt); put(n + '.9', r.mn); put(n + '.10', r.pay); put(n + '.11', r.next); } else { put(n + '.7', r.mn); put(n + '.8', r.pay); }
-      const bs = m.querySelector('[data-bs="' + n + '"]'); bs.textContent = r.inc || r.pay ? ' → ' + fmtAmt(r.pay) + ' ֏' : '';
+  const N = (v, attrs) => `<input class="inp tcn" ${attrs} inputmode="decimal" autocomplete="off" value="${v ? fmtDec(v) : ''}" placeholder="0">`;
+  const card = (x, i) => {
+    const a = def(x.k), r = calcAct(x);
+    const left = `<div class="tcl">
+      <div class="tcrow tchd"><span>${esc(a.sales || 'Եկամուտ, որից՝')}</span><b data-o="${i}.inc">${fmtDec(r.inc)}</b></div>
+      <div class="tcrow"><span>Ինվոյսով</span>${N(x.inv, `data-f="inv" data-i="${i}"`)}</div>
+      <div class="tcrow"><span>ՀԴՄ-ով</span>${N(x.hdm, `data-f="hdm" data-i="${i}"`)}</div>
+      <div class="tcrow"><span>Վերադարձ (−)</span>${N(x.ret, `data-f="ret" data-i="${i}"`)}</div>
+      ${a.exp ? `<div class="tcrow tchd" style="margin-top:8px"><span>Ծախսեր, որից՝</span><b data-o="${i}.exp">${fmtDec(r.exp)}</b></div>
+      ${x.exp.map((e, j) => `<div class="tcrow tce"><input class="inp" data-en="${j}" data-i="${i}" value="${esc(e.n)}" placeholder="Ծախսի անվանում"><select class="inp" data-et="${j}" data-i="${i}" title="ՊԵԿ ձևի տողը"><option value="1" ${+e.t === 1 ? 'selected' : ''}>${a.n}.4.1</option><option value="2" ${+e.t !== 1 ? 'selected' : ''}>${a.n}.4.2</option></select>${N(e.a, `data-ea="${j}" data-i="${i}"`)}<button type="button" class="btn sm" data-erm="${j}" data-i="${i}" title="Հեռացնել">✕</button></div>`).join('')}
+      <button type="button" class="btn sm" data-eadd="${i}" style="margin-top:4px">+ Ծախս</button>` : ''}</div>`;
+    const P = x => String(x).replace('.', ',') + '%';
+    const right = a.exp ? `<div class="tcr">
+      <div class="tcrow"><span>Հարկի դրույքաչափ՝</span><em>${P(a.rate)}</em><b data-o="${i}.tax">${fmtDec(r.tax)}</b></div>
+      <div class="tcrow"><span>Նվազեցման տոկոս՝</span><em>${P(a.ded)}</em><b data-o="${i}.dq">${fmtDec(r.dq)}</b></div>
+      <div class="tcrow"><span>Նվազագույն շեմ՝</span><em>${P(a.min)}</em><b data-o="${i}.mn">${fmtDec(r.mn)}</b></div>
+      <div class="tcrow"><span>Նախորդ եռամսյակներից փոխանցված${x.carry == null && ST.prevNext[x.k] ? ' <small class="muted">(նախորդ հաշվարկից)</small>' : ''}</span>${N(x.carry == null ? (ST.prevNext[x.k] || 0) : x.carry, `data-f="carry" data-i="${i}"`)}</div>
+      <div class="tcrow tcpay"><span>Վճարվող հարկ՝</span><b data-o="${i}.pay">${fmtDec(r.pay)}</b></div>
+      <div class="tcrow"><span>Հաջորդ եռամսյակներ փոխանցվող գումար</span><b data-o="${i}.next" style="color:#b45309">${r.next ? fmtDec(r.next) : '—'}</b></div>
+      ${a.risk ? `<div class="tcrow" title="Վճարվող հարկ ÷ վաճառք"><span>Ռիսկայնության ցուցանիշ</span><b data-o="${i}.risk">${r.inc ? String(c2(r.pay / r.inc * 100)).replace('.', ',') + '%' : '—'}</b></div>` : ''}
+    </div>` : `<div class="tcr"><div class="tcrow"><span>Հարկի դրույքաչափ՝</span><em>${P(a.rate)}</em><b data-o="${i}.tax">${fmtDec(r.tax)}</b></div><div class="tcrow tcpay"><span>Վճարվող հարկ՝</span><b data-o="${i}.pay">${fmtDec(r.pay)}</b></div></div>`;
+    return `<div class="tcc"><div class="tct"><b>${esc(a.t)}</b><button type="button" class="btn sm" data-arm="${i}" title="Հեռացնել գործունեությունը">✕</button></div><div class="tcg">${left}${right}</div></div>`;
+  };
+  const pekView = () => {
+    if (!ST.acts.length) return '<div class="muted" style="padding:14px">Ավելացրեք գործունեություն և լրացրեք թվերը։</div>';
+    const cp = v => `<span class="pekv" data-cp="${c2(v)}" title="Սեղմեք՝ պատճենելու համար">${fmtDec(v)}</span>`;
+    const RW = (no, l, v, cls) => `<tr class="${cls || ''}"><td>${no}. ${l}</td><td>${v}</td></tr>`;
+    const P = x => String(x) + '%';
+    let html = '', A = 0, G = 0; const sum = [];
+    ST.acts.forEach(x => {
+      const a = def(x.k), r = calcAct(x); A += r.inc; G += r.pay;
+      if (!a.exp) { sum.push([a.line, a.t, r.inc, P(a.rate), r.pay]); return; }
+      const n = a.n, S1 = a.s[0].toUpperCase() + a.s.slice(1);
+      sum.push([a.line, a.t, r.inc, 'x', r.pay]);
+      html += `<div class="pekh">${n}. ${esc(a.t.replace('եկամուտներ', 'եկամուտների մասով հարկի հաշվարկ'))}</div><table class="totbl">
+        ${RW(n + '.1', 'Հաշվետու եռամսյակում ' + a.s + ' եկամուտներ', cp(r.inc))}
+        ${RW(n + '.2', S1 + ' եկամուտների նկատմամբ հարկի դրույքաչափ', '<b>' + P(a.rate) + '</b>')}
+        ${RW(n + '.3', S1 + ' եկամուտների մասով հաշվետու եռամսյակի համար հաշվարկված հարկի գումար', cp(r.tax))}
+        ${RW(n + '.4.1', a.e1, cp(r.e1))}
+        ${RW(n + '.4.2', 'Իրացման և վարչական ծախսեր', cp(r.e2))}
+        ${RW(n + '.4', 'Ընդամենը հաշվետու եռամսյակում կատարված ծախսերի գումար', cp(r.exp))}
+        ${RW(n + '.5', 'Հարկի գումարից նվազեցվող գումարի հաշվարկման համար կատարված ծախսերի գումարի նկատմամբ դրույքաչափ', '<b>' + P(a.ded) + '</b>')}
+        ${RW(n + '.6', 'Հաշվետու եռամսյակում հարկի գումարից նվազեցվող գումար', cp(r.dq))}
+        ${RW(n + '.7', 'Նախորդ եռամսյակներում կատարված ծախսերի մասով հարկի գումարից չնվազեցված և փոխանցված գումար', cp(r.carry))}
+        ${RW(n + '.8', 'Ընդամենը հաշվետու եռամսյակում հարկի գումարից նվազեցվող գումար', cp(r.dt))}
+        ${RW(n + '.9', 'Հաշվետու եռամսյակի համար հարկի նվազագույն գումար (' + P(a.min) + ')', cp(r.mn))}
+        ${RW(n + '.10', 'Հաշվետու եռամսյակի համար հաշվարկված վճարման ենթակա հարկի գումար', cp(r.pay), 'tototal')}
+        ${RW(n + '.11', 'Կատարված ծախսերի մասով հարկի գումարից չնվազեցվող և հաջորդ եռամսյակներ փոխանցվող գումար', cp(r.next))}</table>`;
     });
-    let A = 0, G = 0; const lines = [];
-    TO_SUM.forEach(([no, l, o]) => {
-      const a = o.blk ? B[o.blk].inc : g('A' + no), t = o.blk ? B[o.blk].pay : Math.round(a * o.rate / 100);
-      if (o.blk) put('A' + no, a); put('G' + no, t); A += a; G += t; if (a || t) lines.push([no, l, a, t]);
-    });
-    put('A22', A); put('G22', G);
-    const e27 = A + TO_EXTRA.reduce((x, [no]) => x + g('E' + no), 0); put('E27', e27);
-    const nx = TO_BLK.filter(a => a.carry && B[a.n].next).map(a => a.n + '.11՝ ' + fmtAmt(B[a.n].next));
-    const mo = save._q * 3 + 1, due = '20.' + String(mo > 12 ? 1 : mo).padStart(2, '0') + '.' + (mo > 12 ? save._y + 1 : save._y);
-    m.querySelector('#toSum').innerHTML = `<div class="tosum">
-      <div class="tol tot" style="font-size:18px"><span>Վճարման ենթակա շրջանառության հարկ (տող 22 [Գ])</span><b>${fmtAmt(G)} ֏</b></div>
-      <div class="tol"><span>Արդյունավետ դրույք</span><b>${A ? String(Math.round(G / A * 1000) / 10).replace('.', ',') : 0}%</b></div>
+    sum.sort((p, q) => p[0] - q[0]);
+    html += `<div class="pekh">10. Շրջանառության հարկով հարկվող եկամուտների տեսակը</div><table class="totbl tosum10"><tr class="toth"><td></td><td>Եկամուտը [Ա]</td><td>Դրույքաչափը [Բ]</td><td>Հարկի գումարը [Գ]</td></tr>
+      ${sum.map(([no, l, a, rt, g]) => `<tr><td>${no}. ${esc(l)}</td><td style="text-align:right">${cp(a)}</td><td class="torate">${rt}</td><td style="text-align:right">${cp(g)}</td></tr>`).join('')}
+      <tr class="tototal"><td>22. Ընդամենը</td><td style="text-align:right">${cp(A)}</td><td class="torate">x</td><td style="text-align:right">${cp(G)}</td></tr></table>
+      <div class="hint">Սեղմեք ցանկացած թվի վրա՝ պատճենելու համար։ Ցույց են տրված միայն լրացված գործունեությունների բաժինները։</div>`;
+    return html;
+  };
+  const totals = () => { let A = 0, G = 0, nx = {}; ST.acts.forEach(x => { const r = calcAct(x); A += r.inc; G += r.pay; if (r.next) nx[x.k] = r.next; }); return { A: c2(A), G: c2(G), next: nx }; };
+  const drawTot = () => {
+    const T = totals(), mo = ST.q * 3 + 1, due = '20.' + String(mo > 12 ? 1 : mo).padStart(2, '0') + '.' + (mo > 12 ? ST.y + 1 : ST.y);
+    m.querySelector('#tcTot').innerHTML = ST.acts.length ? `<div class="tosum">
+      <div class="tol"><span>Ընդամենը եկամուտ (տող 22 [Ա])</span><b>${fmtDec(T.A)}</b></div>
+      <div class="tol tot" style="font-size:18px"><span>Ընդամենը վճարվող շրջանառության հարկ (տող 22 [Գ])</span><b>${fmtDec(T.G)} ֏</b></div>
       <div class="tol"><span>Ներկայացման և վճարման ժամկետ</span><b>մինչև ${due}</b></div>
-      ${nx.length ? `<div class="tol" style="color:#b45309"><span>Հաջորդ եռամսյակ փոխանցվող (լրացնել x.7 տողերում)</span><b>${nx.join(' · ')}</b></div>` : ''}
-      ${e27 > TO_LIMIT ? '<div class="lerr" style="margin-top:6px">⚠ Եռամսյակի շրջանառությունը գերազանցում է 115 000 000-ը։</div>' : e27 * 4 > TO_LIMIT ? '<div class="hint" style="margin-top:6px;color:#b45309">⚠ Այս տեմպով տարեկան շրջանառությունը կարող է գերազանցել 115 000 000 շեմը։</div>' : ''}
-      <div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn sm" id="toCopy">📋 Պատճենել</button></div></div>`;
-    m.querySelector('#toCopy').onclick = () => { copyText(['Շրջանառության հարկ — ' + (save._nm || '') + (save._tin ? ' (ՀՎՀՀ ' + save._tin + ')' : '') + ', ' + save._y + ' թ. ' + save._q + '-րդ եռամսյակ'].concat(lines.map(x => x[0] + '. ' + x[1] + '՝ եկամուտ ' + fmtAmt(x[2]) + ', հարկ ' + fmtAmt(x[3]))).concat(['22. Ընդամենը՝ եկամուտ ' + fmtAmt(A) + ', հարկ ' + fmtAmt(G), 'Վճարել մինչև ' + due]).concat(nx.length ? ['Հաջորդ եռամսյակ փոխանցվող՝ ' + nx.join(', ')] : []).join('\n')); toast('📋 Պատճենվեց', 'ok'); };
-    try { localStorage.setItem('nx_to2', JSON.stringify(save)); } catch (e) {}
+      ${T.A > TO_LIMIT ? '<div class="lerr" style="margin-top:6px">⚠ Եռամսյակի եկամուտը գերազանցում է 115 000 000-ը։</div>' : T.A * 4 > TO_LIMIT ? '<div class="hint" style="margin-top:6px;color:#b45309">⚠ Այս տեմպով տարեկան եկամուտը կարող է գերազանցել 115 000 000 շեմը։</div>' : ''}
+    </div>` : '';
+    const sv = m.querySelector('#tcSave'); sv.disabled = !ST.cid; sv.textContent = ST.dirty ? '💾 Պահպանել*' : '💾 Պահպանել';
   };
-  m.addEventListener('input', e => { const i = e.target.closest('[data-to]'); if (i) { const n = parseAmt(i.value); i.value = n ? fmtAmt(n) : ''; } draw(); });
-  m.addEventListener('change', draw);
-  m.querySelector('#toComp').addEventListener('change', async e => {
-    const id = e.target.value, c = comps.find(x => x.id === id); if (!c) return;
-    const set = (k, val) => { const i = m.querySelector('[data-h=' + k + ']'); if (i) i.value = val || ''; };
-    const td = String(c.tin || '').replace(/\D/g, ''); set('tin', td.length >= 6 && td.length < 8 ? td.padStart(8, '0') : (c.tin || '')); set('nm', c.name); set('addr', ''); draw();
-    try { const D = docGetCached(id) || await docGetLoad(id); if (m.querySelector('#toComp').value === id) { set('addr', (D && D.data && D.data.legalAddr) || ''); draw(); } } catch (x) {}
+  const draw = () => {
+    m.querySelectorAll('#tcView button').forEach(b => b.classList.toggle('on', b.dataset.v === ST.view));
+    body.innerHTML = ST.view === 'pek' ? pekView() : (ST.acts.map(card).join('') || '<div class="muted" style="padding:10px 2px">Ընտրեք գործունեության տեսակը ներքևից։</div>');
+    const used = new Set(ST.acts.map(x => x.k));
+    m.querySelector('#tcAdd').innerHTML = ST.view === 'pek' ? '' : `<span class="muted" style="font-size:12.5px">+ Ավելացնել՝</span>${TC_DED.concat(TC_FIX).filter(a => !used.has(a.k)).map(a => `<button type="button" class="btn sm" data-aadd="${a.k}" title="${esc(a.t)}">${esc({ trade: 'Առևտուր', prod: 'Արտադրություն', cater: 'Հանրային սնունդ', other: 'Այլ գործունեություն', rent: 'Վարձակալություն, տոկոս, ռոյալթի', asset: 'Ակտիվների օտարում', raw: 'Երկրորդային հումք', hitech: 'Բարձր տեխնոլոգիաներ', news: 'Թերթեր', caterX: 'Սննդի վճարողի այլ եկամուտ' }[a.k])}</button>`).join('')}`;
+    drawTot();
+  };
+  /** Թվերը փոխելիս՝ միայն հաշվարկված արժեքները (դաշտերը չեն վերագծվում) */
+  const refreshNums = () => {
+    ST.acts.forEach((x, i) => {
+      const r = calcAct(x), set = (k, v) => { const el = m.querySelector('[data-o="' + i + '.' + k + '"]'); if (el) el.textContent = v; };
+      set('inc', fmtDec(r.inc)); set('exp', fmtDec(r.exp)); set('tax', fmtDec(r.tax)); set('dq', fmtDec(r.dq)); set('mn', fmtDec(r.mn)); set('pay', fmtDec(r.pay));
+      set('next', r.next ? fmtDec(r.next) : '—'); set('risk', r.inc ? String(c2(r.pay / r.inc * 100)).replace('.', ',') + '%' : '—');
+    });
+    drawTot();
+  };
+  const info = t => { m.querySelector('#tcInfo').innerHTML = t; };
+  const load = async () => {
+    ST.acts = []; ST.prevNext = {}; ST.saved = null; ST.dirty = false;
+    try { localStorage.setItem('nx_tc', JSON.stringify({ cid: ST.cid })); } catch (e) {}
+    if (!ST.cid) { info('Կազմակերպություն ընտրելու դեպքում հաշվարկը պահպանվում է, իսկ հաջորդ եռամսյակի «փոխանցված» գումարը լրացվում է ինքնաբերաբար։'); ST.acts = (pref.lastActs || ['trade']).map(newAct); draw(); return; }
+    info('⏳ Բեռնվում է…'); draw();
+    try {
+      const r = await call('tocGet', { cid: ST.cid, y: ST.y, q: ST.q }, { silent: true });
+      ST.prevNext = r.prevNext || {};
+      if (r.cur && r.cur.data && r.cur.data.acts) { ST.acts = r.cur.data.acts; ST.saved = r.cur; info('✔ Պահպանված հաշվարկ՝ ' + esc(r.cur.by) + ', ' + esc(String(r.cur.at).slice(0, 16)) + (Object.keys(ST.prevNext).length ? ' · նախորդ եռամսյակից փոխանցվողը ներառված է' : '')); }
+      else { ST.acts = (pref.lastActs || ['trade']).map(newAct); info('Նոր հաշվարկ' + (Object.keys(ST.prevNext).length ? ' · ✔ նախորդ եռամսյակից փոխանցվող գումարը լրացված է' : r.prevAt === '' ? ' · նախորդ եռամսյակի հաշվարկ չկա' : '')); }
+    } catch (e) { info('<span style="color:#b91c1c">' + esc(e.message) + '</span>'); }
+    draw();
+  };
+  const dirty = () => { ST.dirty = true; };
+  m.addEventListener('input', e => {
+    const t = e.target, i = +t.dataset.i; if (isNaN(i) || !ST.acts[i]) return;
+    const x = ST.acts[i];
+    if (t.dataset.f) x[t.dataset.f] = parseDec(t.value);
+    else if (t.dataset.ea !== undefined) x.exp[+t.dataset.ea].a = parseDec(t.value);
+    else if (t.dataset.en !== undefined) { x.exp[+t.dataset.en].n = t.value; dirty(); drawTot(); return; }
+    else return;
+    dirty(); refreshNums();
   });
-  m.querySelector('#toClr').onclick = () => { m.querySelectorAll('[data-to]').forEach(i => { i.value = ''; }); draw(); };
-  draw();
+  m.addEventListener('focusout', e => { if (e.target.classList && e.target.classList.contains('tcn')) { const v = parseDec(e.target.value); e.target.value = v ? fmtDec(v) : ''; } });
+  m.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.et !== undefined) { ST.acts[+t.dataset.i].exp[+t.dataset.et].t = +t.value; dirty(); draw(); return; }
+    if (t.id === 'tcComp' || t.id === 'tcY' || t.id === 'tcQ') {
+      const go = () => { ST.cid = m.querySelector('#tcComp').value; ST.y = +m.querySelector('#tcY').value || y0; ST.q = +m.querySelector('#tcQ').value; load(); };
+      if (ST.dirty && ST.cid) { const back = t.id === 'tcComp' ? ST.cid : t.id === 'tcY' ? ST.y : ST.q; NxDlg.confirm('Չպահպանված փոփոխությունները կկորչեն։ Շարունակե՞լ', { ok: 'Այո' }).then(ok => { if (ok) go(); else t.value = back; }); return; }
+      go();
+    }
+  });
+  m.addEventListener('click', e => {
+    const t = e.target.closest('button,[data-cp]'); if (!t) return;
+    if (t.dataset.cp !== undefined) { copyText(String(t.dataset.cp)); toast('📋 ' + esc(fmtDec(+t.dataset.cp)) + ' — պատճենվեց', 'ok'); return; }
+    if (t.dataset.v) { ST.view = t.dataset.v; draw(); return; }
+    if (t.dataset.aadd) { ST.acts.push(newAct(t.dataset.aadd)); dirty(); draw(); return; }
+    if (t.dataset.arm !== undefined) { ST.acts.splice(+t.dataset.arm, 1); dirty(); draw(); return; }
+    if (t.dataset.eadd !== undefined) { ST.acts[+t.dataset.eadd].exp.push({ n: '', a: 0, t: 2 }); dirty(); draw(); const ins = m.querySelectorAll(`[data-en][data-i="${t.dataset.eadd}"]`); if (ins.length) ins[ins.length - 1].focus(); return; }
+    if (t.dataset.erm !== undefined) { ST.acts[+t.dataset.i].exp.splice(+t.dataset.erm, 1); dirty(); draw(); return; }
+  });
+  m.querySelector('#tcSave').onclick = async e => {
+    if (!ST.cid) return;
+    const b = e.currentTarget; b.disabled = true;
+    try {
+      const T = totals();
+      const r = await call('tocSave', { cid: ST.cid, y: ST.y, q: ST.q, total: T.G, data: { acts: ST.acts, next: T.next, total: T.G, inc: T.A } });
+      ST.saved = r; ST.dirty = false; info('✔ Պահպանված է՝ ' + esc(r.by) + ', ' + esc(String(r.at).slice(0, 16)));
+      try { localStorage.setItem('nx_tc', JSON.stringify({ cid: ST.cid, lastActs: ST.acts.map(x => x.k) })); pref.lastActs = ST.acts.map(x => x.k); } catch (x) {}
+      toast('💾 Պահպանված է', 'ok');
+    } catch (err) { toast(esc(err.message), 'err'); }
+    drawTot();
+  };
+  load();
 }
 /* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
 const TOOL_MENU = {
