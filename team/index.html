@@ -676,10 +676,10 @@ body.dockon .toasts{right:420px}
       <button class="iconbtn menubtn" data-act="toggleSide" title="Մենյու"><svg class="i"><use href="#i-menu"/></svg></button>
       <h1 id="pageTitle">Թասքեր</h1>
       <div class="tbar" id="toolBar">
-        <button class="iconbtn tbtn" data-act="toolCalc" title="Հաշվիչ (կալկուլյատոր)">🧮</button>
+        <button class="iconbtn tbtn" data-act="toolPrimary" data-k="calc" title="Հաշվիչ (կալկուլյատոր)">🧮</button>
         <button class="iconbtn tbtn" data-act="toolMenu" data-k="tax" title="Հարկային հաշվիչներ"><span class="tico" style="background:#059669">%</span></button>
-        <button class="iconbtn tbtn" data-act="toolMenu" data-k="word" title="Նոր Word փաստաթուղթ"><span class="tico" style="background:#2b579a">W</span></button>
-        <button class="iconbtn tbtn" data-act="toolMenu" data-k="excel" title="Նոր Excel աղյուսակ"><span class="tico" style="background:#217346">X</span></button>
+        <button class="iconbtn tbtn" data-act="toolPrimary" data-k="word" title="Նոր Word փաստաթուղթ"><span class="tico" style="background:#2b579a">W</span></button>
+        <button class="iconbtn tbtn" data-act="toolPrimary" data-k="excel" title="Նոր Excel աղյուսակ"><span class="tico" style="background:#217346">X</span></button>
       </div>
       <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" placeholder="Որոնում՝ թասք, կազմակերպություն, ID…" autocomplete="off"></div>
       <button class="iconbtn" data-act="hardRefresh" id="hardRef" title="Թարմացնել տվյալները (բոլորի փոփոխությունները)"><svg class="i"><use href="#i-refresh"/></svg></button>
@@ -6054,20 +6054,36 @@ const BLANK_DOCX = 'UEsDBBQAAAAIACFPTV15bjPX6AAAAK0BAAATAAAAW0NvbnRlbnRfVHlwZXNd
 const BLANK_XLSX = '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';
 const TOOL_MENU = {
   tax: [['salary', '💼', 'Աշխատավարձի հաշվիչ', 'Գրանցված ↔ մաքուր, պահումներ'], ['turnover', '📈', 'Շրջանառության հարկի հաշվիչ', 'Ըստ գործունեության տեսակի']],
-  word: [['wordFile', '<span class="tico" style="background:#2b579a">W</span>', 'Նոր Word ֆայլ (.docx)', 'Ներբեռնվում է, բացեք Word-ով'], ['gdoc', '📄', 'Նոր Google Docs', 'Բացվում է նոր ներդիրում']],
-  excel: [['xlsFile', '<span class="tico" style="background:#217346">X</span>', 'Նոր Excel ֆայլ (.xlsx)', 'Ներբեռնվում է, բացեք Excel-ով'], ['gsheet', '📊', 'Նոր Google Sheets', 'Բացվում է նոր ներդիրում']]
+  calc: [['calcApp', '🖩', 'Windows-ի հաշվիչը', 'Համակարգչի Calculator ծրագիրը'], ['calcWeb', '🧮', 'Ներկառուցված հաշվիչ', 'Տոկոսներով, պատմությամբ, պատճենումով']],
+  word: [['wordApp', '<span class="tico" style="background:#2b579a">W</span>', 'Microsoft Word (համակարգչում)', 'Բացվում է նոր դատարկ փաստաթուղթ'], ['wordFile', '⬇', 'Նոր Word ֆայլ (.docx)', 'Ներբեռնվում է, բացեք Word-ով'], ['gdoc', '📄', 'Նոր Google Docs', 'Բացվում է նոր ներդիրում']],
+  excel: [['xlsApp', '<span class="tico" style="background:#217346">X</span>', 'Microsoft Excel (համակարգչում)', 'Բացվում է նոր դատարկ աղյուսակ'], ['xlsFile', '⬇', 'Նոր Excel ֆայլ (.xlsx)', 'Ներբեռնվում է, բացեք Excel-ով'], ['gsheet', '📊', 'Նոր Google Sheets', 'Բացվում է նոր ներդիրում']]
 };
 function toolPopClose() { const p = $('#toolPop'); if (p) p.remove(); }
-function toolMenu(el) {
+const IS_WIN = /Windows/i.test(navigator.userAgent);
+/** Համակարգչի ծրագրի գործարկում (Windows՝ ms-calculator:, ms-word:, ms-excel:) */
+function toolLaunch(uri) { const a = document.createElement('a'); a.href = uri; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+function toolTpl(f) {
+  if (/github\.io$/.test(location.hostname)) return new URL(f, location.href).href;
+  const base = String((S.d && S.d.settings && S.d.settings.clientAppUrl) || 'https:/' + '/datanumetrix-sudo.github.io/app/').replace(/\/?$/, '/');
+  return base + 'team/' + f;
+}
+/** Սեղմում W / X / 🧮 կոճակին. Windows-ում՝ անմիջապես բացում է ծրագիրը և ցույց տալիս այլընտրանքները */
+function toolPrimary(el) {
+  const k = el.dataset.k, app = { calc: 'calcApp', word: 'wordApp', excel: 'xlsApp' }[k];
+  if (!IS_WIN) { if (k === 'calc') { toolPopClose(); return calcOpen(); } return toolMenu(el); }
+  toolGo(app, true);
+  toolMenu(el, '⏳ Բացվում է ' + (k === 'calc' ? 'հաշվիչը' : k === 'word' ? 'Word-ը' : 'Excel-ը') + '… Առաջին անգամ բրաուզերը կհարցնի՝ նշեք «Always allow» և «Open»։ Չբացվե՞ց՝ ընտրեք ներքևից.', true);
+}
+function toolMenu(el, note, keep) {
   const k = el.dataset.k, was = $('#toolPop');
-  toolPopClose(); if (was && was.dataset.k === k) return;
+  toolPopClose(); if (was && was.dataset.k === k && !keep) return;
   const r = el.getBoundingClientRect(), d = document.createElement('div');
   d.id = 'toolPop'; d.className = 'tpop'; d.dataset.k = k;
-  d.innerHTML = TOOL_MENU[k].map(([a, i, t, sub]) => `<button type="button" data-act="toolGo" data-k="${a}"><span style="font-size:18px;width:24px;text-align:center">${i}</span><span><b style="font-weight:600">${t}</b><small>${sub}</small></span></button>`).join('');
+  d.innerHTML = (note ? `<div style="font-size:12px;color:var(--muted);padding:6px 10px 8px;max-width:300px;border-bottom:1px solid var(--line);margin-bottom:4px">${esc(note)}</div>` : '') + TOOL_MENU[k].filter(x => IS_WIN || !/App$/.test(x[0])).map(([a, i, t, sub]) => `<button type="button" data-act="toolGo" data-k="${a}"><span style="font-size:18px;width:24px;text-align:center">${i}</span><span><b style="font-weight:600">${t}</b><small>${sub}</small></span></button>`).join('');
   document.body.appendChild(d);
   d.style.top = (r.bottom + 6) + 'px'; d.style.left = Math.max(8, Math.min(r.left, innerWidth - d.offsetWidth - 8)) + 'px';
 }
-document.addEventListener('mousedown', e => { if ($('#toolPop') && !e.target.closest('#toolPop,[data-act=toolMenu]')) toolPopClose(); });
+document.addEventListener('mousedown', e => { if ($('#toolPop') && !e.target.closest('#toolPop,[data-act=toolMenu],[data-act=toolPrimary]')) toolPopClose(); });
 function toolBlank(b64, ext, mime) {
   const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
   const d = new Date(), pad2 = n => String(n).padStart(2, '0');
@@ -6076,8 +6092,12 @@ function toolBlank(b64, ext, mime) {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   toast('⬇ «' + esc(name) + '»՝ ներբեռնվեց. բացեք այն ներբեռնումների ցանկից', 'ok');
 }
-function toolGo(k) {
-  toolPopClose();
+function toolGo(k, keep) {
+  if (!keep) toolPopClose();
+  if (k === 'calcApp') return toolLaunch('ms-calculator:');
+  if (k === 'calcWeb') return calcOpen();
+  if (k === 'wordApp') return toolLaunch('ms-word:nft|u|' + toolTpl('blank.docx'));
+  if (k === 'xlsApp') return toolLaunch('ms-excel:nft|u|' + toolTpl('blank.xlsx'));
   if (k === 'wordFile') return toolBlank(BLANK_DOCX, 'docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
   if (k === 'xlsFile') return toolBlank(BLANK_XLSX, 'xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   if (k === 'gdoc') return window.open('https:/' + '/docs.google.com/document/create', '_blank', 'noopener');
@@ -6179,7 +6199,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'Escape') { $('#calcBox').remove(); }
   else if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'c' && !String(getSelection())) { let v = ''; try { v = String(Math.round(calcEval(CALC.ex || '0') * 100) / 100); } catch (x) {} copyText(v); toast('📋 ' + esc(v) + '՝ պատճենվեց', 'ok'); }
 });
-Object.assign(ACT, { toolCalc: () => { toolPopClose(); calcOpen(); }, toolMenu: el => toolMenu(el), toolGo: el => toolGo(el.dataset.k) });
+Object.assign(ACT, { toolCalc: () => { toolPopClose(); calcOpen(); }, toolMenu: el => toolMenu(el), toolPrimary: el => toolPrimary(el), toolGo: el => toolGo(el.dataset.k) });
 
 document.addEventListener('click', e => {
   unlockAudio();
