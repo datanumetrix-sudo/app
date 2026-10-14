@@ -573,7 +573,7 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 .chr{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .chh{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line2)}
 .chback{display:none}
-.chdock{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100vw;z-index:35;background:var(--panel);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(15,23,42,.12);display:flex;flex-direction:column;animation:dkIn .18s ease-out}
+.chdock{position:fixed;top:0;right:0;bottom:0;width:var(--dkw,440px);container-type:inline-size;max-width:100vw;z-index:35;background:var(--panel);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(15,23,42,.12);display:flex;flex-direction:column;animation:dkIn .18s ease-out}
 @keyframes dkIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
 .chdock .dkh{display:flex;align-items:center;gap:6px;padding:10px 10px 10px 14px;border-bottom:1px solid var(--line2);background:var(--panel2)}
 .chdock .dkh b{flex:1;font-size:15px}
@@ -583,9 +583,11 @@ table.st .mini span{display:block;height:100%;background:#0ca30c}
 .chdock .chats.has .chl{display:none}.chdock .chats:not(.has) .chr{display:none}.chdock .chback{display:inline-flex}
 .chdock .chl-top .seg{flex:1;min-width:0;overflow-x:auto}
 body.dockon .toasts{right:420px}
-@media (max-width:1279px){.chdock{width:370px}body.dockon .toasts{right:390px}}
-@media (min-width:1200px){.chdock{width:820px}.chdock .chats{grid-template-columns:300px minmax(0,1fr)}.chdock .chats.has .chl,.chdock .chats .chl{display:flex;border-right:1px solid var(--line2)}.chdock .chats:not(.has) .chr,.chdock .chats .chr{display:flex}.chdock .chback{display:none}body.dockon .toasts{right:840px}}
-@media (min-width:1700px){body.dockon .main{margin-right:820px}}
+@container (min-width:640px){.chdock .chats{grid-template-columns:clamp(200px,34%,280px) minmax(0,1fr)}.chdock .chats.has .chl,.chdock .chats .chl{display:flex;border-right:1px solid var(--line2)}.chdock .chats:not(.has) .chr,.chdock .chats .chr{display:flex}.chdock .chback{display:none}}
+body.dockon .toasts{right:calc(var(--dkw,440px) + 20px)}
+.dkrz{position:absolute;left:-4px;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:2}.dkrz:hover,.dkrz.on{background:linear-gradient(90deg,transparent 3px,#2563eb 3px,#2563eb 5px,transparent 5px)}
+@media (max-width:860px){.chdock{width:100vw}.dkrz{display:none}}
+@media (min-width:1700px){body.dockon .main{margin-right:var(--dkw,440px)}}
 .chdock .chr,.chats .chr{background:#efeae2}.chdock .chh,.chats .chh{background:var(--panel)}
 @media (max-width:860px){.chats{grid-template-columns:1fr;height:calc(100vh - 150px)}.chats.has .chl{display:none}.chats:not(.has) .chr{display:none}.chback{display:inline-flex}}
 
@@ -3857,8 +3859,21 @@ function openDock() {
   if (S.view === 'chats') { S.view = 'tasks'; lsSet('nx_view', 'tasks'); renderView(); }
   S.ch.dock = true; lsSet('nx_dock', '1'); document.body.classList.add('dockon');
   let d = $('#chdock');
-  if (!d) { d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.innerHTML = '<div class="dkh"><b>💬 Չաթեր</b><button class="iconbtn" data-act="dockFull" title="Բացել ամբողջ էկրանով">⤢</button><button class="iconbtn" data-act="dockClose" title="Փակել">✕</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>'; document.body.appendChild(d); }
+  if (!d) { d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.innerHTML = '<div class="dkrz" title="Քաշեք՝ լայնությունը փոխելու համար (կրկնակի սեղմում՝ նեղ/լայն)"></div><div class="dkh"><b>💬 Չաթեր</b><button class="iconbtn" data-act="dockFull" title="Բացել ամբողջ էկրանով">⤢</button><button class="iconbtn" data-act="dockClose" title="Փակել">✕</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>'; document.body.appendChild(d); dockResizeBind(d); }
   renderDock(); renderShell(); loadChats();
+}
+/** Չաթի պատուհանի լայնություն՝ քաշելով (պահվում է) */
+function dockW(w) { w = Math.round(Math.max(340, Math.min(w, Math.min(1000, innerWidth * 0.7)))); document.documentElement.style.setProperty('--dkw', w + 'px'); return w; }
+(() => { const w = +lsGet('nx_dkw', 0); if (w) dockW(w); })();
+function dockResizeBind(d) {
+  const h = d.querySelector('.dkrz'); if (!h) return;
+  h.addEventListener('pointerdown', e => {
+    e.preventDefault(); h.setPointerCapture(e.pointerId); h.classList.add('on'); document.body.style.userSelect = 'none';
+    const mv = ev => dockW(innerWidth - ev.clientX);
+    const up = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); h.classList.remove('on'); document.body.style.userSelect = ''; lsSet('nx_dkw', String(d.offsetWidth)); };
+    h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up);
+  });
+  h.addEventListener('dblclick', () => { lsSet('nx_dkw', String(dockW(d.offsetWidth < 600 ? 760 : 440))); });
 }
 function renderDock() {
   const b = $('#dkbody'); if (!b) return;
