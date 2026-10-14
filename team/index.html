@@ -383,6 +383,12 @@ table.mx thead th:first-child{left:0;z-index:3}
 /* ---------- modal ---------- */
 .modal{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;background:rgba(15,23,42,.45);overflow:auto}
 .modal.on{display:flex}
+@media (min-width:861px){body.dockon .modal{right:var(--dkw,440px)}}
+.mminb{font-size:14px;font-weight:700}
+.mmbar{position:fixed;left:300px;bottom:10px;z-index:59;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100vw - 320px)}
+.mmchip{display:flex;align-items:center;background:#1e3a8a;color:#fff;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,.25);overflow:hidden}
+.mmchip button{background:none;border:0;color:inherit;cursor:pointer;font:inherit;font-size:13px;padding:8px 10px}.mmchip button:first-child{font-weight:600;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mmchip button:hover{background:#2563eb}
+@media (max-width:860px){.mmbar{left:10px;bottom:70px;max-width:calc(100vw - 20px)}}
 .mbox{background:var(--panel);border-radius:16px;box-shadow:var(--shadow2);width:100%;max-width:560px;animation:pop .18s ease}
 .mbox.wide{max-width:760px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -5817,7 +5823,7 @@ function openModal(title, body, onSubmit, opts) {
   opts = opts || {};
   const m = $('#modal');
   m.innerHTML = `<form class="mbox ${opts.wide ? 'wide' : ''}" novalidate>
-    <div class="mh"><h3>${esc(title)}</h3><button type="button" class="iconbtn" data-act="closeModal">${ico('x')}</button></div>
+    <div class="mh"><h3>${esc(title)}</h3><button type="button" class="iconbtn mminb" data-act="modalMin" title="Ծալել՝ շարունակել աշխատել այլ տեղ, հետո վերադառնալ (տվյալները չեն կորչի)">▁</button><button type="button" class="iconbtn" data-act="closeModal">${ico('x')}</button></div>
     <div class="mb">${body}<div class="lerr" id="mErr"></div></div>
     <div class="mf">${opts.extra || ''}${opts.okOnly ? '<button type="button" class="btn primary" data-act="closeModal">Լավ</button>' : `<button type="button" class="btn" data-act="closeModal">Չեղարկել</button><button type="submit" class="btn primary">${esc(opts.submit || 'Պահպանել')}</button>`}</div>
   </form>`;
@@ -5836,9 +5842,30 @@ function openModal(title, body, onSubmit, opts) {
   return form;
 }
 function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTML = ''; }
+/* ---------- Ծալված պատուհաններ. ձևը տեղափոխվում է պահոց (DOM-ը և լրացվածը մնում են), ներքևում՝ կոճակ ---------- */
+let MMIN_SEQ = 0;
+function modalMin() {
+  const md = $('#modal'), f = md.querySelector('form.mbox'); if (!f || !md.classList.contains('on')) return;
+  let st = document.getElementById('mmStore'); if (!st) { st = document.createElement('div'); st.id = 'mmStore'; st.style.display = 'none'; document.body.appendChild(st); }
+  let bar = document.getElementById('mmBar'); if (!bar) { bar = document.createElement('div'); bar.id = 'mmBar'; bar.className = 'mmbar'; document.body.appendChild(bar); }
+  const id = 'mm' + (++MMIN_SEQ); f.dataset.mm = id; st.appendChild(f);
+  md.classList.remove('on'); md.innerHTML = '';
+  const t = (f.querySelector('.mh h3') || {}).textContent || 'Պատուհան';
+  bar.insertAdjacentHTML('beforeend', `<div class="mmchip" data-mm="${id}"><button type="button" data-act="modalRestore" data-mm="${id}" title="Բացել">🗗 ${esc(t)}</button><button type="button" data-act="modalDiscard" data-mm="${id}" title="Փակել">✕</button></div>`);
+}
+function modalRestore(id) {
+  const md = $('#modal'); if (md.classList.contains('on') && md.querySelector('form.mbox')) modalMin();
+  const f = document.querySelector('#mmStore form[data-mm="' + id + '"]'); const chip = document.querySelector('.mmchip[data-mm="' + id + '"]');
+  if (chip) chip.remove(); if (!f) return;
+  md.innerHTML = ''; md.appendChild(f); md.classList.add('on');
+}
+function modalDiscard(id) { const f = document.querySelector('#mmStore form[data-mm="' + id + '"]'); if (f) f.remove(); const chip = document.querySelector('.mmchip[data-mm="' + id + '"]'); if (chip) chip.remove(); }
 
 /* ====================== EVENTS ====================== */
 const ACT = {
+  modalMin: () => modalMin(),
+  modalRestore: el => modalRestore(el.dataset.mm),
+  modalDiscard: (el, e) => { e.stopPropagation(); modalDiscard(el.dataset.mm); },
   go: el => { if (el.dataset.v === 'chats' && dockable()) { $('#side').classList.remove('on'); if (S.ch.dock) closeDock(); else openDock(); return; } closeMs();
     if (vtKeep(el.dataset.v)) return;
     const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
