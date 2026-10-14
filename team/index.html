@@ -198,6 +198,11 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .pekh{font-weight:700;font-size:13px;margin:12px 0 4px;color:#1e3a8a}.pekv{display:inline-block;min-width:110px;text-align:right;font-weight:600;padding:3px 8px;border-radius:6px;background:#f1f5f9;cursor:copy}.pekv:hover{background:#dbeafe}
 @media (max-width:760px){.tcg{grid-template-columns:1fr}.tcl{border-right:0;border-bottom:1px dashed #bfdbfe}.tcrow .tcn{width:120px}}
 @media (max-width:700px){.totbl td:nth-child(2){width:140px}.tosum10 td:nth-child(3){width:50px}}
+.vtabs{display:none;gap:4px;padding:6px 28px 0;overflow-x:auto;scrollbar-width:thin;position:sticky;top:69px;z-index:19;background:rgba(244,246,251,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}.vtabs.on{display:flex}
+.vtab{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 12px;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:#e9edf5;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap;max-width:220px;user-select:none}
+.vtab .vt{overflow:hidden;text-overflow:ellipsis}.vtab button{border:0;background:none;color:inherit;cursor:pointer;border-radius:6px;padding:0 4px;font-size:12px;opacity:.6}.vtab button:hover{opacity:1;background:#cbd5e1}
+.vtab:hover{background:#f1f5f9}.vtab.on{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 -2px 0 #2563eb inset}
+@media (max-width:860px){.vtabs{display:none!important}}
 .tbtn{font-size:18px}.nowin .wonly{display:none}.tico{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;color:#fff;font:800 13px/1 system-ui,sans-serif}
 .tpop{position:fixed;z-index:80;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:6px;min-width:260px}
 .tpop button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:8px;cursor:pointer;font:inherit;color:var(--text)}
@@ -700,6 +705,7 @@ body.dockon .toasts{right:420px}
       <button class="iconbtn" data-act="toggleNotifs" title="Ծանուցումներ"><svg class="i"><use href="#i-bell"/></svg><span class="badge hidden" id="nBadge">0</span></button>
       <button class="btn primary" data-act="newTask"><svg class="i"><use href="#i-plus"/></svg><span>Նոր թասք</span></button>
     </header>
+    <div class="vtabs" id="vtabs"></div>
     <div id="season"></div>
     <section class="content" id="view"></section>
   </div>
@@ -2067,7 +2073,8 @@ const S = {
 };
 
 /* ====================== utils ====================== */
-const $ = s => document.querySelector(s);
+/** Նախ՝ ակտիվ ներդիրի (#view) ներսում, որ թաքնված ներդիրների նույն id-ով տարրերը չխանգարեն */
+const $ = s => { const v = /^#[\w-]+$/.test(s) && s !== '#view' ? document.getElementById('view') : null; if (v) { const r = v.querySelector(s); if (r) return r; } return document.querySelector(s); };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ico = (n, cls) => `<svg class="i ${cls || ''}"><use href="#i-${n}"/></svg>`;
 function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
@@ -2863,7 +2870,8 @@ const TITLES = { chats: 'Չաթեր', clients: 'Հաճախորդների մու�
 function renderView() {
   if (!S.d) return;
   $('#pageTitle').textContent = TITLES[S.view] || '';
-  const v = $('#view');
+  vtActivate(S.view);
+  const v = $('#view'); v.dataset.dv = String(S.d.dv);
   const fn = { chats: viewChats, clients: viewClients, requests: viewRequests, stats: viewStats, tasks: viewTasks, reports: viewReports, archive: viewArchive, companies: viewCompanies, docs: viewDocs, mail: viewMail, team: viewTeam, settings: viewSettings }[S.view] || viewTasks;
   applyTaskCols();
   // բաց չաթը չվերաբեռնել (որ չկորի գրածը/ձայնագրությունը)
@@ -5816,7 +5824,9 @@ function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTM
 
 /* ====================== EVENTS ====================== */
 const ACT = {
-  go: el => { if (el.dataset.v === 'chats' && dockable()) { $('#side').classList.remove('on'); if (S.ch.dock) closeDock(); else openDock(); return; } closeMs(); const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
+  go: el => { if (el.dataset.v === 'chats' && dockable()) { $('#side').classList.remove('on'); if (S.ch.dock) closeDock(); else openDock(); return; } closeMs();
+    if (vtKeep(el.dataset.v)) return;
+    const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; $('#side').classList.remove('on'); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => { const on = $('#side').classList.toggle('on'); if (on && innerWidth <= 860) histPush({ nxs: 1, nxv: S.view }); },
   installApp: () => { $('#side').classList.remove('on'); installApp(); },
   srcPick: () => { $('#side').classList.remove('on'); srcPick(); },
@@ -6379,6 +6389,62 @@ function toCalcOpen() {
   };
   load();
 }
+/* ====================== 🗂 ՆԵՐԴԻՐՆԵՐ (բաց բաժինները չեն կորչում) ======================
+   Ամեն բաժին ունի իր <section>-ը. ակտիվը ստանում է id="view", մյուսները թաքնված են և պահում են իրենց վիճակը (լրացված դաշտեր, scroll)։ */
+const VT = {};
+let VTL = (() => { try { const a = JSON.parse(localStorage.getItem('nx_vtabs') || '[]'); return Array.isArray(a) ? a.filter(v => TITLES[v]).slice(0, 8) : []; } catch (e) { return []; } })();
+const VT_ICO = { tasks: '☑️', reports: '📊', archive: '🗄', chats: '💬', companies: '🏢', docs: '📄', mail: '✉️', team: '👥', settings: '⚙️', stats: '📈', requests: '📨', clients: '🔑' };
+function vtSave() { try { localStorage.setItem('nx_vtabs', JSON.stringify(VTL)); } catch (e) {} }
+function vtAdd(v) {
+  if (VTL.includes(v)) return;
+  VTL.push(v);
+  while (VTL.length > 8) { const old = VTL.find(x => x !== S.view && x !== v); if (!old) break; vtDrop(old); }
+  vtSave();
+}
+function vtDrop(v) { VTL = VTL.filter(x => x !== v); const el = VT[v]; if (el && el.id !== 'view') { el.remove(); delete VT[v]; } vtSave(); }
+/** Ակտիվացնում է v-ի section-ը (ստեղծում է, եթե չկա). true՝ եթե արդեն կար */
+function vtActivate(v) {
+  const cur = document.getElementById('view');
+  vtAdd(v);
+  if (!cur.dataset.v || cur.dataset.v === v) { cur.dataset.v = v; VT[v] = cur; vtDraw(); return true; }
+  cur.dataset.sy = String(window.scrollY || 0); cur.removeAttribute('id'); cur.style.display = 'none';
+  let el = VT[v]; const had = !!(el && document.body.contains(el));
+  if (!had) { el = document.createElement('section'); el.className = 'content'; el.dataset.v = v; cur.parentNode.insertBefore(el, cur.nextSibling); VT[v] = el; }
+  el.id = 'view'; el.style.display = '';
+  vtDraw();
+  return had;
+}
+/** Մենյուից/ներդիրից անցում արդեն բաց բաժին՝ առանց վերագծման (վիճակը մնում է) */
+function vtKeep(v) {
+  if (v === 'stats' && !isMgr()) v = 'tasks';
+  const el = VT[v];
+  if (!el || !document.body.contains(el) || v === S.view || v === 'chats' || S.view === 'chats') return false;
+  const prev = S.view; S.view = v;
+  if (!NAV_POP) histPush({ nxv: v });
+  lsSet('nx_view', v); $('#side').classList.remove('on');
+  vtActivate(v); renderShell(); $('#pageTitle').textContent = TITLES[v] || '';
+  if (el.dataset.dv !== String(S.d.dv) && v !== 'docs' && v !== 'settings') renderView();
+  else { mobTables(); renderBnav(); }
+  window.scrollTo(0, +el.dataset.sy || 0);
+  return true;
+}
+function vtClose(v) {
+  const wasActive = v === S.view;
+  VTL = VTL.filter(x => x !== v); vtSave();
+  if (wasActive) {
+    const next = VTL[VTL.length - 1] || 'tasks';
+    if (!vtKeep(next)) { ACT.go({ dataset: { v: next } }); }
+  }
+  const el = VT[v]; if (el && el.id !== 'view') { el.remove(); delete VT[v]; }
+  vtDraw();
+}
+function vtDraw() {
+  const bar = document.getElementById('vtabs'); if (!bar) return;
+  if (!S.view || VTL.length < 2) { bar.innerHTML = ''; bar.classList.remove('on'); return; }
+  bar.classList.add('on');
+  bar.innerHTML = VTL.map(v => `<div class="vtab ${v === S.view ? 'on' : ''}" data-act="vtGo" data-v="${v}" title="${esc(TITLES[v])}"><span>${VT_ICO[v] || '•'}</span><span class="vt">${esc(TITLES[v])}</span><button type="button" data-act="vtClose" data-v="${v}" title="Փակել ներդիրը">✕</button></div>`).join('');
+}
+Object.assign(ACT, { vtGo: el => ACT.go(el), vtClose: (el, e) => { e.stopPropagation(); vtClose(el.dataset.v); } });
 /* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
 const TOOL_MENU = {
   tax: [['salary', '💼', 'Աշխատավարձի հաշվիչ', 'Գրանցված ↔ մաքուր, պահումներ'], ['turnover', '📈', 'Շրջանառության հարկի հաշվիչ', 'Եռամսյակային, ծախսերի նվազեցումով']]
