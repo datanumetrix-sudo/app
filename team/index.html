@@ -1986,15 +1986,15 @@ const NxChat = (function () {
   function render() {
     if (!ROOT) return;
     const c = CUR, d = c.d, key = ymdOf(d);
-    if (LS.get('nx_season', '1') !== '1') { ROOT.innerHTML = ''; ROOT.className = ''; return; }
-    const opened = LS.get('nx_gift', '') === key, mini = LS.get('nx_ssn_min', '') === key;
+    if (LS.get('nx_season', '1') !== '1' || LS.get('nx_ssn_hide', '') === '1') { ROOT.innerHTML = ''; ROOT.className = ''; return; }
+    const opened = LS.get('nx_gift', '') === key, mini = LS.get('nx_ssn_min', '') === key || LS.get('nx_ssn_min', '') === '1';
     const first = (NAME || '').split(' ')[0];
     const head = c.sp ? `<b>${esc(c.sp.t)}</b> · ${esc(c.sp.msg)}` : `<b>${esc(greet(d))}${first ? ', ' + esc(first) : ''}</b> · ${esc(c.th.t)}`;
     ROOT.className = 'ssn' + (mini ? ' mini' : '') + (c.quiet ? ' quiet' : '');
     const dark = !c.quiet && /^#1e293b$/i.test(c.th.b);   // գիշերային թեմաներ
     ROOT.style.setProperty('--sa', c.quiet ? '#ede9fe' : c.th.a); ROOT.style.setProperty('--sb', c.quiet ? '#f5f3ff' : dark ? '#c7d2fe' : c.th.b); ROOT.style.setProperty('--si', c.quiet ? '#4c1d95' : c.th.ink);
     document.documentElement.style.setProperty('--ssn-a', c.quiet ? '#ede9fe' : c.th.a);
-    if (mini) { ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք">${c.sc.slice(0, 2).join('')}</button><span class="ssn-h">${head}</span><button class="ssn-x" data-ssn="max" title="Բացել">⌄</button>`; return; }
+    if (mini) { ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք">${c.sc.slice(0, 2).join('')}</button><span class="ssn-h">${head}</span><button class="ssn-x" data-ssn="max" title="Բացել">⌄</button><button class="ssn-x" data-ssn="hide" title="Թաքցնել պաստառը (նորից ցույց տալ՝ վերևի սեզոնային կոճակով)">✕</button>`; return; }
     const vibe = c.quiet ? '' : dayVibe(d);
     ROOT.innerHTML = `<button class="ssn-sc" data-ssn="burst" title="Սեղմեք 🙂">${c.sc.map((e, i) => `<span style="animation-delay:${i * 0.4}s">${e}</span>`).join('')}</button>
       <div class="ssn-txt"><div class="ssn-h">${head}</div>
@@ -2002,7 +2002,7 @@ const NxChat = (function () {
         ${c.quiet ? '' : `<div class="ssn-f">${c.sp ? '' : esc(c.th.line) + ' '}<span class="ssn-fact">🌿 ${esc(c.fact)}</span></div>`}
         ${M.on && M.cur ? `<div class="ssn-np">🎵 ${M.cur.day ? 'Այսօրվա երգը՝ ' : ''}<b>${esc(M.cur.name)}</b> <button data-ssn="next" title="Հաջորդ երգը">⏭</button><span title="Ձայնի ուժգնություն" style="display:inline-flex;align-items:center;gap:4px">🔉<input type="range" min="0" max="1" step="0.05" value="${vol()}" data-ssnvol style="width:90px;accent-color:currentColor"></span></div>` : ''}</div>
       <div class="ssn-gift">${c.quiet ? '' : opened ? `<div class="ssn-open">${esc(c.surprise)}</div>` : `<button data-ssn="gift" class="ssn-gb">🎁<span>Այսօրվա անակնկալը</span></button>`}</div>
-      <div class="ssn-ctl"><button class="ssn-x" data-ssn="min" title="Փոքրացնել այսօրվա համար">⌃</button><button class="ssn-x" data-ssn="off" title="Անջատել սեզոնային ձևավորումը (միացնել՝ վերևի 🍂 կոճակով)">✕</button></div>`;
+      <div class="ssn-ctl"><button class="ssn-x" data-ssn="min" title="Փոքրացնել մեկ տողի">⌃</button><button class="ssn-x" data-ssn="hide" title="Թաքցնել պաստառը (նորից ցույց տալ՝ վերևի սեզոնային կոճակով)">✕</button></div>`;
   }
   function onClick(e) {
     const b = e.target.closest('[data-ssn]'); if (!b) return;
@@ -2010,7 +2010,8 @@ const NxChat = (function () {
     if (a === 'burst') fxRun(CUR.fx || 'sparkle', 6);
     else if (a === 'gift') { LS.set('nx_gift', key); render(); fxRun(CUR.quiet ? '' : 'confetti', 5); }
     else if (a === 'next') musicNext();
-    else if (a === 'min') { LS.set('nx_ssn_min', key); render(); }
+    else if (a === 'min') { LS.set('nx_ssn_min', '1'); render(); }
+    else if (a === 'hide') { LS.set('nx_ssn_hide', '1'); render(); paintDesign(); if (TOAST) TOAST('Պաստառը թաքցված է։ Նորից ցույց տալու համար սեղմեք վերևի սեզոնային կոճակը։'); }
     else if (a === 'max') { LS.set('nx_ssn_min', ''); render(); }
     else if (a === 'off') { setDesign(false); if (TOAST) TOAST('Սեզոնային ձևավորումն անջատված է։ Նորից միացնելու համար սեղմեք վերևի 🍂 կոճակը։'); }
   }
@@ -2038,11 +2039,13 @@ const NxChat = (function () {
     render(); paintDesign();
     if (on) fxRun(CUR.fx, 5);
   }
-  function paintDesign() { const b = document.getElementById('ssnBtn'); if (!b) return; const on = LS.get('nx_season', '1') === '1'; b.classList.toggle('on', on); b.textContent = on ? (CUR.sc && CUR.sc[0] || '🍂') : '🍂'; b.style.opacity = on ? '1' : '.45'; b.title = on ? 'Սեզոնային ձևավորում՝ միացված (սեղմեք՝ անջատելու)' : 'Սեզոնային ձևավորում՝ անջատված (սեղմեք՝ միացնելու)'; }
+  function bannerHidden() { return LS.get('nx_ssn_hide', '') === '1'; }
+  function showBanner() { LS.set('nx_ssn_hide', ''); LS.set('nx_ssn_min', ''); render(); paintDesign(); }
+  function paintDesign() { const b = document.getElementById('ssnBtn'); if (!b) return; const on = LS.get('nx_season', '1') === '1'; b.classList.toggle('on', on); b.textContent = on ? (CUR.sc && CUR.sc[0] || '🍂') : '🍂'; b.style.opacity = on ? '1' : '.45'; b.title = on && bannerHidden() ? 'Սեզոնային պաստառը թաքցված է (սեղմեք՝ ցույց տալու)' : on ? 'Սեզոնային ձևավորում՝ միացված (սեղմեք՝ անջատելու)' : 'Սեզոնային ձևավորում՝ անջատված (սեղմեք՝ միացնելու)'; }
   function toggleMusic() { if (M.on) { LS.set('nx_music', '0'); musicStop(); } else { LS.set('nx_music', '1'); musicStart(); } return M.on; }
   function setVol(v) { LS.set('nx_mvol', String(v)); if (M.audio) M.audio.volume = vol(); }
   function setOpt(k, on) { LS.set(k, on ? '1' : '0'); if (k === 'nx_season') render(); if (k === 'nx_music') { on ? musicStart() : musicStop(); } }
-  window.NxSeason = { init, setDesign, designOn: () => LS.get('nx_season', '1') === '1', toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, mode: () => M.mode, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.stale = true; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
+  window.NxSeason = { init, setDesign, bannerHidden, showBanner, designOn: () => LS.get('nx_season', '1') === '1', toggleMusic, setVol, vol, setOpt, opt: k => LS.get(k, '1') === '1', burst: () => fxRun(CUR.fx || 'sparkle', 6), playing: () => M.on, mode: () => M.mode, next: musicNext, now: () => (M.on && M.cur ? M.cur : null), reload: () => { M.stale = true; M.told = 0; }, info: () => CUR, _special: special, _compute: compute };
 })();
 
 /* NXSEASON:END */
@@ -5885,7 +5888,7 @@ const ACT = {
   musPause: () => { closeMusPop(); NxSeason.toggleMusic(); toast('🔇 Երաժշտությունն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   musNext: () => { NxSeason.next(); setTimeout(musPopFill, 400); },
   ssnBurst: () => NxSeason.burst(),
-  ssnToggle: () => { const on = !NxSeason.designOn(); NxSeason.setDesign(on); toast(on ? '🍂 Սեզոնային ձևավորումը միացված է' : 'Սեզոնային ձևավորումն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
+  ssnToggle: () => { if (NxSeason.designOn() && NxSeason.bannerHidden && NxSeason.bannerHidden()) { NxSeason.showBanner(); toast('Սեզոնային պաստառը նորից ցույց է տրվում', 'ok', null, 2000); return; } const on = !NxSeason.designOn(); NxSeason.setDesign(on); toast(on ? '🍂 Սեզոնային ձևավորումը միացված է' : 'Սեզոնային ձևավորումն անջատված է', 'ok', null, 2000); if (S.view === 'settings') renderView(); },
   musFolder: async () => { try { const r = await call('musicFolder', {}); window.open(r.url, '_blank', 'noopener'); } catch (e) { toast(esc(e.message), 'err'); } },
   musSync: async el => { el.disabled = true; el.textContent = '⏳ Ստուգվում է…'; try { const r = await call('musicSync', {}); toast(`🔄 Ավելացվեց ${r.added} երգ${r.removed ? `, հանվեց ${r.removed}` : ''}${r.big ? ` · ⚠️ ${r.big} ֆայլ մեծ է 200 ՄԲ-ից` : ''}${r.shareErr ? ` · ⚠️ ${r.shareErr} ֆայլի համար չհաջողվեց միացնել «Anyone with the link»-ը (կնվագի նախապես բեռնվելով)` : ''}`, 'ok', null, 8000); S.mus = null; NxSeason.reload(); renderView(); } catch (e) { toast(esc(e.message), 'err'); el.disabled = false; el.textContent = '🔄 Ավելացնել Drive-ից'; } },
   musF: el => { S.mus.filter = el.dataset.k; renderView(); },
