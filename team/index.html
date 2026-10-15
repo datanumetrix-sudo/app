@@ -2138,7 +2138,7 @@ function call(action, payload, opts) {
       if (!opts.silent) busy(-1);
       if (r && r.ok) {
         // մեր իսկ փոփոխությունից հետո ամբողջ տվյալները նորից չբեռնելու համար
-        if (r.dvb && S.d && S.d.dv === r.dvb.prev) S.d.dv = r.dvb.next;
+        if (r.dvb && S.d && S.d.dv === r.dvb.prev) { S.d.dv = r.dvb.next; S.dataGen = (S.dataGen || 0) + 1; nxBc({ dv: r.dvb.next }); }
         return resolve(r.data);
       }
       const msg = (r && r.error) || 'Կապի սխալ';
@@ -2422,6 +2422,10 @@ async function pokePoll() { if (S.token && S.d && !document.hidden) { stopPollin
 window.addEventListener('focus', pokePoll);
 window.addEventListener('online', pokePoll);
 
+/* Նույն բրաուզերի մյուս ներդիրներին՝ ակնթարթային ազդանշան, որ տվյալները փոխվել են */
+let NXBC = null, NXBC_T = null;
+try { NXBC = new BroadcastChannel('nx-data'); NXBC.onmessage = ev => { const m = ev.data || {}; if (!S.d || !S.token || !m.dv || m.dv === S.d.dv) return; clearTimeout(NXBC_T); NXBC_T = setTimeout(() => { refresh(true).catch(() => {}); }, 300); }; } catch (e) { NXBC = null; }
+function nxBc(m) { try { if (NXBC) NXBC.postMessage(m); } catch (e) {} }
 async function refresh(silent) {
   const d = await call('bootstrap', {}, { silent });
   applyBoot(d);
@@ -2437,6 +2441,7 @@ function applyBoot(d) {
   bootSave(d);
   const notifs = d.notifs;
   S.d = d;
+  S.dataGen = (S.dataGen || 0) + 1;
   sortCompanies();
   if (S.view === 'requests') S.reqs = null;
   if (nv && nv !== d.nv) handleNotifs(notifs); else { S.d.notifs = notifs; renderBadge(); }
@@ -4579,7 +4584,7 @@ function taxLoad(ym, force) {
   S.tax = S.tax || {};
   if ((S.tax[ym] && !force) || S.taxBusy === ym) return;
   S.taxBusy = ym;
-  call('taxMonth', { ym }, { silent: true }).then(r => { S.tax[ym] = r; }).catch(e => { S.tax[ym] = { err: e.message }; })
+  const gen = S.dataGen; call('taxMonth', { ym }, { silent: true }).then(r => { r.gen = gen; S.tax[ym] = r; }).catch(e => { S.tax[ym] = { err: e.message }; })
     .finally(() => { S.taxBusy = ''; if (S.view === 'docs' && S.docTab === 'tax') renderView(); });
 }
 /** Քարտի տողերը՝ ամսվա հարկերը + լրացված (այդ թվում «այլ») գումարները */
@@ -4621,6 +4626,7 @@ function viewTax() {
     <button class="btn sm" data-act="taxYm" data-n="-1">◀</button><input class="inp" type="month" id="taxYmIn" value="${esc(ym)}" style="width:170px"><button class="btn sm" data-act="taxYm" data-n="1">▶</button>
     ${isMgr() ? `<select class="inp" id="taxWho" style="width:auto"><option value="">Բոլորը</option>${S.d.employees.filter(e => e.active).map(e => `<option ${S.taxWho === e.name ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>` : ''}
     <span style="flex:1"></span><button class="btn sm" data-act="taxReload">${ico('refresh')}</button>${isMgr() ? '<button class="btn sm" data-act="taxCatOpen">⚙️ Հարկերի ցանկ</button>' : ''}</div>`;
+  if (T && !T.err && T.gen !== S.dataGen && S.taxBusy !== ym && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('.taxcard'))) setTimeout(() => taxLoad(ym, true), 0);   // տվյալները փոխվել են (օր. կազմակերպության հարկերը)՝ ֆոնային թարմացում
   if (!T) { taxLoad(ym); return head + '<div class="card" style="padding:18px"><span class="muted">⏳ Բեռնվում է…</span></div>'; }
   if (T.err) return head + `<div class="card" style="padding:18px"><div class="lerr">${esc(T.err)}</div></div>`;
   const list = T.companies.filter(c => !S.taxWho || c.responsible === S.taxWho);
@@ -6465,7 +6471,7 @@ function vtKeep(v) {
   if (!NAV_POP) histPush({ nxv: v });
   lsSet('nx_view', v); $('#side').classList.remove('on');
   vtActivate(v); renderShell(); $('#pageTitle').textContent = TITLES[v] || '';
-  if (el.dataset.dv !== String(S.d.dv) && v !== 'docs' && v !== 'settings') renderView();
+  if (el.dataset.dv !== String(S.d.dv) && !(v === 'docs' && (S.docTab || 'make') === 'make') && v !== 'settings') renderView();
   else { mobTables(); renderBnav(); }
   window.scrollTo(0, +el.dataset.sy || 0);
   return true;
