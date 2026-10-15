@@ -381,15 +381,16 @@ table.mx thead th:first-child{left:0;z-index:3}
 .df{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
 
 /* ---------- modal ---------- */
-.modal{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;background:rgba(15,23,42,.45);overflow:auto}
+.modal{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;padding:4vh 16px;background:rgba(15,23,42,.45);overflow:hidden}
 .modal.on{display:flex}
 @media (min-width:861px){body.dockon .modal{right:var(--dkw,440px)}}
 .mminb{font-size:14px;font-weight:700}
-.mmbar{position:fixed;left:300px;bottom:10px;z-index:59;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100vw - 320px)}
+.mmbar{position:fixed;left:300px;bottom:10px;z-index:61;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100vw - 320px)}
 .mmchip{display:flex;align-items:center;background:#1e3a8a;color:#fff;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,.25);overflow:hidden}
 .mmchip button{background:none;border:0;color:inherit;cursor:pointer;font:inherit;font-size:13px;padding:8px 10px}.mmchip button:first-child{font-weight:600;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mmchip button:hover{background:#2563eb}
 @media (max-width:860px){.mmbar{left:10px;bottom:70px;max-width:calc(100vw - 20px)}}
-.mbox{background:var(--panel);border-radius:16px;box-shadow:var(--shadow2);width:100%;max-width:560px;animation:pop .18s ease}
+.mbox{background:var(--panel);border-radius:16px;box-shadow:var(--shadow2);width:100%;max-width:560px;animation:pop .18s ease;display:flex;flex-direction:column;max-height:calc(96vh - 58px)}
+.mbox>.mh,.mbox>.mf{flex:none}.mbox>.mb{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
 .mbox.wide{max-width:760px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .iconbtn.spin svg{animation:spin .8s linear infinite}
@@ -636,7 +637,7 @@ body.dockon .toasts{right:calc(var(--dkw,440px) + 20px)}
   .bnav button.on .i{transform:scale(1.08)}
   .bnav .bc{position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;font-size:10px;line-height:16px;min-width:16px;padding:0 4px}
   .modal{padding:0;align-items:stretch}
-  .mbox,.mbox.wide{max-width:none;border-radius:0;min-height:100%;display:flex;flex-direction:column}
+  .mbox,.mbox.wide{max-width:none;border-radius:0;min-height:100%;max-height:100%;height:100%;display:flex;flex-direction:column}
   .mh{position:sticky;top:0;background:var(--panel);z-index:2;padding-top:calc(14px + env(safe-area-inset-top))}
   .mb{flex:1}
   .mf{position:sticky;bottom:0;border-radius:0;padding-bottom:calc(12px + env(safe-area-inset-bottom));flex-wrap:wrap}
@@ -5827,7 +5828,11 @@ function formData(root) {
   });
   return o;
 }
+let MODAL_LASTCLICK_IN = false;
+document.addEventListener('pointerdown', e => { MODAL_LASTCLICK_IN = !!(e.target.closest && e.target.closest('#modal,.nxd')); }, true);
 function openModal(title, body, onSubmit, opts) {
+  // եթե պատուհան բաց է, և նորը բացվում է դրսից (մենյու, բաժին, չաթ)՝ առաջինը ծալվում է, չի կորչում
+  { const md0 = document.getElementById('modal'); if (md0 && md0.classList.contains('on') && md0.querySelector('form.mbox') && !MODAL_LASTCLICK_IN && !(opts && opts.replace)) modalMin(); }
   if (!$('#modal').classList.contains('on') && !(history.state && history.state.nxm)) histPush({ nxm: 1, nxv: S.view });
   opts = opts || {};
   const m = $('#modal');
