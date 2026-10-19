@@ -2678,7 +2678,7 @@ function navItemHtml(it) {
   if (it.sep) return '<div class="sep"></div>';
   if (it.ext === 'src') return `<button class="ext src" data-act="srcPick" title="ՊԵԿ, ԱՎԾ, ԱԱԱՄՊ և այլ կայքեր՝ ընտրել կազմակերպությունը և բացել կայքը">${ico('gov')}<span>Ուղարկել հաշվետվություն</span><span class="arr">${ico('ext')}</span></button>`;
   if (it.ext === 'contracts') return `<button class="ext" data-act="contractsGo" title="Բացել «Պայմանագրեր և ակտեր» ծրագիրը նոր թաբում (առանց կրկին մուտքի)">${ico('file')}<span>Պայմանագրեր և ակտեր</span><span class="arr">${ico('ext')}</span></button>`;
-  if (it.ext === 'hr') return `<a class="ext" href="${esc(S.d.settings.hrUrl)}" target="_blank" rel="noopener" title="Բացել նոր թաբում">${ico('hr')}<span>${esc(it.l)}</span><span class="arr">${ico('ext')}</span></a>`;
+  if (it.ext === 'hr') return `<button class="ext" data-act="hrGo" title="Բացել Numetrix HR-ը նոր թաբում (առանց կրկին մուտքի)">${ico('hr')}<span>${esc(it.l)}</span><span class="arr">${ico('ext')}</span></button>`;
   return `<button class="${S.view === it.k || (it.k === 'chats' && S.ch.dock) ? 'on' : ''}" data-act="go" data-v="${it.k}">${ico(it.i)}<span>${it.l}</span>${it.c !== '' ? `<span class="cnt">${it.c}</span>` : ''}</button>`;
 }
 function renderShell() {
@@ -6008,6 +6008,13 @@ const ACT = {
     if ($('#syncBox')) $('#syncBox').innerHTML = syncBody();
   },
   syncEdit: el => { closeModal(); editCompany(el.dataset.id); },
+  hrGo: async () => {
+    let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:#64748b">Բեռնվում է Numetrix HR…</p>'); } catch (e) {}
+    try {
+      const r = await call('hrLink', {});
+      if (w && !w.closed) w.location.href = r.url; else location.href = r.url;
+    } catch (e) { if (w && !w.closed) w.close(); toast(esc(e.message), 'err'); }
+  },
   contractsGo: async () => {
     // պատուհանը բացվում է անմիջապես (սեղմման պահին), որ բրաուզերը չարգելափակի, հղումը՝ հետո
     let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:#64748b">Բեռնվում է «Պայմանագրեր և ակտեր»…</p>'); } catch (e) {}
