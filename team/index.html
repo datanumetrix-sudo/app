@@ -5478,6 +5478,9 @@ function viewSettings() {
         <div><label class="f">Ծանուցումների ստուգում (վրկ)</label><input class="inp" type="number" min="10" name="pollSeconds" value="${esc(s.pollSeconds)}" ${dis}></div>
         <div><label class="f">Կադրային պլատֆորմի կոճակ</label><input class="inp" name="hrLabel" value="${esc(s.hrLabel || '')}" ${dis}></div>
         <div><label class="f">Կադրային պլատֆորմի հղում</label><input class="inp" name="hrUrl" value="${esc(s.hrUrl || '')}" placeholder="https:\/\/…" ${dis}></div>
+        ${isMgr() ? `<div class="full" style="border:1px dashed var(--line);border-radius:10px;padding:10px 12px"><label class="f">🔐 HR-ի համաժամեցման բանալի ${s.hrKeySet ? '<span class="tag" style="background:#dcfce7;color:#166534;border:0">✔ տեղադրված է</span>' : '<span class="tag" style="background:#fef3c7;color:#92400e;border:0">տեղադրված չէ</span>'}</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><input class="inp" type="password" id="hrKeyIn" autocomplete="off" placeholder="Տեղադրեք HR-ի ցույց տված բանալին" style="flex:1;min-width:220px"><button type="button" class="btn sm primary" data-act="hrKeySave">Պահպանել բանալին</button>${s.hrKeySet ? '<button type="button" class="btn sm" data-act="hrKeyClear" title="Անջատել HR-ի համաժամեցումը">Հեռացնել</button>' : ''}</div>
+          <div class="hint">Պահվում է միայն սերվերում (Script Properties → HR_SYNC_SECRET) և այստեղ ետ չի ցուցադրվում։</div></div>` : ''}
         <div class="full"><label class="f">Հաճախորդների հավելվածի հասցե</label><input class="inp" name="clientAppUrl" value="${esc(s.clientAppUrl || '')}" placeholder="https:\/\/….github.io/app/" ${dis}><div class="hint">Հրավերներում ուղարկվող հասցեն (GitHub Pages)։ Դատարկ՝ Google-ի հասցեն։</div></div>
 
         <div class="full"><label class="f">Կցված ֆայլերի թղթապանակ (Google Drive)</label><button type="button" class="btn sm" data-act="openFilesFolder">📁 Բացել թղթապանակը</button><div class="hint">Բոլոր կցված ֆայլերը պահվում են այս թղթապանակում՝ ենթաթղթապանակով ամեն կազմակերպության համար։</div></div>
@@ -5877,6 +5880,8 @@ function modalDiscard(id) { const f = document.querySelector('#mmStore form[data
 
 /* ====================== EVENTS ====================== */
 const ACT = {
+  hrKeySave: async el => { const i = $('#hrKeyIn'), v = (i && i.value || '').trim(); if (!v) return toast('Տեղադրեք բանալին', 'err'); el.disabled = true; try { await call('hrKeySet', { secret: v }); i.value = ''; toast('🔐 HR-ի բանալին պահպանված է', 'ok'); await refresh(); } catch (e) { toast(esc(e.message), 'err'); } el.disabled = false; },
+  hrKeyClear: async el => { if (!(await NxDlg.confirm('Հեռացնե՞լ HR-ի բանալին։ HR-ի համաժամեցումը կանջատվի։', { ok: 'Հեռացնել', danger: true }))) return; el.disabled = true; try { await call('hrKeySet', { clear: true }); toast('Բանալին հեռացված է', 'ok'); await refresh(); } catch (e) { toast(esc(e.message), 'err'); } el.disabled = false; },
   modalMin: () => modalMin(),
   modalRestore: el => modalRestore(el.dataset.mm),
   modalDiscard: (el, e) => { e.stopPropagation(); modalDiscard(el.dataset.mm); },
