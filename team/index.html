@@ -3557,6 +3557,15 @@ async function editCompany(id, preset) {
     if (m.querySelector('[name=taxLang]')) { payload.taxes = taxSelOut(m); payload.taxComm = taxCommRead(m); payload.taxLang = f.taxLang; }
     if (!f.type) throw new Error('Ընտրեք կազմակերպության տեսակը');
     if (D) { const docs = { addrs: readAddrs(m) }; Object.keys(f).forEach(k => { if (k.startsWith('d_')) docs[k.slice(2)] = f[k]; }); docs.vat = f.d_vat ? 'Այո' : 'Ոչ'; if (f.type === 'ԱՁ') docs.dirPos = ''; payload.docs = docs; }
+    // ղեկավարի անունը ձեռքով փոխվել է, իսկ անձնական տվյալները մնացել են նախորդինը՝ առաջարկել մաքրել (որ չանցնեն նորին)
+    if (D && payload.docs) {
+      const od = D.data || {}, nd = payload.docs, oF = String(od.dirFirst || '').trim(), oL = String(od.dirLast || '').trim();
+      const PERS = ['dirMiddle', 'dirDocNo', 'dirDocDate', 'dirDocBy', 'dirSsn', 'dirAddr', 'dirPhone'];
+      if ((oF || oL) && (String(nd.dirFirst || '').trim() !== oF || String(nd.dirLast || '').trim() !== oL) && PERS.some(k => String(nd[k] || '').trim() && String(nd[k] || '').trim() === String(od[k] || '').trim())) {
+        if (await NxDlg.confirm('Ղեկավարի անունը փոխվել է (' + (oF + ' ' + oL).trim() + ' → ' + (String(nd.dirFirst || '') + ' ' + String(nd.dirLast || '')).trim() + '), բայց անձնագիրը, ՀԾՀ-ն, հասցեն կամ հեռախոսը մնացել են նախորդինը։\nՄաքրե՞լ դրանք, որ չանցնեն նոր ղեկավարին։', { ok: 'Մաքրել', cancel: 'Թողնել' }))
+          { PERS.forEach(k => { if (String(nd[k] || '').trim() === String(od[k] || '').trim()) nd[k] = ''; }); if (!nd.dirDocNo) nd.dirDocType = ''; }
+      }
+    }
     const r = await call('saveCompany', payload);
     docGetDrop(r.id || (c && c.id));
     if (S.req) delete S.req[r.id || (c && c.id)];
@@ -4675,6 +4684,7 @@ function taxCardSave(card) {
     } catch (e) { toast(esc(e.message), 'err'); }
   }, 400);
 }
+document.addEventListener('change', async e => { const el = e.target; if (!el.dataset || !el.dataset.xsv) return; try { const r = await call('xsVerSet', { peer: el.dataset.xsv, v: +el.value }); S.d.settings.xsOutHr = r.HR; S.d.settings.xsOutContracts = r.CONTRACTS; toast('✔ ' + (el.dataset.xsv === 'HR' ? 'HR' : 'Պայմանագրեր') + '՝ v' + el.value, 'ok'); } catch (x) { toast(esc(x.message), 'err'); } });
 document.addEventListener('toggle', e => { if (e.target && e.target.id === 'taxArch') S.taxArchOpen = e.target.open; }, true);
 document.addEventListener('input', e => { const card = e.target.closest && e.target.closest('.taxcard'); if (card && (e.target.dataset.taxamt !== undefined || e.target.dataset.taxname !== undefined)) taxCardTotal(card); });
 document.addEventListener('focusout', e => {
@@ -5482,6 +5492,9 @@ function viewSettings() {
         ${isMgr() ? `<div class="full" style="border:1px dashed var(--line);border-radius:10px;padding:10px 12px"><label class="f">🔐 HR-ի համաժամեցման բանալի ${s.hrKeySet ? '<span class="tag" style="background:#dcfce7;color:#166534;border:0">✔ տեղադրված է</span>' : '<span class="tag" style="background:#fef3c7;color:#92400e;border:0">տեղադրված չէ</span>'}</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><input class="inp" type="password" id="hrKeyIn" autocomplete="off" placeholder="Տեղադրեք HR-ի ցույց տված բանալին" style="flex:1;min-width:220px"><button type="button" class="btn sm primary" data-act="hrKeySave">Պահպանել բանալին</button>${s.hrKeySet ? '<button type="button" class="btn sm" data-act="hrKeyClear" title="Անջատել HR-ի համաժամեցումը">Հեռացնել</button>' : ''}</div>
           <div class="hint">Պահվում է միայն սերվերում (Script Properties → HR_SYNC_SECRET) և այստեղ ետ չի ցուցադրվում։</div></div>` : ''}
+        ${isMgr() ? `<div class="full" style="border:1px dashed var(--line);border-radius:10px;padding:10px 12px"><label class="f">🔄 Կազմակերպությունների համաժամեցման ձևաչափ (ուղարկվող)</label>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">${[['HR', 'Numetrix HR', s.xsOutHr], ['CONTRACTS', 'Պայմանագրեր և ակտեր', s.xsOutContracts]].map(([k, l, v]) => `<label style="display:flex;gap:6px;align-items:center;font-size:13px">${l}՝ <select class="inp" data-xsv="${k}" style="width:auto;padding:5px 8px"><option value="1" ${v !== 2 ? 'selected' : ''}>v1</option><option value="2" ${v === 2 ? 'selected' : ''}>v2</option></select></label>`).join('')}</div>
+          <div class="hint">Tasks-ը ընդունում է v1-ը և v2-ը։ v2-ը միացրեք միայն այն ծրագրի համար, որն արդեն ընդունում է v2։</div></div>` : ''}
         <div class="full"><label class="f">Հաճախորդների հավելվածի հասցե</label><input class="inp" name="clientAppUrl" value="${esc(s.clientAppUrl || '')}" placeholder="https:\/\/….github.io/app/" ${dis}><div class="hint">Հրավերներում ուղարկվող հասցեն (GitHub Pages)։ Դատարկ՝ Google-ի հասցեն։</div></div>
 
         <div class="full"><label class="f">Կցված ֆայլերի թղթապանակ (Google Drive)</label><button type="button" class="btn sm" data-act="openFilesFolder">📁 Բացել թղթապանակը</button><div class="hint">Բոլոր կցված ֆայլերը պահվում են այս թղթապանակում՝ ենթաթղթապանակով ամեն կազմակերպության համար։</div></div>
