@@ -1155,7 +1155,7 @@ table.st .mini span{display:block;height:100%;background:var(--ok)}
 .chh{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line2)}
 .chback{display:none}
 .chdock{position:fixed;top:0;right:0;bottom:0;width:var(--dkw,440px);container-type:inline-size;max-width:100vw;z-index:35;background:var(--panel);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(15,23,42,.12);display:flex;flex-direction:column;animation:dkIn .18s ease-out}
-@keyframes dkIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes dkIn{from{transform:translateY(16px) scale(.98);opacity:0}to{transform:none;opacity:1}}
 .chdock .dkh{display:flex;align-items:center;gap:6px;padding:10px 10px 10px 14px;border-bottom:1px solid var(--line2);background:var(--panel2)}
 .chdock .dkh b{flex:1;font-size:15px}
 .chdock .dkh .icon-btn{width:32px;height:32px}
@@ -1170,6 +1170,31 @@ body.dockon .toasts{right:calc(var(--dkw,440px) + 20px)}
 @media (max-width:860px){.chdock{width:100vw}.dkrz{display:none}}
 @media (min-width:1700px){body.dockon .main{margin-right:var(--dkw,440px)}}
 .chdock .chr,.chats .chr{background:var(--surface-2, #efeae2)}.chdock .chh,.chats .chh{background:var(--panel)}
+/* ---- Լողացող չաթ ---- */
+.chdock{top:auto;right:auto;bottom:auto;left:auto;width:400px;height:600px;min-width:320px;min-height:380px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;resize:both;z-index:60;background:var(--surface);box-shadow:0 18px 48px rgba(15,23,42,.22),0 2px 6px rgba(15,23,42,.08)}
+.chdock.max{resize:none}
+.chdock .dkh{cursor:move;user-select:none;touch-action:none;background:var(--surface-2)}
+.chdock .dkh b{display:flex;align-items:center;gap:8px}
+.chdock .dkh .icon-btn{font-size:16px;line-height:1}
+.chdock .dkh svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2}
+.chdock.moving{opacity:.96;box-shadow:0 24px 60px rgba(15,23,42,.3)}
+.dkrz{display:none!important}
+body.dockon .toasts{right:20px}
+@media (min-width:861px){body.dockon .modal-bg{right:0}}
+@media (min-width:1700px){body.dockon .main{margin-right:0}}
+.chfab{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:58;width:56px;height:56px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:0 10px 26px rgba(15,23,42,.28),0 2px 6px rgba(15,23,42,.12);transition:transform .15s}
+.chfab:hover{transform:translateY(-2px)}
+.chfab[hidden]{display:none}
+.chfab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9}
+.chfab .fb{position:absolute;top:-3px;right:-3px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--bad);color:#FFFFFF;font-size:12px;font-weight:700;line-height:22px;text-align:center;box-shadow:0 0 0 2px var(--surface)}
+.chfab.ping{animation:chping .9s ease-out 2}
+@keyframes chping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bad) 55%,transparent),0 10px 26px rgba(15,23,42,.28)}100%{box-shadow:0 0 0 18px transparent,0 10px 26px rgba(15,23,42,.28)}}
+body.fabon .toasts{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+body.fabon main.page{padding-bottom:96px}
+@media (max-width:860px){.chfab{bottom:calc(76px + env(safe-area-inset-bottom,0px));right:16px}body.fabon .toasts{bottom:calc(140px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:640px){.chdock{inset:0;width:100vw;height:100%;max-width:none;max-height:none;border-radius:0;border:0;resize:none;z-index:75}.chdock .dkh{cursor:default}.chdock .dkh [data-act=dockMax]{display:none}}
+@media (prefers-reduced-motion:reduce){.chfab.ping{animation:none}}
+
 @media (max-width:860px){.chats{grid-template-columns:1fr;height:calc(100vh - 150px)}.chats.has .chl{display:none}.chats:not(.has) .chr{display:none}.chback{display:inline-flex}}
 
 /* ---------- responsive ---------- */
@@ -3212,7 +3237,7 @@ async function installApp() {
 function renderBnav() {
   const box = $('#bnav'); if (!box || !S.d) return;
   const defs = Object.fromEntries(navDefs().filter(Boolean).map(d => [d.k, d]));
-  const it = [['tasks', 'list', 'Թասքեր'], ['chats', 'chat', 'Չաթեր'], ['requests', 'inbox', 'Հարցումներ'], ['docs', 'docs', 'Փաստաթղթեր']];
+  const it = [['tasks', 'list', 'Թասքեր'], ['reports', 'file', 'Հաշվետվ.'], ['requests', 'inbox', 'Հարցումներ'], ['docs', 'docs', 'Փաստաթղթեր']];
   const main = it.map(x => x[0]);
   box.innerHTML = it.map(([k, i, l]) => { const c = defs[k] && defs[k].c; return `<button class="${S.view === k ? 'on' : ''}" data-act="go" data-v="${k}">${ico(i)}<span class="l">${l}</span>${c ? `<span class="bc">${c > 99 ? '99+' : c}</span>` : ''}</button>`; }).join('')
     + `<button class="${main.includes(S.view) ? '' : 'on'}" data-act="toggleSide">${ico('menu')}<span class="l">Ավելին</span></button>`;
@@ -3484,7 +3509,7 @@ async function showLogin(msg) {
   render();
 }
 function logoutLocal(msg) {
-  stopPolling(); fbStop(); lsDel(bootKey()); S.token = null; S.d = null; lsDel('nx_token'); closeDrawer(); closeModal(); if (S.ch.dock) closeDock(true);
+  stopPolling(); fbStop(); lsDel(bootKey()); S.token = null; { const f = document.getElementById('chfab'); if (f) f.remove(); document.body.classList.remove('fabon'); } S.d = null; lsDel('nx_token'); closeDrawer(); closeModal(); if (S.ch.dock) closeDock(true);
   showLogin(msg);
 }
 async function logout() {
@@ -3598,7 +3623,7 @@ document.addEventListener('click', e => {
   }
   if (S.msOpen && !e.target.closest('#mspop') && !e.target.closest('.ms-btn')) closeMs();
 }, true);
-window.addEventListener('resize', () => { if (S.msOpen) placeMs(); if (S.ch && S.ch.dock && !dockable()) { const th = S.ch.thread; closeDock(true); S.ch.thread = th; ACT.go({ dataset: { v: 'chats' } }); } });
+window.addEventListener('resize', () => { if (S.msOpen) placeMs(); if (S.ch && S.ch.dock) dockClamp(); });
 document.addEventListener('scroll', () => { if (S.msOpen) placeMs(); }, true);
 
 /* ---- կազմակերպությունների այբբենական դասավորություն ---- */
@@ -3616,7 +3641,6 @@ function navDefs() {
     { k: 'tasks', i: 'list', l: 'Թասքեր', c: myOpen(K.KIND_TASK) },
     { k: 'reports', i: 'file', l: 'Հաշվետվություններ', c: myOpen(K.KIND_REPORT) },
     { k: 'archive', i: 'archive', l: 'Արխիվ', c: '' },
-    { k: 'chats', i: 'chat', l: 'Չաթեր', c: S.ch.unread || '' },
     { k: 'requests', i: 'inbox', l: 'Գործընկերների հարցումներ', c: Object.values(S.d.reqNew || {}).reduce((a, b) => a + b, 0) || '' },
     { k: 'clients', i: 'users', l: 'Հաճախորդների մուտքեր', c: '' },
     isMgr() ? { k: 'stats', i: 'chart', l: 'Վիճակագրություն', c: '' } : null,
@@ -3656,6 +3680,7 @@ function navItemHtml(it) {
   return `<button class="${S.view === it.k || (it.k === 'chats' && S.ch.dock) ? 'on' : ''}" data-act="go" data-v="${it.k}">${ico(it.i)}<span class="lbl">${it.l}</span>${it.c !== '' && it.c !== 0 && it.c !== '0' ? `<span class="cnt">${it.c}</span>` : ''}</button>`;
 }
 function renderShell() {
+  renderFab();
   
   renderBnav(); updateInstallBtn();
   const nav = $('#nav');
@@ -4919,14 +4944,19 @@ function mountChatPane() {
 }
 function unmountChatPane() { if (TEAMCHAT) { TEAMCHAT.destroy(); TEAMCHAT = null; } }
 /* ---- Չաթը աջ կողմի վահանակում (ինչպես Messenger-ում). հիմնական էջը մնում է աշխատելու ---- */
-function dockable() { return innerWidth > 860; }
+function dockable() { return true; }
 function chatsShown() { return S.view === 'chats' || !!S.ch.dock; }
 function chatRefresh() { if (S.ch.dock) renderDock(); else renderView(); }
 function openDock() {
   if (S.view === 'chats') { S.view = 'tasks'; lsSet('nx_view', 'tasks'); renderView(); }
   S.ch.dock = true; lsSet('nx_dock', '1'); document.body.classList.add('dockon');
   let d = $('#chdock');
-  if (!d) { d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.innerHTML = '<div class="dkrz" title="Քաշեք՝ լայնությունը փոխելու համար (կրկնակի սեղմում՝ նեղ/լայն)"></div><div class="dkh"><b>' + ico('nx-chat') + 'Չաթեր</b><button class="icon-btn" data-act="dockFull" title="Բացել ամբողջ էկրանով">⤢</button><button class="icon-btn" data-act="dockClose" title="Փակել">' + ico('nx-x') + '</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>'; document.body.appendChild(d); dockResizeBind(d); }
+  if (!d) {
+    d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Չաթեր');
+    d.innerHTML = '<div class="dkh" title="Քաշեք՝ տեղափոխելու համար"><b>' + ico('nx-chat') + 'Չաթեր</b><button class="icon-btn" data-act="dockMax" title="Մեծացնել / փոքրացնել (կամ կրկնակի սեղմեք վերնագրին)">⤢</button><button class="icon-btn" data-act="dockClose" title="Իջեցնել (չաթը կմնա ներքևի կոճակում)"><svg class="i" viewBox="0 0 24 24"><path d="M6 18h12" stroke-linecap="round"></path></svg></button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>';
+    document.body.appendChild(d); dockMoveBind(d);
+  }
+  dockApplyGeom(d); renderFab();
   renderDock(); renderShell(); loadChats();
 }
 /** Չաթի պատուհանի լայնություն՝ քաշելով (պահվում է) */
@@ -4948,9 +4978,61 @@ function renderDock() {
   b.innerHTML = viewChats(); mountChatPane();
 }
 function closeDock(silent) {
+  const d = $('#chdock'); if (d) dockSaveGeom(d);
   S.ch.dock = false; lsSet('nx_dock', ''); unmountChatPane();
-  const d = $('#chdock'); if (d) d.remove(); document.body.classList.remove('dockon');
+  if (d) d.remove(); document.body.classList.remove('dockon');
+  renderFab();
   if (!silent) renderShell();
+}
+/* ---- Լողացող չաթ. կոճակ ներքևի աջ անկյունում (նոր հաղորդագրությունների թվով), պատուհանը տեղափոխվում է, փոքրանում/մեծանում ---- */
+function renderFab() {
+  let f = document.getElementById('chfab');
+  if (!S.token || !S.d) { if (f) f.remove(); return; }
+  if (!f) { f = document.createElement('button'); f.id = 'chfab'; f.className = 'chfab'; f.type = 'button'; f.dataset.act = 'fabOpen'; f.setAttribute('aria-label', 'Չաթեր'); f.title = 'Չաթեր'; document.body.appendChild(f); }
+  const u = +(S.ch && S.ch.unread) || 0;
+  f.innerHTML = ico('nx-chat') + (u ? `<span class="fb">${u > 99 ? '99+' : u}</span>` : '');
+  f.classList.toggle('has', !!u); f.hidden = !!S.ch.dock;
+  if (u > (S.ch.fabU || 0)) { f.classList.remove('ping'); void f.offsetWidth; f.classList.add('ping'); }
+  S.ch.fabU = u;
+  document.body.classList.toggle('fabon', !S.ch.dock);
+}
+function dockGeom() { try { return JSON.parse(lsGet('nx_dkgeo', '{}')) || {}; } catch (e) { return {}; } }
+function dockSmall() { return innerWidth <= 640; }
+function dockApplyGeom(d) {
+  if (dockSmall()) { d.removeAttribute('style'); return; }
+  const g = dockGeom(), mx = !!g.max;
+  d.classList.toggle('max', mx);
+  const w = mx ? Math.min(1100, innerWidth - 48) : Math.max(320, Math.min(g.w || 400, innerWidth - 16));
+  const h = mx ? innerHeight - 48 : Math.max(380, Math.min(g.h || 600, innerHeight - 16));
+  d.style.width = w + 'px'; d.style.height = h + 'px';
+  let x = mx ? (innerWidth - w) / 2 : (g.x == null ? innerWidth - w - 24 : g.x), y = mx ? 24 : (g.y == null ? innerHeight - h - 24 : g.y);
+  d.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + 'px'; d.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + 'px';
+}
+function dockSaveGeom(d) {
+  if (!d || !d.isConnected || dockSmall() || d.classList.contains('max')) return;
+  const r = d.getBoundingClientRect(), g = dockGeom(); if (!r.width || !r.height) return;
+  Object.assign(g, { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+  lsSet('nx_dkgeo', JSON.stringify(g));
+}
+function dockClamp() { const d = $('#chdock'); if (d) dockApplyGeom(d); }
+function dockMaxToggle() {
+  const d = $('#chdock'); if (!d || dockSmall()) return;
+  if (!d.classList.contains('max')) dockSaveGeom(d);
+  const g = dockGeom(); g.max = !g.max; lsSet('nx_dkgeo', JSON.stringify(g)); dockApplyGeom(d);
+}
+function dockMoveBind(d) {
+  const h = d.querySelector('.dkh');
+  h.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('button') || dockSmall() || d.classList.contains('max')) return;
+    e.preventDefault(); h.setPointerCapture(e.pointerId); d.classList.add('moving');
+    const r = d.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
+    const mv = ev => { d.style.left = Math.max(8 - r.width + 80, Math.min(ev.clientX - ox, innerWidth - 80)) + 'px'; d.style.top = Math.max(8, Math.min(ev.clientY - oy, innerHeight - 48)) + 'px'; };
+    const up = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); d.classList.remove('moving'); dockSaveGeom(d); };
+    h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up);
+  });
+  h.addEventListener('dblclick', e => { if (!e.target.closest('button')) dockMaxToggle(); });
+  let t = null;
+  try { new ResizeObserver(() => { if (d.classList.contains('moving')) return; clearTimeout(t); t = setTimeout(() => dockSaveGeom(d), 300); }).observe(d); } catch (e) {}
 }
 function chatSearchModal() {
   const m = openModal('Որոնում զրույցներում', `<input class="inp" id="csq" placeholder="Բառ, գումար, ֆայլի անուն…" autofocus><div id="csr" style="margin-top:10px;max-height:55vh;overflow:auto"></div>`, null, { okOnly: true, wide: true });
@@ -6971,7 +7053,7 @@ const ACT = {
   modalMin: () => modalMin(),
   modalRestore: el => modalRestore(el.dataset.mm),
   modalDiscard: (el, e) => { e.stopPropagation(); modalDiscard(el.dataset.mm); },
-  go: el => { if (el.dataset.v === 'chats' && dockable()) { sideClose(); if (S.ch.dock) closeDock(); else openDock(); return; } closeMs();
+  go: el => { if (el.dataset.v === 'chats') { sideClose(); openDock(); return; } closeMs();
     if (vtKeep(el.dataset.v)) return;
     const prevV = S.view; S.view = el.dataset.v; if (!NAV_POP && prevV !== el.dataset.v) histPush({ nxv: el.dataset.v }); if (S.view === 'stats' && !isMgr()) S.view = 'tasks'; lsSet('nx_view', S.view); S.f.quick = ''; if (S.view === 'archive') S.arch = null; if (S.view === 'stats') S.stats = null; if (S.view === 'requests') S.reqs = null; if (S.view === 'docs' && S.dl) { S.dl.rows = null; S.dl.busy = false; } if (S.view === 'mail') S.mail = null; sideClose(); renderShell(); renderView(); window.scrollTo(0, 0); },
   toggleSide: () => { const a = $('#app'); if (innerWidth <= 640) { const on = a.classList.toggle('m-open'); if (on) histPush({ nxs: 1, nxv: S.view }); } else { const off = a.classList.toggle('nav-off'); lsSet('nx_navoff', off ? '1' : ''); } },
@@ -7116,7 +7198,8 @@ const ACT = {
   waNewKey: async () => { if (!await NxDlg.confirm('Ստեղծե՞լ նոր գաղտնի բանալի\nՀինը կդադարի աշխատել. նորը պետք է տեղադրել նաև միջնորդ ֆունկցիայում (RELAY_KEY)։', { ok: 'Ստեղծել' })) return; S.wa = await call('waSettings', { newKey: 1 }); renderView(); },
   waCopy: el => { toast(copyText(el.dataset.v) ? 'Պատճենված է' : 'Չհաջողվեց պատճենել', 'ok'); },
   dockClose: () => closeDock(),
-  dockFull: () => { closeDock(true); S.view = 'chats'; lsSet('nx_view', 'chats'); renderShell(); renderView(); },
+  dockMax: () => dockMaxToggle(),
+  fabOpen: () => { if (S.ch.dock) closeDock(); else openDock(); },
   chOpenM: el => { closeModal(); openChat(el.dataset.id); },
   chBack: () => { S.ch.thread = null; unmountChatPane(); chatRefresh(); },
   chClear: async () => {
@@ -7552,11 +7635,11 @@ function toCalcOpen() {
 /* ====================== 🗂 ՆԵՐԴԻՐՆԵՐ (բաց բաժինները չեն կորչում) ======================
    Ամեն բաժին ունի իր <section>-ը. ակտիվը ստանում է id="view", մյուսները թաքնված են և պահում են իրենց վիճակը (լրացված դաշտեր, scroll)։ */
 const VT = {};
-let VTL = (() => { try { const a = JSON.parse(localStorage.getItem('nx_vtabs') || '[]'); return Array.isArray(a) ? a.filter(v => TITLES[v]).slice(0, 12) : []; } catch (e) { return []; } })();
+let VTL = (() => { try { const a = JSON.parse(localStorage.getItem('nx_vtabs') || '[]'); return Array.isArray(a) ? a.filter(v => TITLES[v] && v !== 'chats').slice(0, 12) : []; } catch (e) { return []; } })();
 const VT_ICO = { tasks: 'list', reports: 'nx-sheet', archive: 'archive', chats: 'chat', companies: 'building', docs: 'docs', mail: 'mail', team: 'users', settings: 'gear', stats: 'chart', requests: 'inbox', clients: 'nx-user' };
 function vtSave() { try { localStorage.setItem('nx_vtabs', JSON.stringify(VTL)); } catch (e) {} }
 function vtAdd(v) {
-  if (VTL.includes(v)) return;
+  if (VTL.includes(v) || v === 'chats') return;
   VTL.push(v);
   while (VTL.length > 12) { const old = VTL.find(x => x !== S.view && x !== v); if (!old) break; vtDrop(old); }
   vtSave();
