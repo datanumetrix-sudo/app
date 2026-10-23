@@ -687,7 +687,7 @@ svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-widt
 
 /* ---------- shell ---------- */
 .nav.editing .navbar{position:sticky;bottom:0;background:var(--side);padding:8px 0 4px;z-index:2}
-.srcl{display:flex;flex-direction:column;gap:2px;max-height:52vh;overflow:auto;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:4px}
+.srcl{display:flex;flex-direction:column;gap:2px;max-height:max(140px,calc(100vh - 380px));overflow:auto;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:4px}
 .srcr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 10px;border-radius:8px}
 .srcr:hover{background:var(--surface-2)}
 .srcr .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1280,6 +1280,14 @@ label.f { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-
 table.t.tbl { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); border-collapse: separate; border-spacing: 0; overflow: hidden; }
 table.t.tbl th { position: static; }
 table.t.tbl td { vertical-align: middle; }
+/* կմախքը չպետք է սահմանափակվի էկրանի բարձրությամբ (#app-ին տրված height:100%-ը կոտրում էր կպչուն ուղղորդիչն ու ներդիրները) */
+#app.app { height: auto; }
+/* աղյուսակի գլուխը ոլորելիս մնում է էջի վերնագրի տակ (երբ աղյուսակը տեղավորվում է լայնությամբ) */
+.tblwrap.fit { overflow: visible; }
+.tblwrap.fit > table.t.tbl { overflow: visible; }
+.tblwrap.fit > table.t.tbl thead th { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--top-h, 52px) + var(--head-h, 0px) - 1px); z-index: 6; box-shadow: 0 1px 0 var(--line); }
+.tblwrap.fit > table.t.tbl thead th:first-child { border-top-left-radius: var(--r-lg); }
+.tblwrap.fit > table.t.tbl thead th:last-child { border-top-right-radius: var(--r-lg); }
 /* թեգերի գույներ (հաշվետվության տեսակ) */
 .tag { margin: 1px 2px 1px 0; display: inline-block; }
 .tag.r1 { background: var(--info-soft); color: var(--info); }
@@ -1460,104 +1468,193 @@ table.t.tbl td { vertical-align: middle; }
 
 <script>
 /* NXDMY:BEGIN — ավտոմատ տեղադրված src/dmy.js-ից */
-/* Ամսաթվի դաշտեր ՀՀ ձևաչափով (օր/ամիս/տարի)։ Բրաուզերի input[type=date]-ը ցույց է տալիս ամսաթիվը ըստ բրաուզերի լեզվի (օր. mm/dd/yyyy),
-   ուստի յուրաքանչյուր input[type=date] և input[type=month] փոխարինվում է տեքստային դաշտով՝ dd/mm/yyyy (mm/yyyy), իսկ բնիկ դաշտը մնում է թաքնված.
-   նրա value-ն շարունակում է լինել yyyy-mm-dd (yyyy-mm), այնպես որ ծրագրի մնացած կոդը չի փոխվում։ Օրացույցի կոճակը բացում է բրաուզերի ընտրիչը։ */
+/* Ամսաթվի դաշտեր՝ Numetrix UI-ի DateField և .monthf բաղադրիչներով, բրաուզերի լեզվից անկախ։
+   input[type=date]  → .datef (տեքստ՝ օօ/աա/տտտտ + օրացույցի կոճակ, սեփական օրացույց .cal՝ երկուշաբթիից, տոներով)
+   input[type=month] → .monthf (երկու ցանկ՝ ամսվա անունը և տարին)
+   Բնիկ դաշտը մնում է թաքնված, նրա value-ն՝ տտտտ-աա-օօ (տտտտ-աա), ուստի ծրագրի մնացած կոդը չի փոխվում։
+   Ընտրովի կարգավորումներ. window.NXDMY_T(s) թարգմանություն, window.NXDMY_HOL() տոների ցանկ (ԱԱ-ՕՕ կամ ՏՏՏՏ-ԱԱ-ՕՕ)։ */
 (function () {
   if (window.__nxDmy) return; window.__nxDmy = 1;
-  var css = '.dmy{position:relative;display:block}.dmy.dmy-i{display:inline-block;vertical-align:middle}'
-    + '.dmy>input.dmy-t{width:100%;padding-right:34px;font-variant-numeric:tabular-nums}'
-    + '.dmy>input.dmy-n{position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;pointer-events:none;border:0;padding:0;margin:0}'
-    + '.dmy>button.dmy-b{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;color:var(--muted);border-radius:var(--r-sm,6px);cursor:pointer;padding:0}'
-    + '.dmy>button.dmy-b:hover{background:var(--surface-2);color:var(--ink)}.dmy>button.dmy-b:disabled{opacity:.4;cursor:default}'
-    + '.dmy>button.dmy-b svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}'
-    + '.dmy>input.dmy-t.dmy-bad{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-soft)}';
+  var css = '.datef>input.dmy-n,.monthf>input.dmy-n{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0;margin:0}'
+    + '.datef>input.dmy-t{width:100%}.datef-btn{display:grid;place-items:center;padding:0}.datef-btn:disabled{display:none}'
+    + '.datef.dmy-i{display:inline-flex;vertical-align:middle}.monthf{position:relative}.monthf.dmy-i{display:inline-grid;vertical-align:middle}'
+    + '.monthf>select{width:100%;min-width:0}.cal{padding:10px;display:grid;gap:8px}.cal-d:disabled{opacity:.3;cursor:default;background:none}';
   var CAL = 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4';
+  var MONTHS = ['Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս', 'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'];
+  var WD = ['Երկ', 'Երք', 'Չրք', 'Հնգ', 'Ուրբ', 'Շբթ', 'Կիր'];
+  var HOL0 = ['01-01', '01-02', '01-06', '01-28', '03-08', '04-24', '05-01', '05-09', '05-28', '07-05', '09-21', '12-31'];
   var VD = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  function T(s) { var f = window.NXDMY_T; return (typeof f === 'function' && f(s)) || s; }
+  function hols() { var f = window.NXDMY_HOL, h; try { h = typeof f === 'function' && f(); } catch (e) {} return h && h.length ? h : HOL0; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function ph(month) { var f = window.NXDMY_PH; return (typeof f === 'function' && f(month)) || (month ? 'ամիս/տարի' : 'օր/ամիս/տարի'); }
-  function badMsg() { var f = window.NXDMY_BAD; return (typeof f === 'function' && f()) || 'Սխալ ամսաթիվ'; }
-  function toShow(v, month) {
-    var m = String(v || '').match(month ? /^(\d{4})-(\d{2})/ : /^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return '';
-    return month ? m[2] + '/' + m[1] : m[3] + '/' + m[2] + '/' + m[1];
-  }
+  function iso(y, m, d) { return y + '-' + pad(m) + '-' + pad(d); }
+  function todayIso() { var d = new Date(); return iso(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+  function toShow(v) { var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
   function year(y) { y = +y; return y < 100 ? 2000 + y : y; }
-  function parse(s, month) {
+  function parse(s) {
     s = String(s || '').trim(); if (!s) return '';
     var m, d, mo, y;
-    if (month) {
-      if ((m = s.match(/^(\d{1,2})\D+(\d{2}|\d{4})$/))) { mo = +m[1]; y = year(m[2]); }
-      else if ((m = s.match(/^(\d{2})(\d{4})$/))) { mo = +m[1]; y = +m[2]; }
-      else return null;
-      if (mo < 1 || mo > 12 || y < 1900 || y > 2200) return null;
-      return y + '-' + pad(mo);
-    }
     if ((m = s.match(/^(\d{1,2})\D+(\d{1,2})\D+(\d{2}|\d{4})$/))) { d = +m[1]; mo = +m[2]; y = year(m[3]); }
     else if ((m = s.match(/^(\d{2})(\d{2})(\d{4})$/))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
     else return null;
     var dt = new Date(y, mo - 1, d);
     if (y < 1900 || y > 2200 || dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
-    return y + '-' + pad(mo) + '-' + pad(d);
+    return iso(y, mo, d);
   }
-  function mask(t, month) {
-    var v = t.value;
-    if (/[^\d\/]/.test(v)) return;
+  function mask(t) {
+    var v = t.value; if (/[^\d\/]/.test(v)) return;
     var parts = v.split('/'), last = parts.length - 1;
     for (var i = 0; i < last; i++) if (parts[i].length === 1) parts[i] = '0' + parts[i];
-    var dg = parts.join('').slice(0, month ? 6 : 8), out = '';
-    if (month) out = dg.length > 2 ? dg.slice(0, 2) + '/' + dg.slice(2) : dg;
-    else out = dg.length > 4 ? dg.slice(0, 2) + '/' + dg.slice(2, 4) + '/' + dg.slice(4) : dg.length > 2 ? dg.slice(0, 2) + '/' + dg.slice(2) : dg;
-    if (v.charAt(v.length - 1) === '/' && (out.length === 2 || (!month && out.length === 5))) out += '/';
+    var dg = parts.join('').slice(0, 8);
+    var out = dg.length > 4 ? dg.slice(0, 2) + '/' + dg.slice(2, 4) + '/' + dg.slice(4) : dg.length > 2 ? dg.slice(0, 2) + '/' + dg.slice(2) : dg;
+    if (v.charAt(v.length - 1) === '/' && (out.length === 2 || out.length === 5)) out += '/';
     if (out !== v) t.value = out;
   }
   function fire(n) { n.dispatchEvent(new Event('input', { bubbles: true })); n.dispatchEvent(new Event('change', { bubbles: true })); }
-  function commit(w, quiet) {
-    var t = w._t, n = w._n, month = w._m, iso = parse(t.value, month), cur = VD.get.call(n);
-    if (iso === null) { t.classList.add('dmy-bad'); t.setCustomValidity(badMsg()); return false; }
-    var mn = n.getAttribute('min'), mx = n.getAttribute('max');
-    if (iso && ((mn && iso < mn) || (mx && iso > mx))) { t.classList.add('dmy-bad'); t.setCustomValidity(badMsg()); return false; }
-    t.classList.remove('dmy-bad'); t.setCustomValidity('');
-    if (iso) t.value = toShow(iso, month);
-    if (iso !== cur) { VD.set.call(n, iso); if (!quiet) fire(n); }
-    return true;
+  function inRange(n, v) { var mn = n.getAttribute('min'), mx = n.getAttribute('max'); return !v || !((mn && v < mn) || (mx && v > mx)); }
+  function setBad(w, bad) { w.classList.toggle('bad', !!bad); w._t.setCustomValidity(bad ? T('Սխալ ամսաթիվ') : ''); }
+  function setVal(w, v, quiet) {
+    var n = w._n; setBad(w, false); w._t.value = toShow(v);
+    if (v !== VD.get.call(n)) { VD.set.call(n, v); if (!quiet) fire(n); }
   }
-  function wrap(n) {
-    if (n._dmy || !n.parentNode) return; n._dmy = 1;
-    var month = n.type === 'month', w = document.createElement('span'), t = document.createElement('input'), b = document.createElement('button');
-    w.className = 'dmy' + (/width/.test(n.getAttribute('style') || '') ? ' dmy-i' : '');
-    if (n.getAttribute('style')) w.setAttribute('style', n.getAttribute('style'));
-    if (/width\s*:\s*auto/.test(n.getAttribute('style') || '')) w.style.width = month ? '9.5em' : '11.5em';
-    n.removeAttribute('style');
-    t.type = 'text'; t.inputMode = 'numeric'; t.autocomplete = 'off'; t.spellcheck = false;
-    t.className = (n.className || 'inp') + ' dmy-t'; t.placeholder = ph(month); t.maxLength = month ? 7 : 10;
+  function commit(w, quiet) {
+    var v = parse(w._t.value);
+    if (v === null || !inRange(w._n, v)) { setBad(w, true); return false; }
+    setVal(w, v, quiet); return true;
+  }
+  function hideNative(n) { n.classList.add('dmy-n'); n.tabIndex = -1; n.setAttribute('aria-hidden', 'true'); }
+  function keepValue(n, show) {
+    try {
+      Object.defineProperty(n, 'value', { configurable: true, get: function () { return VD.get.call(this); }, set: function (v) { VD.set.call(this, v); show(); } });
+    } catch (e) {}
+  }
+  function inlineStyle(n, w, width) {
+    var st = n.getAttribute('style') || '';
+    if (st) { w.setAttribute('style', st); n.removeAttribute('style'); }
+    if (/width/.test(st)) { w.classList.add('dmy-i'); if (/width\s*:\s*(auto|1\d\dpx)/.test(st)) w.style.width = width; }
+  }
+
+  /* ---------- Օրացույց ---------- */
+  var CALW = null, CALEL = null;
+  function calClose() { if (CALEL) { CALEL.remove(); CALEL = null; } if (CALW) { CALW._b.setAttribute('aria-expanded', 'false'); CALW = null; } }
+  function calOpen(w) {
+    if (CALW === w) { calClose(); return; }
+    calClose(); CALW = w;
+    var cur = VD.get.call(w._n) || '', base = cur || todayIso();
+    var st = { y: +base.slice(0, 4), m: +base.slice(5, 7) };
+    var el = document.createElement('div'); el.className = 'cal'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', T('Օրացույց'));
+    CALEL = el; document.body.appendChild(el); w._b.setAttribute('aria-expanded', 'true');
+    function draw() {
+      var ty = new Date().getFullYear(), y0 = Math.min(1930, st.y), y1 = Math.max(ty + 10, st.y), h = '';
+      h += '<div class="cal-h"><button type="button" class="cal-nav" data-nav="-1" aria-label="' + T('Նախորդ ամիս') + '">‹</button><select class="inp" data-cm aria-label="' + T('Ամիս') + '">';
+      for (var i = 1; i <= 12; i++) h += '<option value="' + i + '"' + (i === st.m ? ' selected' : '') + '>' + T(MONTHS[i - 1]) + '</option>';
+      h += '</select><select class="inp" data-cy aria-label="' + T('Տարի') + '">';
+      for (var yy = y1; yy >= y0; yy--) h += '<option value="' + yy + '"' + (yy === st.y ? ' selected' : '') + '>' + yy + '</option>';
+      h += '</select><button type="button" class="cal-nav" data-nav="1" aria-label="' + T('Հաջորդ ամիս') + '">›</button></div><div class="cal-g">';
+      for (var k = 0; k < 7; k++) h += '<span class="cal-wd' + (k > 4 ? ' we' : '') + '">' + T(WD[k]) + '</span>';
+      var first = (new Date(st.y, st.m - 1, 1).getDay() + 6) % 7, days = new Date(st.y, st.m, 0).getDate(), td = todayIso(), hl = hols();
+      for (k = 0; k < first; k++) h += '<span></span>';
+      for (var d = 1; d <= days; d++) {
+        var v = iso(st.y, st.m, d), wd = (first + d - 1) % 7, hol = hl.indexOf(v.slice(5)) >= 0 || hl.indexOf(v) >= 0;
+        h += '<button type="button" class="cal-d' + (wd > 4 ? ' we' : '') + (hol ? ' hol' : '') + (v === td ? ' today' : '') + (v === cur ? ' on' : '') + '" data-d="' + v + '"'
+          + (hol ? ' title="' + T('Տոնական օր') + '"' : '') + (inRange(w._n, v) ? '' : ' disabled') + '>' + d + '</button>';
+      }
+      h += '</div><div class="cal-f"><button type="button" class="btn ghost sm" data-today>' + T('Այսօր') + '</button><button type="button" class="btn ghost sm" data-clear>' + T('Մաքրել') + '</button></div>';
+      el.innerHTML = h; place();
+    }
+    function place() {
+      var r = w.getBoundingClientRect(), ch = el.offsetHeight, cw = el.offsetWidth;
+      var top = r.bottom + 4; if (top + ch > innerHeight - 8 && r.top - ch - 4 > 8) top = r.top - ch - 4;
+      var left = Math.min(Math.max(8, r.left), innerWidth - cw - 8);
+      el.style.top = Math.max(8, top) + 'px'; el.style.left = left + 'px';
+    }
+    el._place = place;
+    el.addEventListener('mousedown', function (e) { if (e.target.tagName !== 'SELECT') e.preventDefault(); });
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.nav) { st.m += +b.dataset.nav; if (st.m < 1) { st.m = 12; st.y--; } if (st.m > 12) { st.m = 1; st.y++; } draw(); return; }
+      if (b.dataset.d) { setVal(w, b.dataset.d); calClose(); w._t.focus(); return; }
+      if (b.hasAttribute('data-today')) { var t = todayIso(); if (inRange(w._n, t)) setVal(w, t); calClose(); w._t.focus(); return; }
+      if (b.hasAttribute('data-clear')) { setVal(w, ''); calClose(); w._t.focus(); }
+    });
+    el.addEventListener('change', function (e) {
+      if (e.target.hasAttribute('data-cm')) st.m = +e.target.value; else if (e.target.hasAttribute('data-cy')) st.y = +e.target.value; draw();
+    });
+    draw();
+  }
+  document.addEventListener('mousedown', function (e) { if (CALEL && !CALEL.contains(e.target) && !(CALW && CALW.contains(e.target))) calClose(); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && CALEL) { e.stopPropagation(); var w = CALW; calClose(); if (w) w._t.focus(); } }, true);
+  window.addEventListener('resize', function () { if (CALEL) CALEL._place(); });
+  document.addEventListener('scroll', function (e) { if (CALEL && !CALEL.contains(e.target)) { if (CALW && document.body.contains(CALW)) CALEL._place(); else calClose(); } }, true);
+
+  /* ---------- Ամսաթիվ (.datef) ---------- */
+  function wrapDate(n) {
+    var w = document.createElement('div'), t = document.createElement('input'), b = document.createElement('button');
+    w.className = 'datef'; inlineStyle(n, w, '11.5em');
+    t.type = 'text'; t.inputMode = 'numeric'; t.autocomplete = 'off'; t.spellcheck = false; t.maxLength = 10;
+    t.className = (n.className || 'inp') + ' dmy-t'; t.placeholder = T('օօ/աա/տտտտ');
     if (n.title) t.title = n.title;
     if (n.required) { t.required = true; n.required = false; }
-    t.disabled = n.disabled; t.readOnly = n.readOnly;
-    if (n.id) { t.setAttribute('data-for', n.id); }
-    b.type = 'button'; b.className = 'dmy-b'; b.tabIndex = -1; b.disabled = n.disabled || n.readOnly; b.title = month ? 'Ամիս' : 'Օրացույց';
+    b.type = 'button'; b.className = 'datef-btn'; b.tabIndex = -1; b.setAttribute('aria-label', T('Բացել օրացույցը')); b.setAttribute('aria-haspopup', 'dialog');
     b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + CAL + '" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-    n.classList.add('dmy-n'); n.tabIndex = -1; n.setAttribute('aria-hidden', 'true');
+    hideNative(n);
     n.parentNode.insertBefore(w, n); w.appendChild(t); w.appendChild(n); w.appendChild(b);
-    w._t = t; w._n = n; w._m = month; n._w = w;
-    t.value = toShow(VD.get.call(n), month);
-    try {
-      Object.defineProperty(n, 'value', { configurable: true, get: function () { return VD.get.call(this); },
-        set: function (v) { VD.set.call(this, v); t.value = toShow(VD.get.call(this), month); t.classList.remove('dmy-bad'); t.setCustomValidity(''); } });
-    } catch (e) {}
-    t.addEventListener('input', function (e) { e.stopPropagation(); mask(t, month); t.classList.remove('dmy-bad'); t.setCustomValidity('');
-      if (t.value.length === (month ? 7 : 10)) commit(w); else if (!t.value) commit(w); });
+    w._t = t; w._n = n; w._b = b; n._w = w;
+    function sync() { t.disabled = n.disabled; t.readOnly = n.readOnly; b.disabled = n.disabled || n.readOnly; w.classList.toggle('ro', n.disabled || n.readOnly); if (n.required) { t.required = true; n.required = false; } }
+    sync(); t.value = toShow(VD.get.call(n));
+    keepValue(n, function () { t.value = toShow(VD.get.call(n)); setBad(w, false); });
+    t.addEventListener('input', function (e) { e.stopPropagation(); mask(t); setBad(w, false); if (t.value.length === 10 || !t.value) commit(w); });
     t.addEventListener('change', function (e) { e.stopPropagation(); commit(w); });
-    t.addEventListener('blur', function () { commit(w); });
-    t.addEventListener('keydown', function (e) { if (e.key === 'Enter') commit(w); });
-    n.addEventListener('change', function () { t.value = toShow(VD.get.call(n), month); t.classList.remove('dmy-bad'); t.setCustomValidity(''); });
-    b.addEventListener('click', function () {
-      if (b.disabled) return;
-      try { if (n.showPicker) { n.showPicker(); return; } } catch (e) {}
-      t.focus();
+    t.addEventListener('blur', function () { if (CALW !== w) commit(w); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') commit(w);
+      else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); if (!b.disabled) calOpen(w); }
     });
-    new MutationObserver(function () { t.disabled = n.disabled; b.disabled = n.disabled || n.readOnly; if (n.required) { t.required = true; n.required = false; } })
-      .observe(n, { attributes: true, attributeFilter: ['disabled', 'readonly', 'required'] });
+    n.addEventListener('change', function () { t.value = toShow(VD.get.call(n)); setBad(w, false); });
+    b.addEventListener('click', function () { if (!b.disabled) { commit(w, true); calOpen(w); } });
+    new MutationObserver(sync).observe(n, { attributes: true, attributeFilter: ['disabled', 'readonly', 'required'] });
+  }
+
+  /* ---------- Ամիս (.monthf) ---------- */
+  function wrapMonth(n) {
+    var w = document.createElement('div'), sm = document.createElement('select'), sy = document.createElement('select');
+    w.className = 'monthf'; inlineStyle(n, w, '15.5em');
+    var cls = n.className || 'inp'; sm.className = cls; sy.className = cls;
+    sm.setAttribute('aria-label', T('Ամիս')); sy.setAttribute('aria-label', T('Տարի'));
+    if (n.title) w.title = n.title;
+    hideNative(n);
+    n.parentNode.insertBefore(w, n); w.appendChild(sm); w.appendChild(sy); w.appendChild(n);
+    w._n = n; n._w = w;
+    function fill() {
+      var v = VD.get.call(n) || '', y = +v.slice(0, 4) || 0, m = +v.slice(5, 7) || 0, ty = new Date().getFullYear();
+      var y0 = Math.min(ty - 15, y || ty), y1 = Math.max(ty + 5, y || ty), mn = n.getAttribute('min'), mx = n.getAttribute('max'), h = '';
+      if (mn) y0 = Math.max(y0, +mn.slice(0, 4)); if (mx) y1 = Math.min(y1, +mx.slice(0, 4));
+      h = v ? '' : '<option value="">—</option>';
+      for (var i = 1; i <= 12; i++) h += '<option value="' + i + '"' + (i === m ? ' selected' : '') + '>' + T(MONTHS[i - 1]) + '</option>';
+      sm.innerHTML = h;
+      h = v ? '' : '<option value="">—</option>';
+      for (var yy = y1; yy >= y0; yy--) h += '<option value="' + yy + '"' + (yy === y ? ' selected' : '') + '>' + yy + '</option>';
+      sy.innerHTML = h;
+    }
+    function sync() { sm.disabled = sy.disabled = n.disabled || n.readOnly; }
+    function pick() {
+      var m = +sm.value, y = +sy.value;
+      if (!m || !y) { if (!m && !y && VD.get.call(n)) { VD.set.call(n, ''); fire(n); } return; }
+      var v = y + '-' + pad(m); if (v !== VD.get.call(n)) { VD.set.call(n, v); fire(n); }
+      if (sm.options[0] && !sm.options[0].value) fill();
+    }
+    fill(); sync();
+    keepValue(n, fill);
+    [sm, sy].forEach(function (s) {
+      s.addEventListener('change', function (e) { e.stopPropagation(); pick(); });
+      s.addEventListener('input', function (e) { e.stopPropagation(); });
+    });
+    new MutationObserver(function () { sync(); fill(); }).observe(n, { attributes: true, attributeFilter: ['disabled', 'readonly', 'min', 'max'] });
+  }
+
+  function wrap(n) {
+    if (n._dmy || !n.parentNode) return; n._dmy = 1;
+    if (n.type === 'month') wrapMonth(n); else wrapDate(n);
   }
   function scan(root) {
     if (!root || !root.querySelectorAll) return;
@@ -1566,14 +1663,16 @@ table.t.tbl td { vertical-align: middle; }
     for (var i = 0; i < l.length; i++) wrap(l[i]);
   }
   document.addEventListener('submit', function (e) {
-    var l = e.target.querySelectorAll ? e.target.querySelectorAll('.dmy') : [];
-    for (var i = 0; i < l.length; i++) if (!commit(l[i], true)) { e.preventDefault(); e.stopImmediatePropagation(); l[i]._t.reportValidity(); return; }
+    var l = e.target.querySelectorAll ? e.target.querySelectorAll('.datef') : [];
+    for (var i = 0; i < l.length; i++) if (l[i]._t && !commit(l[i], true)) { e.preventDefault(); e.stopImmediatePropagation(); l[i]._t.reportValidity(); return; }
   }, true);
   function start() {
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     scan(document.body);
-    new MutationObserver(function (ms) { for (var i = 0; i < ms.length; i++) for (var j = 0; j < ms[i].addedNodes.length; j++) scan(ms[i].addedNodes[j]); })
-      .observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(function (ms) {
+      for (var i = 0; i < ms.length; i++) for (var j = 0; j < ms[i].addedNodes.length; j++) scan(ms[i].addedNodes[j]);
+      if (CALW && !document.body.contains(CALW)) calClose();
+    }).observe(document.body, { childList: true, subtree: true });
   }
   window.nxDmyParse = parse;
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
@@ -3119,6 +3218,22 @@ function renderBnav() {
     + `<button class="${main.includes(S.view) ? '' : 'on'}" data-act="toggleSide">${ico('menu')}<span class="l">Ավելին</span></button>`;
 }
 /** Աղյուսակները հեռախոսում ցույց տալ քարտերով (սյան անունները՝ data-l) */
+function tblFit(w) {
+  if (!w || !w.classList) return;
+  const inView = !!w.closest('#view'), wide = innerWidth > 860;
+  w.classList.remove('fit');
+  if (inView && wide && w.scrollWidth <= w.clientWidth + 1) w.classList.add('fit');
+}
+/* էջի վերնագրի բարձրությունը (--head-h) և «կպած» վիճակը (.stuck)՝ աղյուսակի գլխի և կողային ցանկերի համար */
+function headSync() {
+  const h = document.getElementById('pageHead'); if (!h) return;
+  document.documentElement.style.setProperty('--head-h', h.offsetHeight + 'px');
+  const top = document.querySelector('header.top'), th = top ? top.getBoundingClientRect().bottom : 52;
+  h.classList.toggle('stuck', scrollY > 4 && h.getBoundingClientRect().top <= th + 1);
+}
+addEventListener('scroll', headSync, { passive: true });
+addEventListener('resize', () => { headSync(); document.querySelectorAll('#view .tblwrap').forEach(tblFit); });
+try { new ResizeObserver(headSync).observe(document.documentElement); } catch (e) {}
 function mobTables(root) {
   (root || document).querySelectorAll('#view table.tbl, #modal table.tbl').forEach(t => {
     const th = [...t.querySelectorAll('thead th')].map(h => h.textContent.trim());
@@ -3126,6 +3241,7 @@ function mobTables(root) {
     t.classList.add('mcards');
     // համակարգչում լայն աղյուսակը ոլորվում է հորիզոնական (չի դուրս գալիս էկրանից)
     if (!t.parentElement.classList.contains('tblwrap')) { const w = document.createElement('div'); w.className = 'tblwrap'; t.parentNode.insertBefore(w, t); w.appendChild(t); }
+    tblFit(t.parentElement);
     t.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => { if (!td.hasAttribute('data-l')) td.setAttribute('data-l', th[i] || ''); }));
   });
 }
@@ -3295,6 +3411,7 @@ let bootSaveT = null;
 function bootSave(d) { clearTimeout(bootSaveT); bootSaveT = setTimeout(() => { try { if (S.token) localStorage.setItem(bootKey(), JSON.stringify(d)); } catch (e) {} }, 500); }
 function applyBoot(d) {
   if (!d || !S.token) return;
+  if (!S.extPre) { S.extPre = 1; setTimeout(() => { if (S.token && !S.ext) loadExt(); }, 4000); }
   const prevStats = S.d ? S.d.commentStats : {};
   const nv = S.d ? S.d.nv : null;
   bootSave(d);
@@ -3758,7 +3875,7 @@ function renderView() {
   if (S.view === 'archive' && !S.arch) loadArchive();
   if (S.view === 'stats' && !S.stats) loadStats();
   if (S.view === 'requests' && !S.reqs) loadRequests();
-  if (S.view === 'clients' && !S.ext) loadExt();
+  if (S.view === 'clients' && (!S.ext || Date.now() - (S.extAt || 0) > 60000)) loadExt();
   if (S.view === 'chats') { if (S.ch.dock) closeDock(true); if (!S.ch.list) loadChats(); mountChatPane(); } else if (!S.ch.dock) unmountChatPane();
   mobTables(); renderBnav();
 }
@@ -3974,6 +4091,7 @@ function periodsFrom(type, startDate, limitDate) {
   for (let g = 0; g < 400; g++) { const p = periodAt(type, y, idx++); if (p.end < startDate) continue; if (p.next > limitDate) return { due, upcoming: p }; due.push(p); }
   return { due, upcoming: null };
 }
+window.NXDMY_HOL = () => (S.d && S.d.settings && S.d.settings.holidays) || null;
 function isHoliday(d) { const wd = new Date(pd(d)).getUTCDay(); const h = S.d.settings.holidays || []; return wd === 0 || wd === 6 || h.includes(d.slice(5)) || h.includes(d); }
 function rtDue(rt, p) {
   const mi = p.endY * 12 + p.endM - 1 + (rt.dueMonth === '' || rt.dueMonth == null ? 1 : +rt.dueMonth);
@@ -4848,9 +4966,17 @@ function chatSearchModal() {
 }
 
 /* ====================== ՀԱՃԱԽՈՐԴՆԵՐԻ ՄՈՒՏՔԵՐ ====================== */
-async function loadExt() {
-  try { S.ext = await call('getExtUsers', {}); if (!S.ext || !S.ext.rows) S.ext = { rows: [], url: '' }; } catch (e) { S.ext = { rows: [], err: e.message }; }
-  if (S.view === 'clients') renderView();
+/* Ցանկը պահվում է հիշողության մեջ. բաժինը բացվում է անմիջապես պահվածով, իսկ թարմը բերվում է ֆոնում */
+let EXT_LOADING = null;
+function loadExt() {
+  if (EXT_LOADING) return EXT_LOADING;
+  EXT_LOADING = (async () => {
+    try { const r = await call('getExtUsers', {}, { silent: !!S.ext }); S.ext = r && r.rows ? r : { rows: [], url: '' }; S.extAt = Date.now(); }
+    catch (e) { if (!S.ext || S.ext.err) S.ext = { rows: [], err: e.message }; }
+    finally { EXT_LOADING = null; }
+    if (S.view === 'clients') renderView();
+  })();
+  return EXT_LOADING;
 }
 function inviteText(u) {
   return `Բարև Ձեզ, ${u.name}։\nNumetrix-ի հետ չաթի, անելիքներ ուղարկելու և դրանց ընթացքին հետևելու համար բացեք՝\n${(S.ext && S.ext.url) || ''}\nՄուտքանուն՝ ${u.login}\nԱռաջին մուտքի ժամանակ կստեղծեք Ձեր PIN-ը (4-8 թվանշան)։\n\nՀեռախոսում տեղադրելու համար՝\n• Android (Chrome)՝ էջում «Տեղադրել հեռախոսում» կամ ⋮ → Install app\n• iPhone (Safari)՝ Կիսվել □↑ → Add to Home Screen`;
@@ -4893,7 +5019,7 @@ function editExt(id) {
   </div>`, async f => {
     const ids = [...m.querySelectorAll('[name=cid]:checked')].map(x => x.value);
     await call('saveExtUser', { id: id || '', name: f.name, position: f.position, login: f.login, phone: f.phone, email: f.email, active: !!f.active, companyIds: ids });
-    toast('Պահպանվեց', 'ok'); S.ext = null; loadExt();
+    toast('Պահպանվեց', 'ok'); S.extAt = 0; loadExt();
     if (!id) { const nu = { name: f.name, login: f.login.trim().toLowerCase() }; setTimeout(() => { if (S.ext) toast(copyText(inviteText(nu)) ? 'Հրավերի տեքստը պատճենված է՝ ուղարկեք WhatsApp-ով կամ էլ. փոստով' : 'Պահպանված է', 'ok'); }, 900); }
   }, { wide: true });
   const q = m.querySelector('#xcq');
@@ -7010,7 +7136,7 @@ const ACT = {
   deleteExt: async el => {
     const u = S.ext && S.ext.rows && S.ext.rows.find(x => x.id === el.dataset.id); if (!u) return;
     if (!(await NxDlg.confirm(`Ջնջե՞լ «${u.name}»-ին (${u.login})։\n\nՆրա մուտքը կփակվի, և նա կհեռացվի ցուցակից։ Նրա գրած հաղորդագրություններն ու անելիքները կմնան չաթում։ Ջնջումը հետ բերել հնարավոր չէ։`, { ok: 'Ջնջել' }))) return;
-    try { await call('deleteExtUser', { id: u.id }); toast('Ջնջվեց', 'ok'); S.ext = null; loadExt(); } catch (e) { toast(esc(e.message), 'err'); }
+    try { await call('deleteExtUser', { id: u.id }); toast('Ջնջվեց', 'ok'); S.extAt = 0; loadExt(); } catch (e) { toast(esc(e.message), 'err'); }
   },
   resetExt: async el => { if (!(await NxDlg.confirm('Զրոյացնե՞լ PIN-ը\nՀաջորդ մուտքին նա կստեղծի նորը։', { ok: 'Զրոյացնել' }))) return; try { await call('resetExtPin', { id: el.dataset.id }); toast('PIN-ը զրոյացվեց', 'ok'); S.ext = null; loadExt(); } catch (e) { toast(esc(e.message), 'err'); } },
   copyInvite: async el => { if (!S.ext || !S.ext.rows) await loadExt(); const u = S.ext && S.ext.rows && S.ext.rows.find(x => x.id === el.dataset.id); if (!u) { toast('Փորձեք նորից', 'err'); return; } toast(copyText(inviteText(u)) ? 'Հրավերի տեքստը պատճենված է' : 'Չհաջողվեց պատճենել', 'ok'); },
@@ -7025,6 +7151,7 @@ const ACT = {
       await call('forceRefresh', {}, { silent: true });
       S.arch = null; S.stats = null; S.reqs = null; S.tax = {}; S.mail = null; S.docList = {};
       if (S.inbox) S.inbox.rows = null;
+      S.extAt = 0; if (S.ext && S.view === 'clients') loadExt();
       try { const F = docLogF(); F.rows = null; F.busy = false; } catch (e) {}
       Object.keys(DGC).forEach(k => delete DGC[k]);
       try { if (typeof chatSync === 'function') chatSync(); } catch (e) {}
