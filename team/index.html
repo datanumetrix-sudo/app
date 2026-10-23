@@ -3421,8 +3421,19 @@ function compDocFields(D) {
     ${fIn('d_dirDocDate', 'Տրման ամսաթիվ', isoD(d.dirDocDate), { type: 'date' })}${fIn('d_dirDocBy', 'Ում կողմից', d.dirDocBy, { ph: 'օր. 001' })}
     ${fIn('d_dirSsn', 'ՀԾՀ', d.dirSsn)}${fIn('d_dirPhone', 'Հեռախոս', d.dirPhone)}
     ${fIn('d_dirAddr', 'Հաշվառման հասցե', d.dirAddr, { full: true })}
+    ${ownersBox(D.owners)}
     ${fH('📍 Գործունեության հասցեներ <span class="muted" style="font-weight:400;font-size:12px">(տեղեկատվական թերթիկը կստեղծվի յուրաքանչյուրի համար)</span>')}
     <div class="full"><div id="addrBox">${addrRows(d.addrs || [])}</div><button type="button" class="btn sm" data-addaddr>+ Ավելացնել հասցե</button></div>`;
+}
+/** Հիմնադիրներ (մասնակիցներ)՝ HR-ից համաժամեցված, միայն դիտելու */
+function ownersBox(list) {
+  const L = Array.isArray(list) ? list : [];
+  const sum = Math.round(L.reduce((a, o) => a + (+o.share || 0), 0) * 10000) / 10000;
+  const rows = L.map(o => `<tr><td>${esc(o.name)}</td><td class="muted">${o.kind === 'org' ? 'Կազմակերպություն' : 'Ֆիզ. անձ'}</td><td>${esc(o.kind === 'org' ? (o.tin ? 'ՀՎՀՀ ' + o.tin : '') : (o.ssn ? 'ՀԾՀ ' + o.ssn : ''))}</td><td style="text-align:right">${o.share == null ? '<span class="muted">—</span>' : esc(String(o.share)) + '%'}</td></tr>`).join('');
+  return `<div class="full">${fH('👥 Հիմնադիրներ (մասնակիցներ) <span class="muted" style="font-weight:400;font-size:12px">(գալիս են HR-ից, փոխվում են HR-ում)</span>')}
+    ${L.length ? `<table class="tbl" id="ownersTbl" style="width:100%;font-size:13px"><thead><tr><th>Անուն / անվանում</th><th>Տեսակ</th><th>ՀԾՀ / ՀՎՀՀ</th><th style="text-align:right">Բաժնեմաս</th></tr></thead><tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="3" class="muted">Ընդամենը</td><td style="text-align:right;${Math.abs(sum - 100) > 0.01 ? 'color:#b91c1c' : ''}">${sum}%</td></tr></tfoot></table>`
+    : `<div class="hint" id="ownersTbl">${list === null || list === undefined ? 'HR-ից հիմնադիրների տվյալներ դեռ չեն ստացվել։' : 'HR-ում հիմնադիրներ նշված չեն։'}</div>`}</div>`;
 }
 const DIRF = { d_dirFirst: 'անուն', d_dirLast: 'ազգանուն', d_dirDocNo: 'փաստաթղթի համար', d_dirDocDate: 'տրման ամսաթիվ', d_dirDocBy: 'ում կողմից', d_dirSsn: 'ՀԾՀ', d_dirAddr: 'հաշվառման հասցե', d_dirPhone: 'հեռախոս' };
 const dirMissList = d => Object.keys(DIRF).filter(k => !String(d[k.slice(2)] || '').trim()).map(k => DIRF[k]);
