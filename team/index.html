@@ -1191,6 +1191,14 @@ body.dockon .toasts{right:20px}
 @keyframes chping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bad) 55%,transparent),0 10px 26px rgba(15,23,42,.28)}100%{box-shadow:0 0 0 18px transparent,0 10px 26px rgba(15,23,42,.28)}}
 body.fabon .toasts{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
 body.fabon main.page{padding-bottom:96px}
+.chdock .chl-top{gap:6px;padding:8px}
+.chdock .chl-top .seg{display:flex;flex:1;min-width:0;overflow:hidden}
+.chdock .chl-top .seg button{flex:1 1 auto;min-width:0;padding-left:6px;padding-right:6px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;justify-content:center;gap:3px}
+.chdock .chl-top .seg button .cu{flex:none;margin-left:2px!important}
+.chdock .chl-top > .btn{flex:none}
+.cav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+.cav:not([style]){color:var(--accent-ink)}
+
 /* ---- Marcelan՝ դատարկ աշխատանքային դաշտ (կարգախոսը՝ Noto Serif Armenian, ինչպես marcelan.css-ում) ---- */
 body.nx-home #pageHead, body.nx-home #season { display: none !important; }
 .nx-empty { min-height: calc(100vh - 140px); display: grid; place-items: center; padding: 24px 8px; }
@@ -2101,7 +2109,9 @@ const NxChat = (function () {
     </div>`;
     const $r = k => root.querySelector(`[data-r="${k}"]`);
     const list = $r('list');
-    list.addEventListener('scroll', () => { S.atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80; if (S.atBottom) { const nb = root.querySelector('.nxc-new'); if (nb) nb.remove(); } });
+    // պատուհանի չափը/բովանդակությունը փոխվելիս՝ ներքևում մնալ (եթե ներքևում էինք)
+    try { new ResizeObserver(() => { if (S.atBottom || Date.now() < (S.pinUntil || 0)) list.scrollTop = list.scrollHeight; }).observe(list); } catch (e) {}
+    list.addEventListener('scroll', () => { if (Date.now() < (S.pinUntil || 0)) { S.atBottom = true; const nb0 = root.querySelector('.nxc-new'); if (nb0) nb0.remove(); return; } S.atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80; if (S.atBottom) { const nb = root.querySelector('.nxc-new'); if (nb) nb.remove(); } });
 
     /* ---------- մեդիա ---------- */
     function media(id) { return fetchMedia(id, call); }
@@ -2440,7 +2450,12 @@ const NxChat = (function () {
       if (fresh.length && o.onIncoming) { try { o.onIncoming(fresh, S.info); } catch (e) {} }
       drawTop(); drawList(); if (S.tab === 'files') drawFiles();
       const grew = S.msgs.length > prevN;
-      if (S.firstLoad || own || (grew && wasBottom)) { requestAnimationFrame(() => scrollEnd(!S.firstLoad)); S.firstLoad = false; }
+      if (S.firstLoad || own || (grew && wasBottom)) {
+        if (S.firstLoad) S.pinUntil = Date.now() + 2500;
+        const smooth = !S.firstLoad; requestAnimationFrame(() => scrollEnd(smooth));
+        if (Date.now() < (S.pinUntil || 0)) [250, 800, 1600].forEach(ms => setTimeout(() => { if (S.alive && Date.now() < S.pinUntil + 200) scrollEnd(false); }, ms));
+        S.firstLoad = false;
+      }
       else if (grew && !root.querySelector('.nxc-new')) { const b = document.createElement('button'); b.className = 'nxc-new'; b.textContent = '↓ ' + _t('Նոր հաղորդագրություն'); root.querySelector('.nxc').appendChild(b); }
     }
     function drawTyping() {
@@ -3400,7 +3415,7 @@ function fbStart() {
     const offSig = NxFb.onSig('team', () => {
       FBSIG_T.forEach(clearTimeout);
       const go = () => chatSync();
-      FBSIG_T = [setTimeout(go, 2500), setTimeout(go, 7000)];
+      FBSIG_T = [2500, 7000, 15000, 30000].map(ms => setTimeout(go, ms));
     });
     // ուրիշի փոփոխությունը՝ ազդանշանով, տվյալները բեռնվում են ֆոնային ռեժիմում
     let dT = null;
@@ -4947,7 +4962,7 @@ function drawChatList() {
   const box = $('#chl'); if (!box) return;
   const rows = chatRows();
   box.innerHTML = rows.length ? rows.map(x => `<div class="chi ${S.ch.thread === x.thread ? 'on' : ''}" data-act="chOpen" data-id="${esc(x.thread)}">
-      <div class="cav ${x.kind === 'R' ? 'r' : ''}" ${x.kind === 'I' && x.who ? `style="--ac:${esc((emp(x.who) || {}).color || 'var(--muted)')};background:color-mix(in srgb, var(--ac) 18%, var(--surface));color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ac)"` : x.kind === 'W' ? 'style="background:#25d366;color:#fff"' : ''}>${x.kind === 'R' ? '' : x.kind === 'I' ? (x.who ? esc(cInit(x.who)) : '') : x.kind === 'W' ? (x.who ? esc(cInit(x.who)) : '') : esc(cInit(x.companyName))}</div>
+      <div class="cav ${x.kind === 'R' ? 'r' : ''}" ${x.kind === 'I' && x.who ? `style="--ac:${esc((emp(x.who) || {}).color || 'var(--muted)')};background:color-mix(in srgb, var(--ac) 18%, var(--surface));color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ac)"` : x.kind === 'W' ? 'style="background:#25d366;color:#fff"' : ''}>${x.kind === 'R' ? ico('nx-docs') : x.kind === 'I' ? (x.who ? esc(cInit(x.who)) : ico('nx-people')) : x.kind === 'W' ? (x.who ? esc(cInit(x.who)) : ico('nx-chat')) : (esc(cInit(x.companyName)) || ico('nx-org'))}</div>
       <div style="flex:1;min-width:0"><div class="cn">${esc(x.title)}</div>
         <div class="cl">${x.kind === 'R' ? esc(x.companyName) + ' · ' : ''}${x.kind === 'W' && !x.linked ? '<b style="color:var(--warn)">չկցված</b> · ' : ''}${x.lastText ? (x.lastSide === 'client' || (x.kind === 'I' && x.who && x.lastBy !== me()) ? '' : esc(x.lastBy === me() ? 'Դուք' : x.lastBy) + '՝ ') + esc(x.lastText) : '<i>դեռ չեն գրել</i>'}</div></div>
       <div style="text-align:right;flex:none"><div class="ct">${esc(x.lastAt ? (x.lastAt.slice(0, 10) === today() ? x.lastAt.slice(11, 16) : fmtD(x.lastAt)) : '')}</div>${x.unread ? `<span class="cu">${x.unread}</span>` : ''}</div>
@@ -4975,7 +4990,7 @@ function openDock() {
   let d = $('#chdock');
   if (!d) {
     d = document.createElement('aside'); d.id = 'chdock'; d.className = 'chdock'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Չաթեր');
-    d.innerHTML = '<div class="dkh" title="Քաշեք՝ տեղափոխելու համար"><b>' + ico('nx-chat') + 'Չաթեր</b><button class="icon-btn" data-act="dockMax" title="Մեծացնել / փոքրացնել (կամ կրկնակի սեղմեք վերնագրին)">⤢</button><button class="icon-btn" data-act="dockClose" title="Իջեցնել (չաթը կմնա ներքևի կոճակում)"><svg class="i" viewBox="0 0 24 24"><path d="M6 18h12" stroke-linecap="round"></path></svg></button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>';
+    d.innerHTML = '<div class="dkh" title="Քաշեք՝ տեղափոխելու համար"><b>' + ico('nx-chat') + 'Չաթեր</b><button class="icon-btn" data-act="dockClose" title="Իջեցնել (չաթը կմնա ներքևի կոճակում)"><svg class="i" viewBox="0 0 24 24"><path d="M6 18h12" stroke-linecap="round"></path></svg></button><button class="icon-btn" data-act="dockMax" title="Մեծացնել / փոքրացնել (կամ կրկնակի սեղմեք վերնագրին)">⤢</button></div><div id="dkbody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>';
     document.body.appendChild(d); dockMoveBind(d);
   }
   dockApplyGeom(d); renderFab();
@@ -5014,6 +5029,7 @@ function renderFab() {
   const u = +(S.ch && S.ch.unread) || 0;
   f.innerHTML = ico('nx-chat') + (u ? `<span class="fb">${u > 99 ? '99+' : u}</span>` : '');
   f.classList.toggle('has', !!u); f.hidden = !!S.ch.dock;
+  { const t0 = document.title.replace(/^\(\d+\+?\) /, ''); document.title = u ? `(${u > 99 ? '99+' : u}) ${t0}` : t0; }
   if (u > (S.ch.fabU || 0)) { f.classList.remove('ping'); void f.offsetWidth; f.classList.add('ping'); }
   S.ch.fabU = u;
   document.body.classList.toggle('fabon', !S.ch.dock);
