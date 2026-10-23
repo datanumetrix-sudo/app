@@ -782,104 +782,193 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
 <script type="application/json" id="tokj">""</script>
 <script>
 /* NXDMY:BEGIN — ավտոմատ տեղադրված src/dmy.js-ից */
-/* Ամսաթվի դաշտեր ՀՀ ձևաչափով (օր/ամիս/տարի)։ Բրաուզերի input[type=date]-ը ցույց է տալիս ամսաթիվը ըստ բրաուզերի լեզվի (օր. mm/dd/yyyy),
-   ուստի յուրաքանչյուր input[type=date] և input[type=month] փոխարինվում է տեքստային դաշտով՝ dd/mm/yyyy (mm/yyyy), իսկ բնիկ դաշտը մնում է թաքնված.
-   նրա value-ն շարունակում է լինել yyyy-mm-dd (yyyy-mm), այնպես որ ծրագրի մնացած կոդը չի փոխվում։ Օրացույցի կոճակը բացում է բրաուզերի ընտրիչը։ */
+/* Ամսաթվի դաշտեր՝ Numetrix UI-ի DateField և .monthf բաղադրիչներով, բրաուզերի լեզվից անկախ։
+   input[type=date]  → .datef (տեքստ՝ օօ/աա/տտտտ + օրացույցի կոճակ, սեփական օրացույց .cal՝ երկուշաբթիից, տոներով)
+   input[type=month] → .monthf (երկու ցանկ՝ ամսվա անունը և տարին)
+   Բնիկ դաշտը մնում է թաքնված, նրա value-ն՝ տտտտ-աա-օօ (տտտտ-աա), ուստի ծրագրի մնացած կոդը չի փոխվում։
+   Ընտրովի կարգավորումներ. window.NXDMY_T(s) թարգմանություն, window.NXDMY_HOL() տոների ցանկ (ԱԱ-ՕՕ կամ ՏՏՏՏ-ԱԱ-ՕՕ)։ */
 (function () {
   if (window.__nxDmy) return; window.__nxDmy = 1;
-  var css = '.dmy{position:relative;display:block}.dmy.dmy-i{display:inline-block;vertical-align:middle}'
-    + '.dmy>input.dmy-t{width:100%;padding-right:34px;font-variant-numeric:tabular-nums}'
-    + '.dmy>input.dmy-n{position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;pointer-events:none;border:0;padding:0;margin:0}'
-    + '.dmy>button.dmy-b{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;color:var(--muted);border-radius:var(--r-sm,6px);cursor:pointer;padding:0}'
-    + '.dmy>button.dmy-b:hover{background:var(--surface-2);color:var(--ink)}.dmy>button.dmy-b:disabled{opacity:.4;cursor:default}'
-    + '.dmy>button.dmy-b svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}'
-    + '.dmy>input.dmy-t.dmy-bad{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-soft)}';
+  var css = '.datef>input.dmy-n,.monthf>input.dmy-n{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0;margin:0}'
+    + '.datef>input.dmy-t{width:100%}.datef-btn{display:grid;place-items:center;padding:0}.datef-btn:disabled{display:none}'
+    + '.datef.dmy-i{display:inline-flex;vertical-align:middle}.monthf{position:relative}.monthf.dmy-i{display:inline-grid;vertical-align:middle}'
+    + '.monthf>select{width:100%;min-width:0}.cal{padding:10px;display:grid;gap:8px}.cal-d:disabled{opacity:.3;cursor:default;background:none}';
   var CAL = 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4';
+  var MONTHS = ['Հունվար', 'Փետրվար', 'Մարտ', 'Ապրիլ', 'Մայիս', 'Հունիս', 'Հուլիս', 'Օգոստոս', 'Սեպտեմբեր', 'Հոկտեմբեր', 'Նոյեմբեր', 'Դեկտեմբեր'];
+  var WD = ['Երկ', 'Երք', 'Չրք', 'Հնգ', 'Ուրբ', 'Շբթ', 'Կիր'];
+  var HOL0 = ['01-01', '01-02', '01-06', '01-28', '03-08', '04-24', '05-01', '05-09', '05-28', '07-05', '09-21', '12-31'];
   var VD = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  function T(s) { var f = window.NXDMY_T; return (typeof f === 'function' && f(s)) || s; }
+  function hols() { var f = window.NXDMY_HOL, h; try { h = typeof f === 'function' && f(); } catch (e) {} return h && h.length ? h : HOL0; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function ph(month) { var f = window.NXDMY_PH; return (typeof f === 'function' && f(month)) || (month ? 'ամիս/տարի' : 'օր/ամիս/տարի'); }
-  function badMsg() { var f = window.NXDMY_BAD; return (typeof f === 'function' && f()) || 'Սխալ ամսաթիվ'; }
-  function toShow(v, month) {
-    var m = String(v || '').match(month ? /^(\d{4})-(\d{2})/ : /^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return '';
-    return month ? m[2] + '/' + m[1] : m[3] + '/' + m[2] + '/' + m[1];
-  }
+  function iso(y, m, d) { return y + '-' + pad(m) + '-' + pad(d); }
+  function todayIso() { var d = new Date(); return iso(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+  function toShow(v) { var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
   function year(y) { y = +y; return y < 100 ? 2000 + y : y; }
-  function parse(s, month) {
+  function parse(s) {
     s = String(s || '').trim(); if (!s) return '';
     var m, d, mo, y;
-    if (month) {
-      if ((m = s.match(/^(\d{1,2})\D+(\d{2}|\d{4})$/))) { mo = +m[1]; y = year(m[2]); }
-      else if ((m = s.match(/^(\d{2})(\d{4})$/))) { mo = +m[1]; y = +m[2]; }
-      else return null;
-      if (mo < 1 || mo > 12 || y < 1900 || y > 2200) return null;
-      return y + '-' + pad(mo);
-    }
     if ((m = s.match(/^(\d{1,2})\D+(\d{1,2})\D+(\d{2}|\d{4})$/))) { d = +m[1]; mo = +m[2]; y = year(m[3]); }
     else if ((m = s.match(/^(\d{2})(\d{2})(\d{4})$/))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
     else return null;
     var dt = new Date(y, mo - 1, d);
     if (y < 1900 || y > 2200 || dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
-    return y + '-' + pad(mo) + '-' + pad(d);
+    return iso(y, mo, d);
   }
-  function mask(t, month) {
-    var v = t.value;
-    if (/[^\d\/]/.test(v)) return;
+  function mask(t) {
+    var v = t.value; if (/[^\d\/]/.test(v)) return;
     var parts = v.split('/'), last = parts.length - 1;
     for (var i = 0; i < last; i++) if (parts[i].length === 1) parts[i] = '0' + parts[i];
-    var dg = parts.join('').slice(0, month ? 6 : 8), out = '';
-    if (month) out = dg.length > 2 ? dg.slice(0, 2) + '/' + dg.slice(2) : dg;
-    else out = dg.length > 4 ? dg.slice(0, 2) + '/' + dg.slice(2, 4) + '/' + dg.slice(4) : dg.length > 2 ? dg.slice(0, 2) + '/' + dg.slice(2) : dg;
-    if (v.charAt(v.length - 1) === '/' && (out.length === 2 || (!month && out.length === 5))) out += '/';
+    var dg = parts.join('').slice(0, 8);
+    var out = dg.length > 4 ? dg.slice(0, 2) + '/' + dg.slice(2, 4) + '/' + dg.slice(4) : dg.length > 2 ? dg.slice(0, 2) + '/' + dg.slice(2) : dg;
+    if (v.charAt(v.length - 1) === '/' && (out.length === 2 || out.length === 5)) out += '/';
     if (out !== v) t.value = out;
   }
   function fire(n) { n.dispatchEvent(new Event('input', { bubbles: true })); n.dispatchEvent(new Event('change', { bubbles: true })); }
-  function commit(w, quiet) {
-    var t = w._t, n = w._n, month = w._m, iso = parse(t.value, month), cur = VD.get.call(n);
-    if (iso === null) { t.classList.add('dmy-bad'); t.setCustomValidity(badMsg()); return false; }
-    var mn = n.getAttribute('min'), mx = n.getAttribute('max');
-    if (iso && ((mn && iso < mn) || (mx && iso > mx))) { t.classList.add('dmy-bad'); t.setCustomValidity(badMsg()); return false; }
-    t.classList.remove('dmy-bad'); t.setCustomValidity('');
-    if (iso) t.value = toShow(iso, month);
-    if (iso !== cur) { VD.set.call(n, iso); if (!quiet) fire(n); }
-    return true;
+  function inRange(n, v) { var mn = n.getAttribute('min'), mx = n.getAttribute('max'); return !v || !((mn && v < mn) || (mx && v > mx)); }
+  function setBad(w, bad) { w.classList.toggle('bad', !!bad); w._t.setCustomValidity(bad ? T('Սխալ ամսաթիվ') : ''); }
+  function setVal(w, v, quiet) {
+    var n = w._n; setBad(w, false); w._t.value = toShow(v);
+    if (v !== VD.get.call(n)) { VD.set.call(n, v); if (!quiet) fire(n); }
   }
-  function wrap(n) {
-    if (n._dmy || !n.parentNode) return; n._dmy = 1;
-    var month = n.type === 'month', w = document.createElement('span'), t = document.createElement('input'), b = document.createElement('button');
-    w.className = 'dmy' + (/width/.test(n.getAttribute('style') || '') ? ' dmy-i' : '');
-    if (n.getAttribute('style')) w.setAttribute('style', n.getAttribute('style'));
-    if (/width\s*:\s*auto/.test(n.getAttribute('style') || '')) w.style.width = month ? '9.5em' : '11.5em';
-    n.removeAttribute('style');
-    t.type = 'text'; t.inputMode = 'numeric'; t.autocomplete = 'off'; t.spellcheck = false;
-    t.className = (n.className || 'inp') + ' dmy-t'; t.placeholder = ph(month); t.maxLength = month ? 7 : 10;
+  function commit(w, quiet) {
+    var v = parse(w._t.value);
+    if (v === null || !inRange(w._n, v)) { setBad(w, true); return false; }
+    setVal(w, v, quiet); return true;
+  }
+  function hideNative(n) { n.classList.add('dmy-n'); n.tabIndex = -1; n.setAttribute('aria-hidden', 'true'); }
+  function keepValue(n, show) {
+    try {
+      Object.defineProperty(n, 'value', { configurable: true, get: function () { return VD.get.call(this); }, set: function (v) { VD.set.call(this, v); show(); } });
+    } catch (e) {}
+  }
+  function inlineStyle(n, w, width) {
+    var st = n.getAttribute('style') || '';
+    if (st) { w.setAttribute('style', st); n.removeAttribute('style'); }
+    if (/width/.test(st)) { w.classList.add('dmy-i'); if (/width\s*:\s*(auto|1\d\dpx)/.test(st)) w.style.width = width; }
+  }
+
+  /* ---------- Օրացույց ---------- */
+  var CALW = null, CALEL = null;
+  function calClose() { if (CALEL) { CALEL.remove(); CALEL = null; } if (CALW) { CALW._b.setAttribute('aria-expanded', 'false'); CALW = null; } }
+  function calOpen(w) {
+    if (CALW === w) { calClose(); return; }
+    calClose(); CALW = w;
+    var cur = VD.get.call(w._n) || '', base = cur || todayIso();
+    var st = { y: +base.slice(0, 4), m: +base.slice(5, 7) };
+    var el = document.createElement('div'); el.className = 'cal'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', T('Օրացույց'));
+    CALEL = el; document.body.appendChild(el); w._b.setAttribute('aria-expanded', 'true');
+    function draw() {
+      var ty = new Date().getFullYear(), y0 = Math.min(1930, st.y), y1 = Math.max(ty + 10, st.y), h = '';
+      h += '<div class="cal-h"><button type="button" class="cal-nav" data-nav="-1" aria-label="' + T('Նախորդ ամիս') + '">‹</button><select class="inp" data-cm aria-label="' + T('Ամիս') + '">';
+      for (var i = 1; i <= 12; i++) h += '<option value="' + i + '"' + (i === st.m ? ' selected' : '') + '>' + T(MONTHS[i - 1]) + '</option>';
+      h += '</select><select class="inp" data-cy aria-label="' + T('Տարի') + '">';
+      for (var yy = y1; yy >= y0; yy--) h += '<option value="' + yy + '"' + (yy === st.y ? ' selected' : '') + '>' + yy + '</option>';
+      h += '</select><button type="button" class="cal-nav" data-nav="1" aria-label="' + T('Հաջորդ ամիս') + '">›</button></div><div class="cal-g">';
+      for (var k = 0; k < 7; k++) h += '<span class="cal-wd' + (k > 4 ? ' we' : '') + '">' + T(WD[k]) + '</span>';
+      var first = (new Date(st.y, st.m - 1, 1).getDay() + 6) % 7, days = new Date(st.y, st.m, 0).getDate(), td = todayIso(), hl = hols();
+      for (k = 0; k < first; k++) h += '<span></span>';
+      for (var d = 1; d <= days; d++) {
+        var v = iso(st.y, st.m, d), wd = (first + d - 1) % 7, hol = hl.indexOf(v.slice(5)) >= 0 || hl.indexOf(v) >= 0;
+        h += '<button type="button" class="cal-d' + (wd > 4 ? ' we' : '') + (hol ? ' hol' : '') + (v === td ? ' today' : '') + (v === cur ? ' on' : '') + '" data-d="' + v + '"'
+          + (hol ? ' title="' + T('Տոնական օր') + '"' : '') + (inRange(w._n, v) ? '' : ' disabled') + '>' + d + '</button>';
+      }
+      h += '</div><div class="cal-f"><button type="button" class="btn ghost sm" data-today>' + T('Այսօր') + '</button><button type="button" class="btn ghost sm" data-clear>' + T('Մաքրել') + '</button></div>';
+      el.innerHTML = h; place();
+    }
+    function place() {
+      var r = w.getBoundingClientRect(), ch = el.offsetHeight, cw = el.offsetWidth;
+      var top = r.bottom + 4; if (top + ch > innerHeight - 8 && r.top - ch - 4 > 8) top = r.top - ch - 4;
+      var left = Math.min(Math.max(8, r.left), innerWidth - cw - 8);
+      el.style.top = Math.max(8, top) + 'px'; el.style.left = left + 'px';
+    }
+    el._place = place;
+    el.addEventListener('mousedown', function (e) { if (e.target.tagName !== 'SELECT') e.preventDefault(); });
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.nav) { st.m += +b.dataset.nav; if (st.m < 1) { st.m = 12; st.y--; } if (st.m > 12) { st.m = 1; st.y++; } draw(); return; }
+      if (b.dataset.d) { setVal(w, b.dataset.d); calClose(); w._t.focus(); return; }
+      if (b.hasAttribute('data-today')) { var t = todayIso(); if (inRange(w._n, t)) setVal(w, t); calClose(); w._t.focus(); return; }
+      if (b.hasAttribute('data-clear')) { setVal(w, ''); calClose(); w._t.focus(); }
+    });
+    el.addEventListener('change', function (e) {
+      if (e.target.hasAttribute('data-cm')) st.m = +e.target.value; else if (e.target.hasAttribute('data-cy')) st.y = +e.target.value; draw();
+    });
+    draw();
+  }
+  document.addEventListener('mousedown', function (e) { if (CALEL && !CALEL.contains(e.target) && !(CALW && CALW.contains(e.target))) calClose(); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && CALEL) { e.stopPropagation(); var w = CALW; calClose(); if (w) w._t.focus(); } }, true);
+  window.addEventListener('resize', function () { if (CALEL) CALEL._place(); });
+  document.addEventListener('scroll', function (e) { if (CALEL && !CALEL.contains(e.target)) { if (CALW && document.body.contains(CALW)) CALEL._place(); else calClose(); } }, true);
+
+  /* ---------- Ամսաթիվ (.datef) ---------- */
+  function wrapDate(n) {
+    var w = document.createElement('div'), t = document.createElement('input'), b = document.createElement('button');
+    w.className = 'datef'; inlineStyle(n, w, '11.5em');
+    t.type = 'text'; t.inputMode = 'numeric'; t.autocomplete = 'off'; t.spellcheck = false; t.maxLength = 10;
+    t.className = (n.className || 'inp') + ' dmy-t'; t.placeholder = T('օօ/աա/տտտտ');
     if (n.title) t.title = n.title;
     if (n.required) { t.required = true; n.required = false; }
-    t.disabled = n.disabled; t.readOnly = n.readOnly;
-    if (n.id) { t.setAttribute('data-for', n.id); }
-    b.type = 'button'; b.className = 'dmy-b'; b.tabIndex = -1; b.disabled = n.disabled || n.readOnly; b.title = month ? 'Ամիս' : 'Օրացույց';
+    b.type = 'button'; b.className = 'datef-btn'; b.tabIndex = -1; b.setAttribute('aria-label', T('Բացել օրացույցը')); b.setAttribute('aria-haspopup', 'dialog');
     b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + CAL + '" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-    n.classList.add('dmy-n'); n.tabIndex = -1; n.setAttribute('aria-hidden', 'true');
+    hideNative(n);
     n.parentNode.insertBefore(w, n); w.appendChild(t); w.appendChild(n); w.appendChild(b);
-    w._t = t; w._n = n; w._m = month; n._w = w;
-    t.value = toShow(VD.get.call(n), month);
-    try {
-      Object.defineProperty(n, 'value', { configurable: true, get: function () { return VD.get.call(this); },
-        set: function (v) { VD.set.call(this, v); t.value = toShow(VD.get.call(this), month); t.classList.remove('dmy-bad'); t.setCustomValidity(''); } });
-    } catch (e) {}
-    t.addEventListener('input', function (e) { e.stopPropagation(); mask(t, month); t.classList.remove('dmy-bad'); t.setCustomValidity('');
-      if (t.value.length === (month ? 7 : 10)) commit(w); else if (!t.value) commit(w); });
+    w._t = t; w._n = n; w._b = b; n._w = w;
+    function sync() { t.disabled = n.disabled; t.readOnly = n.readOnly; b.disabled = n.disabled || n.readOnly; w.classList.toggle('ro', n.disabled || n.readOnly); if (n.required) { t.required = true; n.required = false; } }
+    sync(); t.value = toShow(VD.get.call(n));
+    keepValue(n, function () { t.value = toShow(VD.get.call(n)); setBad(w, false); });
+    t.addEventListener('input', function (e) { e.stopPropagation(); mask(t); setBad(w, false); if (t.value.length === 10 || !t.value) commit(w); });
     t.addEventListener('change', function (e) { e.stopPropagation(); commit(w); });
-    t.addEventListener('blur', function () { commit(w); });
-    t.addEventListener('keydown', function (e) { if (e.key === 'Enter') commit(w); });
-    n.addEventListener('change', function () { t.value = toShow(VD.get.call(n), month); t.classList.remove('dmy-bad'); t.setCustomValidity(''); });
-    b.addEventListener('click', function () {
-      if (b.disabled) return;
-      try { if (n.showPicker) { n.showPicker(); return; } } catch (e) {}
-      t.focus();
+    t.addEventListener('blur', function () { if (CALW !== w) commit(w); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') commit(w);
+      else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); if (!b.disabled) calOpen(w); }
     });
-    new MutationObserver(function () { t.disabled = n.disabled; b.disabled = n.disabled || n.readOnly; if (n.required) { t.required = true; n.required = false; } })
-      .observe(n, { attributes: true, attributeFilter: ['disabled', 'readonly', 'required'] });
+    n.addEventListener('change', function () { t.value = toShow(VD.get.call(n)); setBad(w, false); });
+    b.addEventListener('click', function () { if (!b.disabled) { commit(w, true); calOpen(w); } });
+    new MutationObserver(sync).observe(n, { attributes: true, attributeFilter: ['disabled', 'readonly', 'required'] });
+  }
+
+  /* ---------- Ամիս (.monthf) ---------- */
+  function wrapMonth(n) {
+    var w = document.createElement('div'), sm = document.createElement('select'), sy = document.createElement('select');
+    w.className = 'monthf'; inlineStyle(n, w, '15.5em');
+    var cls = n.className || 'inp'; sm.className = cls; sy.className = cls;
+    sm.setAttribute('aria-label', T('Ամիս')); sy.setAttribute('aria-label', T('Տարի'));
+    if (n.title) w.title = n.title;
+    hideNative(n);
+    n.parentNode.insertBefore(w, n); w.appendChild(sm); w.appendChild(sy); w.appendChild(n);
+    w._n = n; n._w = w;
+    function fill() {
+      var v = VD.get.call(n) || '', y = +v.slice(0, 4) || 0, m = +v.slice(5, 7) || 0, ty = new Date().getFullYear();
+      var y0 = Math.min(ty - 15, y || ty), y1 = Math.max(ty + 5, y || ty), mn = n.getAttribute('min'), mx = n.getAttribute('max'), h = '';
+      if (mn) y0 = Math.max(y0, +mn.slice(0, 4)); if (mx) y1 = Math.min(y1, +mx.slice(0, 4));
+      h = v ? '' : '<option value="">—</option>';
+      for (var i = 1; i <= 12; i++) h += '<option value="' + i + '"' + (i === m ? ' selected' : '') + '>' + T(MONTHS[i - 1]) + '</option>';
+      sm.innerHTML = h;
+      h = v ? '' : '<option value="">—</option>';
+      for (var yy = y1; yy >= y0; yy--) h += '<option value="' + yy + '"' + (yy === y ? ' selected' : '') + '>' + yy + '</option>';
+      sy.innerHTML = h;
+    }
+    function sync() { sm.disabled = sy.disabled = n.disabled || n.readOnly; }
+    function pick() {
+      var m = +sm.value, y = +sy.value;
+      if (!m || !y) { if (!m && !y && VD.get.call(n)) { VD.set.call(n, ''); fire(n); } return; }
+      var v = y + '-' + pad(m); if (v !== VD.get.call(n)) { VD.set.call(n, v); fire(n); }
+      if (sm.options[0] && !sm.options[0].value) fill();
+    }
+    fill(); sync();
+    keepValue(n, fill);
+    [sm, sy].forEach(function (s) {
+      s.addEventListener('change', function (e) { e.stopPropagation(); pick(); });
+      s.addEventListener('input', function (e) { e.stopPropagation(); });
+    });
+    new MutationObserver(function () { sync(); fill(); }).observe(n, { attributes: true, attributeFilter: ['disabled', 'readonly', 'min', 'max'] });
+  }
+
+  function wrap(n) {
+    if (n._dmy || !n.parentNode) return; n._dmy = 1;
+    if (n.type === 'month') wrapMonth(n); else wrapDate(n);
   }
   function scan(root) {
     if (!root || !root.querySelectorAll) return;
@@ -888,14 +977,16 @@ svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none;
     for (var i = 0; i < l.length; i++) wrap(l[i]);
   }
   document.addEventListener('submit', function (e) {
-    var l = e.target.querySelectorAll ? e.target.querySelectorAll('.dmy') : [];
-    for (var i = 0; i < l.length; i++) if (!commit(l[i], true)) { e.preventDefault(); e.stopImmediatePropagation(); l[i]._t.reportValidity(); return; }
+    var l = e.target.querySelectorAll ? e.target.querySelectorAll('.datef') : [];
+    for (var i = 0; i < l.length; i++) if (l[i]._t && !commit(l[i], true)) { e.preventDefault(); e.stopImmediatePropagation(); l[i]._t.reportValidity(); return; }
   }, true);
   function start() {
     var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     scan(document.body);
-    new MutationObserver(function (ms) { for (var i = 0; i < ms.length; i++) for (var j = 0; j < ms[i].addedNodes.length; j++) scan(ms[i].addedNodes[j]); })
-      .observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(function (ms) {
+      for (var i = 0; i < ms.length; i++) for (var j = 0; j < ms[i].addedNodes.length; j++) scan(ms[i].addedNodes[j]);
+      if (CALW && !document.body.contains(CALW)) calClose();
+    }).observe(document.body, { childList: true, subtree: true });
   }
   window.nxDmyParse = parse;
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
@@ -1286,7 +1377,9 @@ const NxChat = (function () {
     </div>`;
     const $r = k => root.querySelector(`[data-r="${k}"]`);
     const list = $r('list');
-    list.addEventListener('scroll', () => { S.atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80; if (S.atBottom) { const nb = root.querySelector('.nxc-new'); if (nb) nb.remove(); } });
+    // պատուհանի չափը/բովանդակությունը փոխվելիս՝ ներքևում մնալ (եթե ներքևում էինք)
+    try { new ResizeObserver(() => { if (S.atBottom || Date.now() < (S.pinUntil || 0)) list.scrollTop = list.scrollHeight; }).observe(list); } catch (e) {}
+    list.addEventListener('scroll', () => { if (Date.now() < (S.pinUntil || 0)) { S.atBottom = true; const nb0 = root.querySelector('.nxc-new'); if (nb0) nb0.remove(); return; } S.atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80; if (S.atBottom) { const nb = root.querySelector('.nxc-new'); if (nb) nb.remove(); } });
 
     /* ---------- մեդիա ---------- */
     function media(id) { return fetchMedia(id, call); }
@@ -1625,7 +1718,12 @@ const NxChat = (function () {
       if (fresh.length && o.onIncoming) { try { o.onIncoming(fresh, S.info); } catch (e) {} }
       drawTop(); drawList(); if (S.tab === 'files') drawFiles();
       const grew = S.msgs.length > prevN;
-      if (S.firstLoad || own || (grew && wasBottom)) { requestAnimationFrame(() => scrollEnd(!S.firstLoad)); S.firstLoad = false; }
+      if (S.firstLoad || own || (grew && wasBottom)) {
+        if (S.firstLoad) S.pinUntil = Date.now() + 2500;
+        const smooth = !S.firstLoad; requestAnimationFrame(() => scrollEnd(smooth));
+        if (Date.now() < (S.pinUntil || 0)) [250, 800, 1600].forEach(ms => setTimeout(() => { if (S.alive && Date.now() < S.pinUntil + 200) scrollEnd(false); }, ms));
+        S.firstLoad = false;
+      }
       else if (grew && !root.querySelector('.nxc-new')) { const b = document.createElement('button'); b.className = 'nxc-new'; b.textContent = '↓ ' + _t('Նոր հաղորդագրություն'); root.querySelector('.nxc').appendChild(b); }
     }
     function drawTyping() {
@@ -1831,8 +1929,8 @@ function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { re
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 /* ======================= ԼԵԶՈՒ (հայերեն / English / Русский) =======================
    Թարգմանվում է միայն ինտերֆեյսը. գրված տեքստերը (հաղորդագրություններ, անելիքներ) մնում են ինչպես գրվել են */
-const I18N = { en: {"օր/ամիս/տարի": "dd/mm/yyyy", "ամիս/տարի": "mm/yyyy", "Սխալ ամսաթիվ": "Invalid date", "Չեղարկել": "Cancel", "Այո, շարունակել": "Yes, continue", "Այո": "Yes", "Լավ": "OK", "ՄԲ": "MB", "ԿԲ": "KB", "Այսօր": "Today", "Երեկ": "Yesterday", "Ֆայլը չի գտնվել": "File not found", "Չհաջողվեց կարդալ": "Could not read", "Լսել": "Play", "Ձայնային": "Voice", "Որոնել զրույցում…": "Search in chat…", "Որոնում": "Search", "Բոլոր ֆայլերը": "All files", "Ֆայլեր": "Files", "Բեռնվում է…": "Loading…", "Պահպանել": "Save", "Փակել": "Close", "հաճախորդ": "client", "Դուք": "You", "ջնջված հաղորդագրություն": "deleted message", "Հաղորդագրությունը ջնջված է": "Message deleted", "խմբագրված": "edited", "Ուղարկվում է": "Sending", "Կարդացված է": "Read", "Ուղարկված է": "Sent", "Գործողություններ": "Actions", "Ոչինչ չի գտնվել": "Nothing found", "Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը ": "No messages yet. Write the first one ", "Ֆայլեր դեռ չկան": "No files yet", "Նկարներ և տեսանյութեր": "Photos and videos", "Փաստաթղթեր": "Documents", "Ուղարկել": "Send", "Խմբագրում": "Editing", "Կցել": "Attach", "Խմբագրել…": "Edit…", "Հաղորդագրություն…": "Message…", "Ձայնային հաղորդագրություն": "Voice message", "Առավելագույնը {0} ֆայլ": "Maximum {0} files", "«{0}» ֆայլը մեծ է {1} ՄԲ-ից": "File «{0}» is larger than {1} MB", "Նկարեք ավելի կարճ տեսանյութ։": "Record a shorter video.", "Մեկ անգամում՝ մինչև 45 ՄԲ": "Up to 45 MB at once", "Նկարել": "Camera", "Տեսանյութ": "Video", "Գալերեա": "Gallery", "Ֆայլ": "File", "Ձայն": "Voice", "Հաղորդագրությունը չպահպանվեց": "Message was not saved", "Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)": "Microphone permission is not granted (enable it in browser/phone settings)", "Պատասխանել": "Reply", "Պատճենել": "Copy", "Խմբագրել": "Edit", "Ջնջել բոլորի մոտ": "Delete for everyone", "Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։": "Delete the message for everyone?", "Ջնջել": "Delete", "Նոր հաղորդագրություն": "New message", "{0}-ը գրում է…": "{0} is typing…", "{0}-ը գրում են…": "{0} are typing…", "Կապի խնդիր": "Connection problem", "Չհաջողվեց բեռնել հաղորդագրությունները": "Could not load messages", "Կրկին փորձում ենք…": "Retrying…", "Կրկին փորձել": "Try again", "Ստացված": "Received", "Դիտված": "Viewed", "Կատարման մեջ": "In progress", "Կատարված": "Done", "Մերժված": "Rejected", "Կապի սխալ": "Connection error", "սերվերը չի պատասխանում (60 վրկ)": "the server is not responding (60 s)", "սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)": "the server returned an invalid response", "Ֆայլը դատարկ է": "File is empty", "Հարցումներ Numetrix-ին": "Requests to Numetrix", "Նոր հարցում": "New request", "Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։": "Describe what needs to be done. The request will instantly appear for the Numetrix team.", "Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։": "The request has been sent. You will see its status below.", "Ձեր անունը": "Your name", "Ցանկալի ժամկետ": "Desired deadline", "Ի՞նչ է պետք անել": "What needs to be done?", "Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը": "E.g.: Process the October payroll", "Մանրամասներ": "Details", "Լրացուցիչ տեղեկություններ…": "Additional information…", "Հղում փաստաթղթին (եթե կա)": "Link to a document (if any)", "Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)": "Files (up to {0}, each up to {1} MB)", "Սեղմեք կամ քաշեք ֆայլերը այստեղ": "Click or drag files here", "Ուղարկել հարցումը": "Send request", "Ձեր հարցումները": "Your requests", "ժամկետ": "deadline", "Դեռ հարցումներ չկան": "No requests yet", "Հեռացնել": "Remove", "Լրացրեք Ձեր անունը և թե ինչ է պետք անել": "Fill in your name and what needs to be done", "Ֆայլերը բեռնվում են…": "Uploading files…", "Ուղարկվում է…": "Sending…", "Տեղադրել հեռախոսում": "Install on phone", "Միացնել ծանուցումները": "Enable notifications", "Տեղադրել iPhone-ում": "Install on iPhone", "Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)": "Tap the <b>Share</b> button at the bottom (□↑)", "Ընտրեք": "Choose", "Սեղմեք": "Tap", "Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։": "The Numetrix icon will appear on your home screen like a regular app.", "Կարգավիճակ": "Status", "Հավելվածը դեռ կարգավորված չէ": "The app is not configured yet", "Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները": "Connection problem — showing the last saved data", "Չհաջողվեց բեռնել": "Could not load", "Դուրս գալ և նորից մտնել": "Log out and log in again", "Հաճախորդի պատուհան": "Client portal", "Բարև, {0}": "Hello, {0}", "Մուտք": "Log in", "Մուտքագրեք Ձեր PIN-ը": "Enter your PIN", "Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։": "First login — create your PIN (4–8 digits). You will need it next time.", "Մուտքանունը տրամադրել է Numetrix-ը": "Your login was provided by Numetrix", "Նոր PIN": "New PIN", "Կրկնեք PIN-ը": "Repeat PIN", "Մուտքանուն": "Login", "Շարունակել": "Continue", "Այլ մուտքանուն": "Another login", "Գրեք մուտքանունը": "Enter your login", "PIN-երը չեն համընկնում": "PINs do not match", "Ելք": "Log out", "Որոնել հաղորդագրություններում և ֆայլերում…": "Search messages and files…", "Չաթ Numetrix-ի հետ": "Chat with Numetrix", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…": "Ask us anything, send a photo, a voice message…", "Անելիքներ": "Tasks", "Նոր անելիք": "New task", "Ընթացիկ": "Current", "Ավարտված": "Completed", "Բոլորը": "All", "Այստեղ դեռ ոչինչ չկա": "Nothing here yet", "Հետ": "Back", "Նոր անելիք Numetrix-ին": "New task for Numetrix", "Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։": "Describe what needs to be done (e.g. a payment, issuing an invoice). It will instantly appear for the specialist serving your company. For quick questions, use the chat.", "Կազմակերպություն": "Company", "ընտրեք": "select", "Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին": "E.g.: Transfer 500,000 AMD to «Beta» LLC", "Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…": "Recipient, account number, amount, purpose, goods/services…", "Հղում (եթե կա)": "Link (if any)", "Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)": "Photos, videos, voice, files (up to 10, each ≤ {0} MB)", "Կանգնեցնել": "Stop", "Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։": "Record a shorter video or send it in parts.", "Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։": "Up to 45 MB at once. Send in parts.", "Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։": "Microphone permission is not granted. Enable it in phone/browser settings, or record with your phone's recorder and attach it as a file.", "Ընտրեք կազմակերպությունը": "Select a company", "Գրեք, թե ինչ է պետք անել": "Describe what needs to be done", "Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։": "Sent. You can follow the status and replies here.", "Ուղարկվել է": "Sent", "Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։": "Here you can ask questions and send extra photos, documents or voice messages about this task.", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային ": "Ask us anything, send a photo, video or voice message ", "Դարձնել անելիք": "Make it a task", "Ստեղծե՞լ անելիք այս հաղորդագրությունից": "Create a task from this message?", "Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։": "It will appear under «Tasks», and you can follow its progress.", "Ստեղծվեց անելիք": "Task created", "Անհրաժեշտ է մուտք գործել": "Please log in", "Ձեր մուտքը անջատված է։ Դիմեք Numetrix-ին։": "Your access is disabled. Please contact Numetrix.", "Մուտքը ժամկետանց է։ Մուտք գործեք նորից։": "Session expired. Please log in again.", "PIN-ը պետք է լինի 4-8 թվանշան": "PIN must be 4–8 digits", "PIN-ը սխալ է": "Wrong PIN", "Հաղորդագրությունը չի գտնվել": "Message not found", "Հղումը պետք է սկսվի http:\/\/ կամ https:\/\/-ով": "The link must start with http:\/\/ or https:\/\/", "Մուտքանունը չի գտնվել կամ անջատված է": "Login not found or disabled", "Չափազանց շատ հարցումներ։ Փորձեք մի փոքր ուշ։": "Too many requests. Please try again a bit later.", "Չափից շատ սխալ փորձեր։ Փորձեք 15 րոպե հետո կամ դիմեք Numetrix-ին։": "Too many failed attempts. Try again in 15 minutes or contact Numetrix.", "Ֆայլը հասանելի չէ": "File is not available", "Զրույցը հասանելի չէ": "Chat is not available", "Զրույցը չի գտնվել": "Chat not found", "Հաղորդագրությունը դատարկ է": "Message is empty", "Կարող եք փոխել միայն Ձեր հաղորդագրությունները": "You can only change your own messages", "Տեքստը դատարկ է": "Text is empty", "Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։": "Task {0} «{1}» was created from your message. You can follow it under «Tasks».", "Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»": "Task {0} «{1}» was created from a message"},
-  ru: {"օր/ամիս/տարի": "дд/мм/гггг", "ամիս/տարի": "мм/гггг", "Սխալ ամսաթիվ": "Неверная дата", "Չեղարկել": "Отмена", "Այո, շարունակել": "Да, продолжить", "Այո": "Да", "Լավ": "OK", "ՄԲ": "МБ", "ԿԲ": "КБ", "Այսօր": "Сегодня", "Երեկ": "Вчера", "Ֆայլը չի գտնվել": "Файл не найден", "Չհաջողվեց կարդալ": "Не удалось прочитать", "Լսել": "Слушать", "Ձայնային": "Голосовые", "Որոնել զրույցում…": "Поиск в чате…", "Որոնում": "Поиск", "Բոլոր ֆայլերը": "Все файлы", "Ֆայլեր": "Файлы", "Բեռնվում է…": "Загрузка…", "Պահպանել": "Сохранить", "Փակել": "Закрыть", "հաճախորդ": "клиент", "Դուք": "Вы", "ջնջված հաղորդագրություն": "удалённое сообщение", "Հաղորդագրությունը ջնջված է": "Сообщение удалено", "խմբագրված": "изменено", "Ուղարկվում է": "Отправляется", "Կարդացված է": "Прочитано", "Ուղարկված է": "Отправлено", "Գործողություններ": "Действия", "Ոչինչ չի գտնվել": "Ничего не найдено", "Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը ": "Сообщений пока нет. Напишите первым ", "Ֆայլեր դեռ չկան": "Файлов пока нет", "Նկարներ և տեսանյութեր": "Фото и видео", "Փաստաթղթեր": "Документы", "Ուղարկել": "Отправить", "Խմբագրում": "Редактирование", "Կցել": "Прикрепить", "Խմբագրել…": "Изменить…", "Հաղորդագրություն…": "Сообщение…", "Ձայնային հաղորդագրություն": "Голосовое сообщение", "Առավելագույնը {0} ֆայլ": "Максимум {0} файлов", "«{0}» ֆայլը մեծ է {1} ՄԲ-ից": "Файл «{0}» больше {1} МБ", "Նկարեք ավելի կարճ տեսանյութ։": "Снимите более короткое видео.", "Մեկ անգամում՝ մինչև 45 ՄԲ": "До 45 МБ за раз", "Նկարել": "Камера", "Տեսանյութ": "Видео", "Գալերեա": "Галерея", "Ֆայլ": "Файл", "Ձայն": "Голос", "Հաղորդագրությունը չպահպանվեց": "Сообщение не сохранено", "Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)": "Нет доступа к микрофону (включите в настройках браузера/телефона)", "Պատասխանել": "Ответить", "Պատճենել": "Копировать", "Խմբագրել": "Изменить", "Ջնջել բոլորի մոտ": "Удалить у всех", "Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։": "Удалить сообщение у всех?", "Ջնջել": "Удалить", "Նոր հաղորդագրություն": "Новое сообщение", "{0}-ը գրում է…": "{0} печатает…", "{0}-ը գրում են…": "{0} печатают…", "Կապի խնդիր": "Проблема со связью", "Չհաջողվեց բեռնել հաղորդագրությունները": "Не удалось загрузить сообщения", "Կրկին փորձում ենք…": "Повторяем попытку…", "Կրկին փորձել": "Повторить", "Ստացված": "Получено", "Դիտված": "Просмотрено", "Կատարման մեջ": "В работе", "Կատարված": "Выполнено", "Մերժված": "Отклонено", "Կապի սխալ": "Ошибка связи", "սերվերը չի պատասխանում (60 վրկ)": "сервер не отвечает (60 с)", "սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)": "сервер вернул некорректный ответ", "Ֆայլը դատարկ է": "Файл пустой", "Հարցումներ Numetrix-ին": "Запросы в Numetrix", "Նոր հարցում": "Новый запрос", "Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։": "Опишите, что нужно сделать. Запрос сразу появится у команды Numetrix.", "Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։": "Запрос отправлен. Статус вы увидите ниже.", "Ձեր անունը": "Ваше имя", "Ցանկալի ժամկետ": "Желаемый срок", "Ի՞նչ է պետք անել": "Что нужно сделать?", "Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը": "Напр.: Оформить зарплату за октябрь", "Մանրամասներ": "Подробности", "Լրացուցիչ տեղեկություններ…": "Дополнительная информация…", "Հղում փաստաթղթին (եթե կա)": "Ссылка на документ (если есть)", "Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)": "Файлы (до {0} шт., каждый до {1} МБ)", "Սեղմեք կամ քաշեք ֆայլերը այստեղ": "Нажмите или перетащите файлы сюда", "Ուղարկել հարցումը": "Отправить запрос", "Ձեր հարցումները": "Ваши запросы", "ժամկետ": "срок", "Դեռ հարցումներ չկան": "Запросов пока нет", "Հեռացնել": "Удалить", "Լրացրեք Ձեր անունը և թե ինչ է պետք անել": "Укажите имя и что нужно сделать", "Ֆայլերը բեռնվում են…": "Загрузка файлов…", "Ուղարկվում է…": "Отправка…", "Տեղադրել հեռախոսում": "Установить на телефон", "Միացնել ծանուցումները": "Включить уведомления", "Տեղադրել iPhone-ում": "Установить на iPhone", "Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)": "Нажмите внизу кнопку <b>Поделиться</b> (□↑)", "Ընտրեք": "Выберите", "Սեղմեք": "Нажмите", "Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։": "Значок Numetrix появится на экране телефона, как обычное приложение.", "Կարգավիճակ": "Статус", "Հավելվածը դեռ կարգավորված չէ": "Приложение ещё не настроено", "Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները": "Проблема со связью — показаны последние сохранённые данные", "Չհաջողվեց բեռնել": "Не удалось загрузить", "Դուրս գալ և նորից մտնել": "Выйти и войти снова", "Հաճախորդի պատուհան": "Кабинет клиента", "Բարև, {0}": "Здравствуйте, {0}", "Մուտք": "Вход", "Մուտքագրեք Ձեր PIN-ը": "Введите ваш PIN", "Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։": "Первый вход — придумайте PIN (4–8 цифр). Он понадобится в следующий раз.", "Մուտքանունը տրամադրել է Numetrix-ը": "Логин предоставлен Numetrix", "Նոր PIN": "Новый PIN", "Կրկնեք PIN-ը": "Повторите PIN", "Մուտքանուն": "Логин", "Շարունակել": "Продолжить", "Այլ մուտքանուն": "Другой логин", "Գրեք մուտքանունը": "Введите логин", "PIN-երը չեն համընկնում": "PIN-коды не совпадают", "Ելք": "Выйти", "Որոնել հաղորդագրություններում և ֆայլերում…": "Поиск в сообщениях и файлах…", "Չաթ Numetrix-ի հետ": "Чат с Numetrix", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…": "Задайте любой вопрос, отправьте фото, голосовое…", "Անելիքներ": "Задачи", "Նոր անելիք": "Новая задача", "Ընթացիկ": "Текущие", "Ավարտված": "Завершённые", "Բոլորը": "Все", "Այստեղ դեռ ոչինչ չկա": "Здесь пока ничего нет", "Հետ": "Назад", "Նոր անելիք Numetrix-ին": "Новая задача для Numetrix", "Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։": "Опишите, что нужно сделать (напр., перевод, выписать счёт). Задача сразу появится у специалиста, обслуживающего вашу компанию. Для быстрых вопросов используйте чат.", "Կազմակերպություն": "Компания", "ընտրեք": "выберите", "Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին": "Напр.: Перевести 500 000 драм в ООО «Бета»", "Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…": "Получатель, счёт, сумма, назначение, товар/услуга…", "Հղում (եթե կա)": "Ссылка (если есть)", "Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)": "Фото, видео, голос, файлы (до 10, каждый ≤ {0} МБ)", "Կանգնեցնել": "Стоп", "Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։": "Снимите видео короче или отправьте частями.", "Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։": "До 45 МБ за раз. Отправьте частями.", "Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։": "Нет доступа к микрофону. Включите его в настройках телефона/браузера или запишите диктофоном и прикрепите как файл.", "Ընտրեք կազմակերպությունը": "Выберите компанию", "Գրեք, թե ինչ է պետք անել": "Опишите, что нужно сделать", "Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։": "Отправлено. Статус и ответы можно отслеживать здесь.", "Ուղարկվել է": "Отправлено", "Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։": "Здесь можно задать вопросы и отправить дополнительные фото, документы, голосовые по этой задаче.", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային ": "Задайте любой вопрос, отправьте фото, видео, голосовое ", "Դարձնել անելիք": "Сделать задачей", "Ստեղծե՞լ անելիք այս հաղորդագրությունից": "Создать задачу из этого сообщения?", "Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։": "Она появится в разделе «Задачи», и вы сможете следить за выполнением.", "Ստեղծվեց անելիք": "Создана задача", "Անհրաժեշտ է մուտք գործել": "Необходимо войти", "Ձեր մուտքը անջատված է։ Դիմեք Numetrix-ին։": "Ваш доступ отключён. Обратитесь в Numetrix.", "Մուտքը ժամկետանց է։ Մուտք գործեք նորից։": "Сессия истекла. Войдите снова.", "PIN-ը պետք է լինի 4-8 թվանշան": "PIN должен содержать 4–8 цифр", "PIN-ը սխալ է": "Неверный PIN", "Հաղորդագրությունը չի գտնվել": "Сообщение не найдено", "Հղումը պետք է սկսվի http:\/\/ կամ https:\/\/-ով": "Ссылка должна начинаться с http:\/\/ или https:\/\/", "Մուտքանունը չի գտնվել կամ անջատված է": "Логин не найден или отключён", "Չափազանց շատ հարցումներ։ Փորձեք մի փոքր ուշ։": "Слишком много запросов. Попробуйте чуть позже.", "Չափից շատ սխալ փորձեր։ Փորձեք 15 րոպե հետո կամ դիմեք Numetrix-ին։": "Слишком много неудачных попыток. Попробуйте через 15 минут или обратитесь в Numetrix.", "Ֆայլը հասանելի չէ": "Файл недоступен", "Զրույցը հասանելի չէ": "Чат недоступен", "Զրույցը չի գտնվել": "Чат не найден", "Հաղորդագրությունը դատարկ է": "Сообщение пустое", "Կարող եք փոխել միայն Ձեր հաղորդագրությունները": "Можно изменять только свои сообщения", "Տեքստը դատարկ է": "Текст пустой", "Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։": "Из вашего сообщения создана задача {0} «{1}». Следить за ней можно в разделе «Задачи».", "Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»": "Из сообщения создана задача {0} «{1}»"} };
+const I18N = { en: {"Հունվար": "January", "Փետրվար": "February", "Մարտ": "March", "Ապրիլ": "April", "Մայիս": "May", "Հունիս": "June", "Հուլիս": "July", "Օգոստոս": "August", "Սեպտեմբեր": "September", "Հոկտեմբեր": "October", "Նոյեմբեր": "November", "Դեկտեմբեր": "December", "Երկ": "Mon", "Երք": "Tue", "Չրք": "Wed", "Հնգ": "Thu", "Ուրբ": "Fri", "Շբթ": "Sat", "Կիր": "Sun", "Մաքրել": "Clear", "Օրացույց": "Calendar", "Նախորդ ամիս": "Previous month", "Հաջորդ ամիս": "Next month", "Ամիս": "Month", "Տարի": "Year", "Տոնական օր": "Public holiday", "Բացել օրացույցը": "Open calendar", "օօ/աա/տտտտ": "dd/mm/yyyy", "Սխալ ամսաթիվ": "Invalid date", "Այսօր": "Today", "Չեղարկել": "Cancel", "Այո, շարունակել": "Yes, continue", "Այո": "Yes", "Լավ": "OK", "ՄԲ": "MB", "ԿԲ": "KB", "Այսօր": "Today", "Երեկ": "Yesterday", "Ֆայլը չի գտնվել": "File not found", "Չհաջողվեց կարդալ": "Could not read", "Լսել": "Play", "Ձայնային": "Voice", "Որոնել զրույցում…": "Search in chat…", "Որոնում": "Search", "Բոլոր ֆայլերը": "All files", "Ֆայլեր": "Files", "Բեռնվում է…": "Loading…", "Պահպանել": "Save", "Փակել": "Close", "հաճախորդ": "client", "Դուք": "You", "ջնջված հաղորդագրություն": "deleted message", "Հաղորդագրությունը ջնջված է": "Message deleted", "խմբագրված": "edited", "Ուղարկվում է": "Sending", "Կարդացված է": "Read", "Ուղարկված է": "Sent", "Գործողություններ": "Actions", "Ոչինչ չի գտնվել": "Nothing found", "Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը ": "No messages yet. Write the first one ", "Ֆայլեր դեռ չկան": "No files yet", "Նկարներ և տեսանյութեր": "Photos and videos", "Փաստաթղթեր": "Documents", "Ուղարկել": "Send", "Խմբագրում": "Editing", "Կցել": "Attach", "Խմբագրել…": "Edit…", "Հաղորդագրություն…": "Message…", "Ձայնային հաղորդագրություն": "Voice message", "Առավելագույնը {0} ֆայլ": "Maximum {0} files", "«{0}» ֆայլը մեծ է {1} ՄԲ-ից": "File «{0}» is larger than {1} MB", "Նկարեք ավելի կարճ տեսանյութ։": "Record a shorter video.", "Մեկ անգամում՝ մինչև 45 ՄԲ": "Up to 45 MB at once", "Նկարել": "Camera", "Տեսանյութ": "Video", "Գալերեա": "Gallery", "Ֆայլ": "File", "Ձայն": "Voice", "Հաղորդագրությունը չպահպանվեց": "Message was not saved", "Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)": "Microphone permission is not granted (enable it in browser/phone settings)", "Պատասխանել": "Reply", "Պատճենել": "Copy", "Խմբագրել": "Edit", "Ջնջել բոլորի մոտ": "Delete for everyone", "Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։": "Delete the message for everyone?", "Ջնջել": "Delete", "Նոր հաղորդագրություն": "New message", "{0}-ը գրում է…": "{0} is typing…", "{0}-ը գրում են…": "{0} are typing…", "Կապի խնդիր": "Connection problem", "Չհաջողվեց բեռնել հաղորդագրությունները": "Could not load messages", "Կրկին փորձում ենք…": "Retrying…", "Կրկին փորձել": "Try again", "Ստացված": "Received", "Դիտված": "Viewed", "Կատարման մեջ": "In progress", "Կատարված": "Done", "Մերժված": "Rejected", "Կապի սխալ": "Connection error", "սերվերը չի պատասխանում (60 վրկ)": "the server is not responding (60 s)", "սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)": "the server returned an invalid response", "Ֆայլը դատարկ է": "File is empty", "Հարցումներ Numetrix-ին": "Requests to Numetrix", "Նոր հարցում": "New request", "Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։": "Describe what needs to be done. The request will instantly appear for the Numetrix team.", "Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։": "The request has been sent. You will see its status below.", "Ձեր անունը": "Your name", "Ցանկալի ժամկետ": "Desired deadline", "Ի՞նչ է պետք անել": "What needs to be done?", "Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը": "E.g.: Process the October payroll", "Մանրամասներ": "Details", "Լրացուցիչ տեղեկություններ…": "Additional information…", "Հղում փաստաթղթին (եթե կա)": "Link to a document (if any)", "Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)": "Files (up to {0}, each up to {1} MB)", "Սեղմեք կամ քաշեք ֆայլերը այստեղ": "Click or drag files here", "Ուղարկել հարցումը": "Send request", "Ձեր հարցումները": "Your requests", "ժամկետ": "deadline", "Դեռ հարցումներ չկան": "No requests yet", "Հեռացնել": "Remove", "Լրացրեք Ձեր անունը և թե ինչ է պետք անել": "Fill in your name and what needs to be done", "Ֆայլերը բեռնվում են…": "Uploading files…", "Ուղարկվում է…": "Sending…", "Տեղադրել հեռախոսում": "Install on phone", "Միացնել ծանուցումները": "Enable notifications", "Տեղադրել iPhone-ում": "Install on iPhone", "Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)": "Tap the <b>Share</b> button at the bottom (□↑)", "Ընտրեք": "Choose", "Սեղմեք": "Tap", "Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։": "The Numetrix icon will appear on your home screen like a regular app.", "Կարգավիճակ": "Status", "Հավելվածը դեռ կարգավորված չէ": "The app is not configured yet", "Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները": "Connection problem — showing the last saved data", "Չհաջողվեց բեռնել": "Could not load", "Դուրս գալ և նորից մտնել": "Log out and log in again", "Հաճախորդի պատուհան": "Client portal", "Բարև, {0}": "Hello, {0}", "Մուտք": "Log in", "Մուտքագրեք Ձեր PIN-ը": "Enter your PIN", "Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։": "First login — create your PIN (4–8 digits). You will need it next time.", "Մուտքանունը տրամադրել է Numetrix-ը": "Your login was provided by Numetrix", "Նոր PIN": "New PIN", "Կրկնեք PIN-ը": "Repeat PIN", "Մուտքանուն": "Login", "Շարունակել": "Continue", "Այլ մուտքանուն": "Another login", "Գրեք մուտքանունը": "Enter your login", "PIN-երը չեն համընկնում": "PINs do not match", "Ելք": "Log out", "Որոնել հաղորդագրություններում և ֆայլերում…": "Search messages and files…", "Չաթ Numetrix-ի հետ": "Chat with Numetrix", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…": "Ask us anything, send a photo, a voice message…", "Անելիքներ": "Tasks", "Նոր անելիք": "New task", "Ընթացիկ": "Current", "Ավարտված": "Completed", "Բոլորը": "All", "Այստեղ դեռ ոչինչ չկա": "Nothing here yet", "Հետ": "Back", "Նոր անելիք Numetrix-ին": "New task for Numetrix", "Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։": "Describe what needs to be done (e.g. a payment, issuing an invoice). It will instantly appear for the specialist serving your company. For quick questions, use the chat.", "Կազմակերպություն": "Company", "ընտրեք": "select", "Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին": "E.g.: Transfer 500,000 AMD to «Beta» LLC", "Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…": "Recipient, account number, amount, purpose, goods/services…", "Հղում (եթե կա)": "Link (if any)", "Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)": "Photos, videos, voice, files (up to 10, each ≤ {0} MB)", "Կանգնեցնել": "Stop", "Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։": "Record a shorter video or send it in parts.", "Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։": "Up to 45 MB at once. Send in parts.", "Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։": "Microphone permission is not granted. Enable it in phone/browser settings, or record with your phone's recorder and attach it as a file.", "Ընտրեք կազմակերպությունը": "Select a company", "Գրեք, թե ինչ է պետք անել": "Describe what needs to be done", "Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։": "Sent. You can follow the status and replies here.", "Ուղարկվել է": "Sent", "Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։": "Here you can ask questions and send extra photos, documents or voice messages about this task.", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային ": "Ask us anything, send a photo, video or voice message ", "Դարձնել անելիք": "Make it a task", "Ստեղծե՞լ անելիք այս հաղորդագրությունից": "Create a task from this message?", "Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։": "It will appear under «Tasks», and you can follow its progress.", "Ստեղծվեց անելիք": "Task created", "Անհրաժեշտ է մուտք գործել": "Please log in", "Ձեր մուտքը անջատված է։ Դիմեք Numetrix-ին։": "Your access is disabled. Please contact Numetrix.", "Մուտքը ժամկետանց է։ Մուտք գործեք նորից։": "Session expired. Please log in again.", "PIN-ը պետք է լինի 4-8 թվանշան": "PIN must be 4–8 digits", "PIN-ը սխալ է": "Wrong PIN", "Հաղորդագրությունը չի գտնվել": "Message not found", "Հղումը պետք է սկսվի http:\/\/ կամ https:\/\/-ով": "The link must start with http:\/\/ or https:\/\/", "Մուտքանունը չի գտնվել կամ անջատված է": "Login not found or disabled", "Չափազանց շատ հարցումներ։ Փորձեք մի փոքր ուշ։": "Too many requests. Please try again a bit later.", "Չափից շատ սխալ փորձեր։ Փորձեք 15 րոպե հետո կամ դիմեք Numetrix-ին։": "Too many failed attempts. Try again in 15 minutes or contact Numetrix.", "Ֆայլը հասանելի չէ": "File is not available", "Զրույցը հասանելի չէ": "Chat is not available", "Զրույցը չի գտնվել": "Chat not found", "Հաղորդագրությունը դատարկ է": "Message is empty", "Կարող եք փոխել միայն Ձեր հաղորդագրությունները": "You can only change your own messages", "Տեքստը դատարկ է": "Text is empty", "Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։": "Task {0} «{1}» was created from your message. You can follow it under «Tasks».", "Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»": "Task {0} «{1}» was created from a message"},
+  ru: {"Հունվար": "Январь", "Փետրվար": "Февраль", "Մարտ": "Март", "Ապրիլ": "Апрель", "Մայիս": "Май", "Հունիս": "Июнь", "Հուլիս": "Июль", "Օգոստոս": "Август", "Սեպտեմբեր": "Сентябрь", "Հոկտեմբեր": "Октябрь", "Նոյեմբեր": "Ноябрь", "Դեկտեմբեր": "Декабрь", "Երկ": "Пн", "Երք": "Вт", "Չրք": "Ср", "Հնգ": "Чт", "Ուրբ": "Пт", "Շբթ": "Сб", "Կիր": "Вс", "Մաքրել": "Очистить", "Օրացույց": "Календарь", "Նախորդ ամիս": "Предыдущий месяц", "Հաջորդ ամիս": "Следующий месяц", "Ամիս": "Месяц", "Տարի": "Год", "Տոնական օր": "Праздничный день", "Բացել օրացույցը": "Открыть календарь", "օօ/աա/տտտտ": "дд/мм/гггг", "Սխալ ամսաթիվ": "Неверная дата", "Այսօր": "Сегодня", "Չեղարկել": "Отмена", "Այո, շարունակել": "Да, продолжить", "Այո": "Да", "Լավ": "OK", "ՄԲ": "МБ", "ԿԲ": "КБ", "Այսօր": "Сегодня", "Երեկ": "Вчера", "Ֆայլը չի գտնվել": "Файл не найден", "Չհաջողվեց կարդալ": "Не удалось прочитать", "Լսել": "Слушать", "Ձայնային": "Голосовые", "Որոնել զրույցում…": "Поиск в чате…", "Որոնում": "Поиск", "Բոլոր ֆայլերը": "Все файлы", "Ֆայլեր": "Файлы", "Բեռնվում է…": "Загрузка…", "Պահպանել": "Сохранить", "Փակել": "Закрыть", "հաճախորդ": "клиент", "Դուք": "Вы", "ջնջված հաղորդագրություն": "удалённое сообщение", "Հաղորդագրությունը ջնջված է": "Сообщение удалено", "խմբագրված": "изменено", "Ուղարկվում է": "Отправляется", "Կարդացված է": "Прочитано", "Ուղարկված է": "Отправлено", "Գործողություններ": "Действия", "Ոչինչ չի գտնվել": "Ничего не найдено", "Հաղորդագրություններ դեռ չկան։ Գրեք առաջինը ": "Сообщений пока нет. Напишите первым ", "Ֆայլեր դեռ չկան": "Файлов пока нет", "Նկարներ և տեսանյութեր": "Фото и видео", "Փաստաթղթեր": "Документы", "Ուղարկել": "Отправить", "Խմբագրում": "Редактирование", "Կցել": "Прикрепить", "Խմբագրել…": "Изменить…", "Հաղորդագրություն…": "Сообщение…", "Ձայնային հաղորդագրություն": "Голосовое сообщение", "Առավելագույնը {0} ֆայլ": "Максимум {0} файлов", "«{0}» ֆայլը մեծ է {1} ՄԲ-ից": "Файл «{0}» больше {1} МБ", "Նկարեք ավելի կարճ տեսանյութ։": "Снимите более короткое видео.", "Մեկ անգամում՝ մինչև 45 ՄԲ": "До 45 МБ за раз", "Նկարել": "Камера", "Տեսանյութ": "Видео", "Գալերեա": "Галерея", "Ֆայլ": "Файл", "Ձայն": "Голос", "Հաղորդագրությունը չպահպանվեց": "Сообщение не сохранено", "Միկրոֆոնի թույլտվությունը տրված չէ (միացրեք բրաուզերի/հեռախոսի կարգավորումներում)": "Нет доступа к микрофону (включите в настройках браузера/телефона)", "Պատասխանել": "Ответить", "Պատճենել": "Копировать", "Խմբագրել": "Изменить", "Ջնջել բոլորի մոտ": "Удалить у всех", "Ջնջե՞լ հաղորդագրությունը բոլորի մոտ։": "Удалить сообщение у всех?", "Ջնջել": "Удалить", "Նոր հաղորդագրություն": "Новое сообщение", "{0}-ը գրում է…": "{0} печатает…", "{0}-ը գրում են…": "{0} печатают…", "Կապի խնդիր": "Проблема со связью", "Չհաջողվեց բեռնել հաղորդագրությունները": "Не удалось загрузить сообщения", "Կրկին փորձում ենք…": "Повторяем попытку…", "Կրկին փորձել": "Повторить", "Ստացված": "Получено", "Դիտված": "Просмотрено", "Կատարման մեջ": "В работе", "Կատարված": "Выполнено", "Մերժված": "Отклонено", "Կապի սխալ": "Ошибка связи", "սերվերը չի պատասխանում (60 վրկ)": "сервер не отвечает (60 с)", "սերվերը վերադարձրեց ոչ ճիշտ պատասխան (ստուգեք API_URL-ը և Deploy-ը)": "сервер вернул некорректный ответ", "Ֆայլը դատարկ է": "Файл пустой", "Հարցումներ Numetrix-ին": "Запросы в Numetrix", "Նոր հարցում": "Новый запрос", "Գրեք, թե ինչ է պետք անել։ Հարցումը անմիջապես կհայտնվի Numetrix-ի թիմի մոտ։": "Опишите, что нужно сделать. Запрос сразу появится у команды Numetrix.", "Հարցումն ուղարկված է։ Կարգավիճակը կտեսնեք ստորև։": "Запрос отправлен. Статус вы увидите ниже.", "Ձեր անունը": "Ваше имя", "Ցանկալի ժամկետ": "Желаемый срок", "Ի՞նչ է պետք անել": "Что нужно сделать?", "Օր.՝ Ձևակերպել հոկտեմբերի աշխատավարձը": "Напр.: Оформить зарплату за октябрь", "Մանրամասներ": "Подробности", "Լրացուցիչ տեղեկություններ…": "Дополнительная информация…", "Հղում փաստաթղթին (եթե կա)": "Ссылка на документ (если есть)", "Ֆայլեր (մինչև {0} հատ, յուրաքանչյուրը մինչև {1} ՄԲ)": "Файлы (до {0} шт., каждый до {1} МБ)", "Սեղմեք կամ քաշեք ֆայլերը այստեղ": "Нажмите или перетащите файлы сюда", "Ուղարկել հարցումը": "Отправить запрос", "Ձեր հարցումները": "Ваши запросы", "ժամկետ": "срок", "Դեռ հարցումներ չկան": "Запросов пока нет", "Հեռացնել": "Удалить", "Լրացրեք Ձեր անունը և թե ինչ է պետք անել": "Укажите имя и что нужно сделать", "Ֆայլերը բեռնվում են…": "Загрузка файлов…", "Ուղարկվում է…": "Отправка…", "Տեղադրել հեռախոսում": "Установить на телефон", "Միացնել ծանուցումները": "Включить уведомления", "Տեղադրել iPhone-ում": "Установить на iPhone", "Ներքևում սեղմեք <b>Կիսվել</b> կոճակը (□↑)": "Нажмите внизу кнопку <b>Поделиться</b> (□↑)", "Ընտրեք": "Выберите", "Սեղմեք": "Нажмите", "Numetrix-ի պատկերակը կհայտնվի հեռախոսի էկրանին՝ ինչպես սովորական հավելված։": "Значок Numetrix появится на экране телефона, как обычное приложение.", "Կարգավիճակ": "Статус", "Հավելվածը դեռ կարգավորված չէ": "Приложение ещё не настроено", "Կապի խնդիր՝ ցույց են տրված վերջին պահված տվյալները": "Проблема со связью — показаны последние сохранённые данные", "Չհաջողվեց բեռնել": "Не удалось загрузить", "Դուրս գալ և նորից մտնել": "Выйти и войти снова", "Հաճախորդի պատուհան": "Кабинет клиента", "Բարև, {0}": "Здравствуйте, {0}", "Մուտք": "Вход", "Մուտքագրեք Ձեր PIN-ը": "Введите ваш PIN", "Առաջին մուտք է՝ ստեղծեք Ձեր PIN-ը (4-8 թվանշան)։ Այն պետք կլինի հաջորդ անգամ։": "Первый вход — придумайте PIN (4–8 цифр). Он понадобится в следующий раз.", "Մուտքանունը տրամադրել է Numetrix-ը": "Логин предоставлен Numetrix", "Նոր PIN": "Новый PIN", "Կրկնեք PIN-ը": "Повторите PIN", "Մուտքանուն": "Логин", "Շարունակել": "Продолжить", "Այլ մուտքանուն": "Другой логин", "Գրեք մուտքանունը": "Введите логин", "PIN-երը չեն համընկնում": "PIN-коды не совпадают", "Ելք": "Выйти", "Որոնել հաղորդագրություններում և ֆայլերում…": "Поиск в сообщениях и файлах…", "Չաթ Numetrix-ի հետ": "Чат с Numetrix", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, ձայնային…": "Задайте любой вопрос, отправьте фото, голосовое…", "Անելիքներ": "Задачи", "Նոր անելիք": "Новая задача", "Ընթացիկ": "Текущие", "Ավարտված": "Завершённые", "Բոլորը": "Все", "Այստեղ դեռ ոչինչ չկա": "Здесь пока ничего нет", "Հետ": "Назад", "Նոր անելիք Numetrix-ին": "Новая задача для Numetrix", "Գրեք, թե ինչ է պետք անել (օր.՝ փոխանցում, հաշիվ դուրս գրել)։ Այն անմիջապես կհայտնվի Ձեր կազմակերպությունը սպասարկող մասնագետի մոտ։ Արագ հարցերի համար օգտվեք չաթից։": "Опишите, что нужно сделать (напр., перевод, выписать счёт). Задача сразу появится у специалиста, обслуживающего вашу компанию. Для быстрых вопросов используйте чат.", "Կազմակերպություն": "Компания", "ընտրեք": "выберите", "Օր.՝ Փոխանցել 500 000 դր. «Բետա» ՍՊԸ-ին": "Напр.: Перевести 500 000 драм в ООО «Бета»", "Ստացող, հաշվեհամար, գումար, նպատակ, ապրանք/ծառայություն…": "Получатель, счёт, сумма, назначение, товар/услуга…", "Հղում (եթե կա)": "Ссылка (если есть)", "Նկարներ, տեսանյութեր, ձայն, ֆայլեր (մինչև 10, յուրաքանչյուրը ≤ {0} ՄԲ)": "Фото, видео, голос, файлы (до 10, каждый ≤ {0} МБ)", "Կանգնեցնել": "Стоп", "Նկարեք ավելի կարճ տեսանյութ կամ ուղարկեք մասերով։": "Снимите видео короче или отправьте частями.", "Մեկ անգամում՝ մինչև 45 ՄԲ։ Ուղարկեք մասերով։": "До 45 МБ за раз. Отправьте частями.", "Միկրոֆոնի թույլտվությունը տրված չէ։ Միացրեք այն հեռախոսի/բրաուզերի կարգավորումներում կամ ձայնագրեք հեռախոսի ձայնագրիչով և կցեք որպես ֆայլ։": "Нет доступа к микрофону. Включите его в настройках телефона/браузера или запишите диктофоном и прикрепите как файл.", "Ընտրեք կազմակերպությունը": "Выберите компанию", "Գրեք, թե ինչ է պետք անել": "Опишите, что нужно сделать", "Ուղարկված է։ Կարգավիճակին և պատասխաններին կարող եք հետևել այստեղ։": "Отправлено. Статус и ответы можно отслеживать здесь.", "Ուղարկվել է": "Отправлено", "Այստեղ կարող եք գրել հարցեր և ուղարկել լրացուցիչ նկարներ, փաստաթղթեր, ձայնային այս անելիքի վերաբերյալ։": "Здесь можно задать вопросы и отправить дополнительные фото, документы, голосовые по этой задаче.", "Գրեք մեզ ցանկացած հարց, ուղարկեք նկար, տեսանյութ, ձայնային ": "Задайте любой вопрос, отправьте фото, видео, голосовое ", "Դարձնել անելիք": "Сделать задачей", "Ստեղծե՞լ անելիք այս հաղորդագրությունից": "Создать задачу из этого сообщения?", "Այն կհայտնվի «Անելիքներ» բաժնում, և կկարողանաք հետևել կատարմանը։": "Она появится в разделе «Задачи», и вы сможете следить за выполнением.", "Ստեղծվեց անելիք": "Создана задача", "Անհրաժեշտ է մուտք գործել": "Необходимо войти", "Ձեր մուտքը անջատված է։ Դիմեք Numetrix-ին։": "Ваш доступ отключён. Обратитесь в Numetrix.", "Մուտքը ժամկետանց է։ Մուտք գործեք նորից։": "Сессия истекла. Войдите снова.", "PIN-ը պետք է լինի 4-8 թվանշան": "PIN должен содержать 4–8 цифр", "PIN-ը սխալ է": "Неверный PIN", "Հաղորդագրությունը չի գտնվել": "Сообщение не найдено", "Հղումը պետք է սկսվի http:\/\/ կամ https:\/\/-ով": "Ссылка должна начинаться с http:\/\/ или https:\/\/", "Մուտքանունը չի գտնվել կամ անջատված է": "Логин не найден или отключён", "Չափազանց շատ հարցումներ։ Փորձեք մի փոքր ուշ։": "Слишком много запросов. Попробуйте чуть позже.", "Չափից շատ սխալ փորձեր։ Փորձեք 15 րոպե հետո կամ դիմեք Numetrix-ին։": "Слишком много неудачных попыток. Попробуйте через 15 минут или обратитесь в Numetrix.", "Ֆայլը հասանելի չէ": "Файл недоступен", "Զրույցը հասանելի չէ": "Чат недоступен", "Զրույցը չի գտնվել": "Чат не найден", "Հաղորդագրությունը դատարկ է": "Сообщение пустое", "Կարող եք փոխել միայն Ձեր հաղորդագրությունները": "Можно изменять только свои сообщения", "Տեքստը դատարկ է": "Текст пустой", "Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։": "Из вашего сообщения создана задача {0} «{1}». Следить за ней можно в разделе «Задачи».", "Հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»": "Из сообщения создана задача {0} «{1}»"} };
 window.NX_SYS = m => {
   if (LANG === 'hy') return m; let x;
   if ((x = String(m).match(/^(?:📋 )?Ձեր հաղորդագրությունից ստեղծվեց անելիք (\S+)՝ «([\s\S]*)»։/))) return t('Ձեր հաղորդագրությունից ստեղծվեց անելիք {0}՝ «{1}»։ Ընթացքին կարող եք հետևել «Անելիքներ» բաժնում։', x[1], x[2]);
@@ -1843,7 +1941,7 @@ var LANG = (function () { try { const v = localStorage.getItem('nx_lang'); if (v
 try { document.documentElement.lang = LANG; if (LANG !== 'hy') document.title = 'Numetrix'; } catch (e) {}
 function t(s, ...a) { let r = (LANG !== 'hy' && I18N[LANG] && I18N[LANG][s]) || s; a.forEach((v, i) => { r = r.split('{' + i + '}').join(v); }); return r; }
 window.NX_T = s => (LANG !== 'hy' && I18N[LANG] && I18N[LANG][s]) || s;
-window.NXDMY_PH = m => t(m ? 'ամիս/տարի' : 'օր/ամիս/տարի'); window.NXDMY_BAD = () => t('Սխալ ամսաթիվ');
+window.NXDMY_T = s => t(s);
 /** Սերվերի սխալները (հայերեն)՝ ընտրված լեզվով */
 function trErr(m) {
   m = String(m || ''); if (LANG === 'hy') return m;
