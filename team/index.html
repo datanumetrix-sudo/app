@@ -5760,7 +5760,7 @@ function taxCompName(name, lang) {
 }
 const fmtAmt = n => fmtNum(Math.round(+n || 0), 0);
 const parseAmt = v => { const n = Math.round(Number(String(v == null ? '' : v).replace(/[\s,]/g, '').replace(/[^\d.]/g, '')) || 0); return n > 0 ? n : 0; };
-const dmyD = d => d ? d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(0, 4) : '';
+const dmyD = d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : '';
 function taxYmNow() { return taxYmAdd(today().slice(0, 7), -1); }   /* հոկտեմբերին կազմում ենք սեպտեմբերի թերթիկը */
 function taxYmAdd(ym, n) { let y = +ym.slice(0, 4), m = +ym.slice(5, 7) + n; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return y + '-' + String(m).padStart(2, '0'); }
 function taxCatById() { const o = {}; (S.d.taxCat || []).forEach(t => { o[t.id] = t; }); return o; }
@@ -5873,57 +5873,72 @@ function taxWrap(ctx, text, maxW) {
   if (cur) lines.push(cur); return lines.length ? lines : [''];
 }
 function taxCanvas(o) {
-  const L = TAX_I18N[o.lang] || TAX_I18N.hy, W = 1080, P = 56, FF = "'Noto Sans Armenian', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif";
+  /* Նկարը ուղարկվում է հաճախորդին, ուստի գույները ֆիքսված են (Marcelan / Numetrix բրենդ), թեմայից անկախ */
+  const C = { navy: '#101B34', navy2: '#1E3057', gold: '#C99A3D', goldL: '#DBAF5E', goldSoft: '#FEF7EB', goldLine: '#ECC683', goldInk: '#6A4F17',
+    ink: '#0F172A', ink2: '#334155', muted: '#5B6B82', line: '#E5E9F2', line2: '#EEF1F7', bg: '#FFFFFF', bg2: '#F7F9FC', onNavy: '#FFFFFF', onNavy2: '#B3C3E4' };
+  const L = TAX_I18N[o.lang] || TAX_I18N.hy, W = 1080, P = 64, FF = "'Noto Sans Armenian', 'Noto Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif";
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   const font = (w, px) => { ctx.font = w + ' ' + px + 'px ' + FF; };
-  const NAMEW = 520, AMTX = 800, DUEX = W - P;
-  // չափեր
-  font(800, 54); const titleLines = taxWrap(ctx, o.company, W - 2 * P);
-  const rows = o.items.map(it => { font(600, 34); const nl = taxWrap(ctx, it.name, NAMEW); return { it, nl, h: 26 * 2 + nl.length * 44 + (it.account ? 38 : 0) }; });
-  const dues = o.items.map(x => x.due).filter(Boolean).sort(); const due = dues[0] || '';
-  font(700, 34); const payLines = due ? taxWrap(ctx, L.pay(due, L.gen), W - 2 * P - 72) : [];
-  const headH = 40 + 40 + titleLines.length * 64 + 56 + 36;
-  const tblH = 70 + rows.reduce((a, r) => a + r.h, 0);
-  const H = headH + 36 + tblH + 30 + 170 + (payLines.length ? 26 + payLines.length * 48 + 44 : 0) + 40 + 150;
-  const SC = 1; cv.width = W * SC; cv.height = H * SC; ctx.scale(SC, SC);
-  ctx.fillStyle = 'var(--surface)'; ctx.fillRect(0, 0, W, H);
-  ctx.textBaseline = 'alphabetic';
-  // վերնագիր
-  ctx.fillStyle = 'var(--accent-fg)'; ctx.fillRect(0, 0, W, headH);
-  let y = 40 + 34; ctx.fillStyle = 'rgba(255,255,255,.85)'; font(600, 30); ctx.fillText(L.title, P, y);
-  y += 20; ctx.fillStyle = 'var(--surface)'; font(800, 54); titleLines.forEach(t => { y += 64; ctx.fillText(t, P, y - 8); });
-  y += 50; ctx.fillStyle = 'var(--warn-soft)'; font(600, 38); ctx.fillText(o.month, P, y - 4);
-  // աղյուսակ
-  y = headH + 36 + 40; ctx.fillStyle = 'var(--muted)'; font(600, 26); ctx.fillText(L.c1, P, y);
-  ctx.textAlign = 'right'; ctx.fillText(L.c2, AMTX, y); ctx.fillText(L.c3, DUEX, y); ctx.textAlign = 'left';
-  y += 20; ctx.fillStyle = 'var(--surface-3)'; ctx.fillRect(P, y, W - 2 * P, 3); y += 10;
-  rows.forEach(r => {
-    const top = y; let ty = top + 26;
-    ctx.fillStyle = 'var(--ink)'; font(600, 34); r.nl.forEach(t => { ty += 44; ctx.fillText(t, P, ty - 10); });
-    if (r.it.account) { ctx.fillStyle = 'var(--muted)'; font(400, 24); ctx.fillText(L.acct + r.it.account, P, ty + 24); }
-    const mid = top + r.h / 2 + 12;
-    ctx.textAlign = 'right'; ctx.fillStyle = 'var(--ink)'; font(800, 36); ctx.fillText(fmtAmt(r.it.amt), AMTX, mid);
-    ctx.fillStyle = 'var(--ink-2)'; font(400, 29); ctx.fillText(dmyD(r.it.due), DUEX, mid); ctx.textAlign = 'left';
-    y = top + r.h; ctx.fillStyle = 'var(--surface-2)'; ctx.fillRect(P, y - 2, W - 2 * P, 2);
-  });
-  // ընդամենը
-  y += 30; const bx = P, bw = W - 2 * P, bh = 150;
   const rr = (x, yy, w, h, rad) => { ctx.beginPath(); ctx.moveTo(x + rad, yy); ctx.arcTo(x + w, yy, x + w, yy + h, rad); ctx.arcTo(x + w, yy + h, x, yy + h, rad); ctx.arcTo(x, yy + h, x, yy, rad); ctx.arcTo(x, yy, x + w, yy, rad); ctx.closePath(); };
-  rr(bx, y, bw, bh, 28); ctx.fillStyle = 'var(--warn-soft)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = 'var(--warn)'; ctx.stroke();
-  ctx.fillStyle = 'var(--ink)'; font(700, 34); ctx.fillText(L.total[0], bx + 40, y + 64); ctx.fillText(L.total[1], bx + 40, y + 108);
-  ctx.textAlign = 'right'; ctx.fillStyle = 'var(--warn)'; let tp = 64; const tt = fmtAmt(o.total) + ' ֏'; font(800, tp); while (ctx.measureText(tt).width > bw - 360 && tp > 36) { tp -= 2; font(800, tp); } ctx.fillText(tt, bx + bw - 40, y + bh / 2 + tp * .36); ctx.textAlign = 'left';
-  y += bh + 26;
-  if (payLines.length) {
-    const ph = payLines.length * 48 + 44; rr(P, y, W - 2 * P, ph, 22); ctx.fillStyle = 'var(--bad-soft)'; ctx.fill();
-    ctx.fillStyle = 'var(--bad)'; font(700, 34); ctx.textAlign = 'center'; payLines.forEach((t, i) => ctx.fillText(t, W / 2, y + 22 + 38 + i * 48)); ctx.textAlign = 'left';
-    y += ph;
+  const NAMEW = 500, AMTX = 790, DUEX = W - P;
+  font(700, 52); const titleLines = taxWrap(ctx, o.company, W - 2 * P);
+  const rows = o.items.map(it => { font(600, 32); const nl = taxWrap(ctx, it.name, NAMEW); return { it, nl, h: 30 * 2 + nl.length * 42 + (it.account ? 36 : 0) }; });
+  const dues = o.items.map(x => x.due).filter(Boolean).sort(); const due = dues[0] || '';
+  font(600, 30); const payLines = due ? taxWrap(ctx, L.pay(due, L.gen), W - 2 * P - 120) : [];
+  const headH = 64 + 34 + 26 + titleLines.length * 62 + 20 + 40 + 56;
+  const tblH = 64 + rows.reduce((a, r) => a + r.h, 0);
+  const totH = 168, payH = payLines.length ? payLines.length * 44 + 48 : 0;
+  const H = headH + 44 + tblH + 36 + totH + (payH ? 24 + payH : 0) + 48 + 2 + 120;
+  const SC = 2; cv.width = W * SC; cv.height = H * SC; ctx.scale(SC, SC);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  // վերնագիր՝ մուգ կապույտ գոտի, ոսկեգույն կետով պիտակ
+  ctx.fillStyle = C.navy; ctx.fillRect(0, 0, W, headH);
+  ctx.fillStyle = C.gold; ctx.fillRect(0, headH - 6, W, 6);
+  let y = 64 + 26;
+  ctx.fillStyle = C.goldL; ctx.beginPath(); ctx.arc(P + 7, y - 10, 7, 0, Math.PI * 2); ctx.fill();
+  font(700, 24); ctx.fillStyle = C.goldL; ctx.fillText(L.title, P + 26, y);
+  y += 26; ctx.fillStyle = C.onNavy; font(700, 52); titleLines.forEach(t => { y += 62; ctx.fillText(t, P, y - 6); });
+  y += 20 + 40; ctx.fillStyle = C.onNavy2; font(500, 34); ctx.fillText(o.month, P, y - 6);
+  // աղյուսակ
+  y = headH + 44 + 30; ctx.fillStyle = C.muted; font(600, 24); ctx.fillText(L.c1, P, y);
+  ctx.textAlign = 'right'; ctx.fillText(L.c2, AMTX, y); ctx.fillText(L.c3, DUEX, y); ctx.textAlign = 'left';
+  y += 22; ctx.fillStyle = C.line; ctx.fillRect(P, y, W - 2 * P, 2); y += 12;
+  rows.forEach((r, i) => {
+    const top = y;
+    if (i % 2 === 1) { ctx.fillStyle = C.bg2; ctx.fillRect(P - 16, top, W - 2 * P + 32, r.h); }
+    let ty = top + 30;
+    ctx.fillStyle = C.ink; font(600, 32); r.nl.forEach(t => { ty += 42; ctx.fillText(t, P, ty - 10); });
+    if (r.it.account) { ctx.fillStyle = C.muted; font(400, 23); ctx.fillText(L.acct + r.it.account, P, ty + 22); }
+    const mid = top + r.h / 2 + 12;
+    ctx.textAlign = 'right'; ctx.fillStyle = C.ink; font(700, 36); ctx.fillText(fmtAmt(r.it.amt), AMTX, mid);
+    ctx.fillStyle = C.ink2; font(500, 28); ctx.fillText(dmyD(r.it.due), DUEX, mid); ctx.textAlign = 'left';
+    y = top + r.h; ctx.fillStyle = C.line2; ctx.fillRect(P, y - 2, W - 2 * P, 2);
+  });
+  // ընդամենը՝ մուգ կապույտ քարտ, գումարը՝ ոսկեգույն
+  y += 36; const bx = P, bw = W - 2 * P;
+  rr(bx, y, bw, totH, 24); ctx.fillStyle = C.navy; ctx.fill();
+  ctx.fillStyle = C.onNavy2; font(600, 28); ctx.fillText(L.total[0], bx + 44, y + 70); ctx.fillStyle = C.onNavy; font(700, 34); ctx.fillText(L.total[1], bx + 44, y + 116);
+  ctx.textAlign = 'right'; ctx.fillStyle = C.goldL; let tp = 72; const tt = fmtAmt(o.total) + ' ֏'; font(700, tp); while (ctx.measureText(tt).width > bw - 360 && tp > 36) { tp -= 2; font(700, tp); }
+  ctx.fillText(tt, bx + bw - 44, y + totH / 2 + tp * .36); ctx.textAlign = 'left';
+  y += totH;
+  // վճարման ժամկետ
+  if (payH) {
+    y += 24; rr(P, y, bw, payH, 20); ctx.fillStyle = C.goldSoft; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.goldLine; ctx.stroke();
+    ctx.fillStyle = C.goldInk; font(600, 30); ctx.textAlign = 'center'; payLines.forEach((t, i) => ctx.fillText(t, W / 2, y + 24 + 34 + i * 44)); ctx.textAlign = 'left';
+    y += payH;
   }
-  y += 40; ctx.fillStyle = 'var(--surface-3)'; ctx.fillRect(P, y, W - 2 * P, 3);
-  y += 56; ctx.fillStyle = 'var(--ink-2)'; font(400, 27);
-  const seg = (txt, bold) => { font(bold ? 700 : 400, 27); ctx.fillStyle = bold ? 'var(--ink)' : 'var(--ink-2)'; ctx.fillText(txt, x0, y); x0 += ctx.measureText(txt).width; };
-  let x0 = P; seg(L.prep); seg(o.firm, true); if (o.by) { seg(' · ' + L.acc + ' '); seg(o.by, true); }
-  y += 44; x0 = P; if (o.phone) { seg(L.call + ' '); seg(o.phone, true); } else seg(L.callNo);
+  // ստորագրություն
+  y += 48; ctx.fillStyle = C.line; ctx.fillRect(P, y, W - 2 * P, 2);
+  y += 52;
+  let x0 = P; const seg = (txt, bold) => { font(bold ? 700 : 400, 26); ctx.fillStyle = bold ? C.ink : C.ink2; ctx.fillText(txt, x0, y); x0 += ctx.measureText(txt).width; };
+  seg(L.prep); seg(o.firm, true); if (o.by) { seg(' · ' + L.acc + ' '); seg(o.by, true); }
+  y += 42; x0 = P; if (o.phone) { seg(L.call + ' '); seg(o.phone, true); } else seg(L.callNo);
   return cv;
+}
+/* Նկարելուց առաջ բեռնել տառատեսակը, որ նկարը լինի ճիշտ տառերով */
+function taxFontsReady() {
+  try { return Promise.race([Promise.all(['400', '500', '600', '700'].map(w => document.fonts.load(w + " 32px 'Noto Sans Armenian'", 'Աա֏'))), new Promise(r => setTimeout(r, 2500))]).catch(() => {}); } catch (e) { return Promise.resolve(); }
 }
 const cvBlob = cv => new Promise(r => cv.toBlob(r, 'image/png'));
 const blobB64 = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(b); });
@@ -5956,18 +5971,18 @@ async function taxImgOpen(cid) {
         <button type="button" class="btn" id="taxDl">${ico('nx-import')}Ներբեռնել</button><button type="button" class="btn" id="taxCopy">${ico('nx-file')}Պատճենել նկարը</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="taxSt">${taxChip(c.sheet)}</span><span style="flex:1"></span>${c.sheet && c.sheet.status === 'sent' ? '<button type="button" class="btn sm" id="taxUnmark">↩ Հանել նշումը</button>' : '<button type="button" class="btn sm" id="taxMark">' + ico('nx-check') + 'Նշել ուղարկված</button>'}</div>
-      <div class="hint" style="margin:0">Հեռախոսում «WhatsApp / Viber»-ը բացում է կիսվելու ցանկը՝ նկարը կգնա լուսանկարի տեսքով։ Համակարգչում նկարը կներբեռնվի և կբացվի WhatsApp-ը. կցեք նկարը () կամ տեղադրեք Ctrl+V-ով։</div>
+      <div class="hint" style="margin:0">Հեռախոսում «WhatsApp / Viber»-ը բացում է կիսվելու ցանկը՝ նկարը կգնա լուսանկարի տեսքով։ Համակարգչում նկարը կներբեռնվի և կբացվի WhatsApp-ը. կցեք նկարը ամրակի կոճակով կամ տեղադրեք Ctrl+V-ով։</div>
     </div></div>`, null, { okOnly: true, wide: true });
   const draw = () => {
     m.querySelectorAll('#taxLangSeg button').forEach(b => b.classList.toggle('on', b.dataset.l === lang));
     m.querySelector('#taxNm').value = nm(); m.querySelector('#taxBy').value = byN(); m.querySelector('#taxTx').value = text();
-    m.querySelector('#taxPrev').src = taxCanvas(data()).toDataURL('image/png');
+    const d0 = data(); taxFontsReady().then(() => { if (document.body.contains(m)) m.querySelector('#taxPrev').src = taxCanvas(d0).toDataURL('image/png'); });
   };
   const key = () => JSON.stringify(data());
   const file = async () => {
     const k = key();
     if (up && upKey === k) return up;
-    const blob = await cvBlob(taxCanvas(data()));
+    await taxFontsReady(); const blob = await cvBlob(taxCanvas(data()));
     const r = await call('taxImg', { ym, id: cid, lang, data: await blobB64(blob) });
     up = { fid: r.fid, name: r.name, blob, file: new File([blob], r.name + '.png', { type: 'image/png' }) }; upKey = k;
     if (S.docList) delete S.docList[cid];
@@ -5986,7 +6001,7 @@ async function taxImgOpen(cid) {
     }
     saveFileAs(f.file); try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': f.blob })]); } catch (x) {}
     window.open(WEB + 'wa.me/?text=' + encodeURIComponent(tx), '_blank', 'noopener');
-    toast('Նկարը ներբեռնվեց (և պատճենվեց)։ WhatsApp-ում ընտրեք չաթը և տեղադրեք նկարը (Ctrl+V կամ )։ Հետո սեղմեք «Նշել ուղարկված»։', 'ok', null, 12000);
+    toast('Նկարը ներբեռնվեց (և պատճենվեց)։ WhatsApp-ում ընտրեք չաթը և տեղադրեք նկարը (Ctrl+V կամ ամրակի կոճակով)։ Հետո սեղմեք «Նշել ուղարկված»։', 'ok', null, 12000);
   });
   m.querySelector('#taxDl').onclick = e => busy(e.currentTarget, async () => { const f = await file(); saveFileAs(f.file); });
   m.querySelector('#taxCopy').onclick = e => busy(e.currentTarget, async () => { const b = await cvBlob(taxCanvas(data())); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); toast('Նկարը պատճենվեց. տեղադրեք չաթում Ctrl+V-ով', 'ok'); });
@@ -6576,7 +6591,7 @@ async function docsSend(companyId, files, text0) {
     window.open(url, '_blank', 'noopener');
     fl.forEach(saveFileAs);
     if (via === 'tg') { try { await navigator.clipboard.writeText(f.text); } catch (e) {} }
-    toast('Ֆայլերը ներբեռնվեցին։ Բացված ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ի չաթում կցեք դրանք ()' + (via === 'tg' ? '. տեքստը պատճենված է' : '') + '։', 'ok', null, 9000);
+    toast('Ֆայլերը ներբեռնվեցին։ Բացված ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ի չաթում կցեք դրանք ամրակի կոճակով' + (via === 'tg' ? '. տեքստը պատճենված է' : '') + '։', 'ok', null, 9000);
   }, { wide: true, submit: 'Ուղարկել' });
   const prefetch = async () => {
     const fids = [...m.querySelectorAll('[name=sf]:checked')].map(x => x.value), key = fids.join();
@@ -6593,7 +6608,7 @@ async function docsSend(companyId, files, text0) {
     const ready = blobs && blobsKey === [...m.querySelectorAll('[name=sf]:checked')].map(x => x.value).join();
     m.querySelector('#viaHint').innerHTML = via === 'email' ? 'Նամակը կուղարկվի ձեր Google հաշվից՝ ֆայլերը կցված։'
       : via === 'chat' ? 'Ֆայլերը կհայտնվեն հաճախորդի հավելվածի չաթում։'
-      : (ready ? 'Ֆայլերը պատրաստ են։ ' : 'Ֆայլերը բեռնվում են… ') + (share ? 'Սեղմեք «Ուղարկել» և ընտրեք ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը։' : 'Սեղմելիս ֆայլերը կներբեռնվեն և կբացվի ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը. կցեք ֆայլերը չաթում ()։');
+      : (ready ? 'Ֆայլերը պատրաստ են։ ' : 'Ֆայլերը բեռնվում են… ') + (share ? 'Սեղմեք «Ուղարկել» և ընտրեք ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը։' : 'Սեղմելիս ֆայլերը կներբեռնվեն և կբացվի ' + (via === 'wa' ? 'WhatsApp' : 'Telegram') + '-ը. կցեք ֆայլերը չաթում ամրակի կոճակով։');
   };
   m.querySelector('#viaBox').onclick = e => { const b = e.target.closest('[data-via]'); if (!b) return; via = b.dataset.via; draw(); if (via === 'wa' || via === 'tg') prefetch(); };
   m.querySelector('[name=extId]').onchange = e => { const u = ext.find(x => x.id === e.target.value); if (u) { if (u.email) m.querySelector('[name=to]').value = u.email; if (u.phone) m.querySelector('[name=phone]').value = u.phone; } draw(); };
@@ -7215,7 +7230,7 @@ const ACT = {
   },
   syncEdit: el => { closeModal(); editCompany(el.dataset.id); },
   hrGo: async () => {
-    let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:var(--muted)">Բեռնվում է Numetrix HR…</p>'); } catch (e) {}
+    let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:#5B6B82">Բեռնվում է Numetrix HR…</p>'); } catch (e) {}
     try {
       const r = await call('hrLink', {});
       if (w && !w.closed) w.location.href = r.url; else location.href = r.url;
@@ -7223,7 +7238,7 @@ const ACT = {
   },
   contractsGo: async () => {
     // պատուհանը բացվում է անմիջապես (սեղմման պահին), որ բրաուզերը չարգելափակի, հղումը՝ հետո
-    let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:var(--muted)">Բեռնվում է «Պայմանագրեր և ակտեր»…</p>'); } catch (e) {}
+    let w = null; try { w = window.open('', '_blank'); if (w) w.document.write('<p style="font:15px system-ui;padding:24px;color:#5B6B82">Բեռնվում է «Պայմանագրեր և ակտեր»…</p>'); } catch (e) {}
     try {
       const r = await call('contractsLink', {});
       if (w && !w.closed) w.location.href = r.url; else location.href = r.url;
