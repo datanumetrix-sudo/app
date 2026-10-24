@@ -4340,14 +4340,19 @@ function viewStats() {
 
   // ---- trend ----
   const N = { 'Ամսական': 12, 'Եռամսյակային': 8, 'Կիսամյակային': 6, 'Տարեկան': 5 }[S.sf.type];
-  const trend = [];
+  let trend = [];
   for (let i = N - 1; i >= 0; i--) {
     const q = statPeriod(S.sf.type, S.sf.off - i);
     const a = agg(all.filter(r => r.done >= q.start && r.done <= q.end));
-    trend.push({ label: shortLabel(S.sf.type, q, i === N - 1), full: q.label, on: a.onTime, late: a.late, n: a.n, pct: a.pct, cur: i === 0 });
+    trend.push({ q, full: q.label, on: a.onTime, late: a.late, n: a.n, pct: a.pct, cur: i === 0 });
   }
+  // տվյալներ չունեցող սկզբնական ժամանակաշրջանները (ծրագրի օգտագործումից առաջ) չենք ցույց տալիս
+  const f0 = trend.findIndex(t => t.n > 0), trimmed = f0 > 0;
+  if (trimmed) trend = trend.slice(f0);
+  trend.forEach((t, i) => { t.label = shortLabel(S.sf.type, t.q, i === 0); });
   S.trend = trend;
-  const trendCard = `<div class="scard"><h3>Դինամիկա</h3><div class="sub">Ավարտված թասքեր՝ վերջին ${N} ժամանակաշրջանում</div>
+  const trendSub = trimmed ? `Ավարտված թասքեր՝ ${esc(trend[0].full)}-ից (ավելի վաղ ավարտված թասքեր չկան)` : `Ավարտված թասքեր՝ վերջին ${N} ժամանակաշրջանում`;
+  const trendCard = `<div class="scard"><h3>Դինամիկա</h3><div class="sub">${trendSub}</div>
     <div class="legend" style="margin-bottom:8px"><span><i style="background:${C_GOOD}"></i>Ժամանակին</span><span><i style="background:${C_LATE}"></i>Ուշացումով</span></div>
     <div class="chartwrap" id="trendChart">${trendSvg(trend)}<div class="ctip" id="ctip"></div></div></div>`;
 
@@ -4366,7 +4371,7 @@ function trendSvg(tr) {
   const W = vw >= 1100 ? 560 : Math.max(320, Math.min(560, vw - 70)), H = 240, L = 34, R = 8, T = 14, B = 38;
   const sc = niceScale(Math.max(...tr.map(t => t.n)));
   const max = sc.max;
-  const cw = (W - L - R) / tr.length, bw = Math.min(34, cw * 0.62);
+  const cw = (W - L - R) / Math.max(tr.length, 3), bw = Math.min(56, cw * 0.62);
   const y = v => T + (H - T - B) * (1 - v / max);
   let g = '';
   for (let i = 0; i <= sc.ticks; i++) {
@@ -4375,7 +4380,7 @@ function trendSvg(tr) {
   }
   const rTop = (x, y0, w, h) => { const r = Math.min(4, h, w / 2); return `M${x},${y0 + h}V${y0 + r}Q${x},${y0} ${x + r},${y0}H${x + w - r}Q${x + w},${y0} ${x + w},${y0 + r}V${y0 + h}Z`; };
   const cols = tr.map((t, i) => {
-    const x = L + cw * i + (cw - bw) / 2;
+    const x = L + ((W - L - R) - cw * tr.length) / 2 + cw * i + (cw - bw) / 2;
     const yOn = y(t.on), hOn = y(0) - yOn;
     const yL = y(t.on + t.late), hL = yOn - yL;
     let marks = '';
@@ -7740,7 +7745,7 @@ function vtDraw() {
   const bar = document.getElementById('vtabs'); if (!bar) return;
   if (!S.view) { bar.innerHTML = ''; return; }
   const L = VTL.length || S.view === 'home' ? VTL : [S.view];
-  bar.innerHTML = L.map(v => `<div class="wtab ${v === S.view ? 'on' : ''}" role="tab" aria-selected="${v === S.view}" tabindex="0" data-act="vtGo" data-v="${v}" title="${esc(TITLES[v])}"><span class="wt-i">${ico(VT_ICO[v] || 'list')}</span><span class="wt-t">${esc(TITLES[v])}</span>${L.length > 1 ? `<button type="button" class="wt-x" data-act="vtClose" data-v="${v}" aria-label="Փակել՝ ${esc(TITLES[v])}">${ico('x')}</button>` : ''}</div>`).join('');
+  bar.innerHTML = L.map(v => `<div class="wtab ${v === S.view ? 'on' : ''}" role="tab" aria-selected="${v === S.view}" tabindex="0" data-act="vtGo" data-v="${v}" title="${esc(TITLES[v])}"><span class="wt-i">${ico(VT_ICO[v] || 'list')}</span><span class="wt-t">${esc(TITLES[v])}</span><button type="button" class="wt-x" data-act="vtClose" data-v="${v}" aria-label="Փակել՝ ${esc(TITLES[v])}" title="Փակել">${ico('x')}</button></div>`).join('');
 }
 Object.assign(ACT, { vtGo: el => ACT.go(el), vtClose: (el, e) => { e.stopPropagation(); vtClose(el.dataset.v); } });
 /* ====================== 🧰 ԳՈՐԾԻՔՆԵՐ (վերևի տող) ====================== */
